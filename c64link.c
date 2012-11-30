@@ -126,9 +126,8 @@ int cable_save(unsigned char memory,
     cable_send_strobe();
 
     int i;
-    for(i=0; i<size; i++) {
+    for(i=0; i<size; i++)
       data[i] = cable_read();
-    }
 
     cable_close();
     return true;
@@ -147,9 +146,9 @@ int cable_jump(int address) {
       cable_close();
       return false;
     }
-    
+
+    cable_write(address >> 8);    
     cable_write(address & 0xff);
-    cable_write(address >> 8);
     
     cable_close();
     return true;
