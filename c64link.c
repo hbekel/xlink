@@ -18,8 +18,10 @@
 
 #define CABLE_LOAD 0x01
 #define CABLE_SAVE 0x02
-#define CABLE_JUMP 0x03
-#define CABLE_RUN  0x04
+#define CABLE_PEEK 0x03
+#define CABLE_POKE 0x04
+#define CABLE_JUMP 0x05
+#define CABLE_RUN  0x06
 
 #define PARPORT_CONTROL_IRQ 0x10
 #define PARPORT_CONTROL_INPUT 0x20
@@ -67,7 +69,7 @@ void cable_close() {
 }
 
 int cable_load(unsigned char memory, 
-	       unsigned char cartridge, 
+	       unsigned char bank, 
 	       int start, 
 	       int end, 
 	       char* data, int size) {
@@ -83,7 +85,7 @@ int cable_load(unsigned char memory,
     }
 
     cable_write(memory);
-    cable_write(cartridge);
+    cable_write(bank);
     cable_write(start & 0xff);
     cable_write(start >> 8);
     cable_write(end & 0xff);
@@ -100,7 +102,7 @@ int cable_load(unsigned char memory,
 }
 
 int cable_save(unsigned char memory, 
-	       unsigned char cartridge, 
+	       unsigned char bank, 
 	       int start, 
 	       int end, 
 	       char* data, int size) {
@@ -116,7 +118,7 @@ int cable_save(unsigned char memory,
     }
 
     cable_write(memory);
-    cable_write(cartridge);
+    cable_write(bank);
     cable_write(start & 0xff);
     cable_write(start >> 8);
     cable_write(end & 0xff);
@@ -135,7 +137,61 @@ int cable_save(unsigned char memory,
   return false;
 }
 
-int cable_jump(int address) {
+unsigned char cable_peek(unsigned char memory, unsigned char bank, int address) {
+  
+  unsigned char command = CABLE_PEEK;
+  unsigned char result;
+
+  if(cable_open()) {
+  
+    if(!cable_write_with_timeout(command)) {
+      fprintf(stderr, "c64link: error: no response from C64\n");
+      cable_close();
+      exit(EXIT_FAILURE);
+    }
+
+    cable_write(memory);
+    cable_write(bank);
+    cable_write(address & 0xff);
+    cable_write(address >> 8);    
+
+    ioctl(port, PPWCONTROL, &ctrl_input);
+    cable_send_strobe();
+
+    result = cable_read();
+
+    cable_close();
+
+    return result;
+  }
+  return 0;
+}
+
+int cable_poke(unsigned char memory, unsigned char bank, int address, unsigned char value) {
+
+  unsigned char command = CABLE_POKE;
+
+  if(cable_open()) {
+  
+    if(!cable_write_with_timeout(command)) {
+      fprintf(stderr, "c64link: error: no response from C64\n");
+      cable_close();
+      return false;
+    }
+
+    cable_write(memory);
+    cable_write(bank);
+    cable_write(address & 0xff);
+    cable_write(address >> 8);    
+    cable_write(value);
+
+    cable_close();
+    return true;
+  }
+  return false;
+}
+
+int cable_jump(unsigned char memory, unsigned char bank, int address) {
 
   unsigned char command = CABLE_JUMP;
 
@@ -146,7 +202,8 @@ int cable_jump(int address) {
       cable_close();
       return false;
     }
-
+    cable_write(memory);
+    cable_write(bank);
     cable_write(address >> 8);    
     cable_write(address & 0xff);
     

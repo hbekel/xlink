@@ -10,8 +10,8 @@
 
 unsigned char debugging = false;
 
-unsigned char memory    = 0x37;
-unsigned char cartridge = 0x10;
+unsigned char memory = 0xFF;
+unsigned char bank   = 0x10;
 
 int start  = -1;
 int end    = -1;
@@ -33,12 +33,12 @@ void load(char* filename) {
   char *suffix;
   char *data;
  
-  if(filename == NULL)
+  if (filename == NULL)
     fail("c64link: error: no file specified\n");
-
+  
   file = fopen(filename, "r");
 
-  if(file == NULL) {
+  if (file == NULL) {
     fprintf(stderr, "c64link: error: '%s': %s\n", filename, strerror(errno));
     fflush(stderr);
     exit(EXIT_FAILURE);
@@ -49,8 +49,8 @@ void load(char* filename) {
   // Determine start address
   suffix = (filename + strlen(filename)-4);
 
-  if(start == -1) {
-    if(strncmp(suffix, ".prg", 4) == 0) {
+  if (start == -1) {
+    if (strncmp(suffix, ".prg", 4) == 0) {
       fread(&start, sizeof(char), 2, file);
       start &= 0xffff;
       size -= 2;
@@ -62,18 +62,27 @@ void load(char* filename) {
       exit(EXIT_FAILURE);
     }
   }
-    
-  // Determine end address
+      
+  // determine end address
   if(end == -1) {
     end = start + size;
   }
 
-  // Read data
+    // determine memory setup
+  if (memory == 0xff) {
+    
+    if(end >= 0xD000 && start < 0xE000)
+      memory = 0x34; // write to ram below io by default
+    else 
+      memory = 0x37;    
+  }
+
+  // read data
   data = (char*) calloc(size, sizeof(char));
   fread(data, sizeof(char), size, file);
   fclose(file);  
 
-  cable_load(memory, cartridge, start, end, data, size);
+  cable_load(memory, bank, start, end, data, size);
 
   free(data);
 }
@@ -96,6 +105,15 @@ void save(const char* filename) {
   if(start >= end)
     fail("c64link: error: start address greater or equal to end address");  
 
+  // determine memory setup
+  if (memory == 0xff) {
+    
+    if(end >= 0xD000 && start < 0xE000)
+      memory = 0x34; // read from ram below io by default
+    else 
+      memory = 0x37;    
+  }
+
   size = end-start;
 
   data = (char*) calloc(size, sizeof(char));
@@ -109,7 +127,7 @@ void save(const char* filename) {
     exit(EXIT_FAILURE);
   }
 
-  cable_save(memory, cartridge, start, end, data, size);
+  cable_save(memory, bank, start, end, data, size);
 
   fwrite(data, sizeof(char), size, file);
   fclose(file);
@@ -117,13 +135,56 @@ void save(const char* filename) {
   free(data);    
 }
 
+void peek(const char* argument) {
+
+  if (argument == NULL)
+    fail("c64link: error: peek requires an address\n");
+
+  int address = strtol(argument, NULL, 0);
+
+  if (memory == 0xff)
+    memory == 0x37;
+
+  printf("%d\n", cable_peek(memory, bank, address));
+}
+
+void poke(char* argument) {
+  
+  int address;
+  unsigned char value;
+  
+  if (argument == NULL)
+    fail("c64link: error: poke requires an argument\n");
+  
+  int comma = strcspn(argument, ",");
+
+  if (comma == strlen(argument) || comma == strlen(argument)-1)
+    fail("c64link: syntax error: poke <address>,<value>\n");
+  
+  char* addr = argument;
+  char* val = argument + comma + 1;
+  addr[comma] = '\0';
+
+  address = strtol(addr, NULL, 0);
+  value = strtol(val, NULL, 0);
+
+  if (memory == 0xff)
+    memory == 0x37;
+
+  cable_poke(memory, bank, address, value);
+}
+
 void jump(const char* argument) {
   
   if(argument == NULL)
     fail("c64link: error: no address specified\n");
 
-  int target = strtol(argument, NULL, 0);
-  cable_jump(target);
+  int address = strtol(argument, NULL, 0);
+
+  if (memory == 0xff)
+    memory == 0x37;
+
+  cable_jump(memory, bank, address);
 }
 
 void run(void) {
@@ -145,7 +206,7 @@ void usage(void) {
 void debug(void) {
   if(debugging)
     printf("%s (mem 0x%02X crt 0x%02X start 0x%04X end 0x%04X) %s\n",
-	   command, memory, cartridge, start, end, argument);
+	   command, memory, bank, start, end, argument);
 } 
 
 int main(int argc, char **argv) {
@@ -156,7 +217,7 @@ int main(int argc, char **argv) {
     { "debug", no_argument, NULL, 'd' },
     { "address", required_argument, NULL, 'a' },
     { "memory", required_argument, NULL, 'm' },
-    { "cartridge", required_argument, NULL, 'c' },
+    { "bank", required_argument, NULL, 'b' },
     { 0, 0, 0, 0 },
   };
   int option;
@@ -194,7 +255,7 @@ int main(int argc, char **argv) {
       break;
 
     case 'c':
-      cartridge = strtol(optarg, NULL, 0);
+      bank = strtol(optarg, NULL, 0);
       break;
 
     case -1:
@@ -227,6 +288,14 @@ int main(int argc, char **argv) {
     save(argument);
   }
   
+  if(strncmp(command, "peek", 4) == 0) {
+    peek(argument);
+  }
+
+  if(strncmp(command, "poke", 4) == 0) {
+    poke(argument);
+  }
+
   if(strncmp(command, "jump", 4) == 0) {
     jump(argument);
   }

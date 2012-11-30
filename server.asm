@@ -1,8 +1,10 @@
-.pc = $c000
+.pc = $1000
 
 .var start = $c1    // Transfer start address
 .var end   = $c3    // Transfer end address
 
+.var mem   = $fc    // Memory config
+.var bank  = $fd
 .var low   = $fe    // Ack value low
 .var high  = $ff    // Ack value high
 	
@@ -13,8 +15,10 @@
 .namespace Command {
 .label load  = $01
 .label save  = $02
-.label jump  = $03
-.label run   = $04
+.label peek  = $03
+.label poke  = $04
+.label jump  = $05
+.label run   = $06
 }
 	
 .macro wait() { // Wait for handshake from PC (falling edge on FLAG <- Parport STROBE)
@@ -90,6 +94,14 @@ irq: {
 	bne !next+
 	jmp save
 
+!next:	cpy #Command.peek
+	bne !next+
+	jmp peek
+	
+!next:	cpy #Command.poke
+	bne !next+
+	jmp poke
+	
 !next:	cpy #Command.jump
 	bne !next+
 	jmp jump
@@ -104,12 +116,30 @@ done:	jmp $ea31
 load: {
 	:screenOff()
 	jsr readHeader
+
+	ldy #$00
 	
-	ldy #$00	
-loop:   jsr read
-	sta (start),y
+	lda mem         // check if specific memory config was requested
+	cmp #$37
+	beq fast
+	jmp slow
+	
+fast:	
+!loop:  jsr read        
+	sta (start),y   // write with normal memory config
 	jsr next
-	bne loop
+	bne !loop-
+	jmp done
+
+slow:	
+!loop:  jsr read        
+	lda mem         // write with requested memory config
+	sta $01
+	sta (start),y
+	lda #$37
+	sta $01
+	jsr next
+	bne !loop-
 
 done:   :screenOn()
 	jmp irq.done
@@ -119,27 +149,92 @@ save: {
 	:screenOff()
 	jsr readHeader
 
-	:wait()    // wait until PC has set its port to input
-
-	lda #$ff   // set CIA2 port B to output
+	:wait()        // wait until PC has set its port to input
+	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 
 	ldy #$00
-loop:   lda (start),y
+
+	lda mem        // check if specific memory config was requested
+	cmp #$37
+	beq fast
+	jmp slow	
+
+fast:	
+!loop:  lda (start),y  // read with normal memory config
 	jsr write
 	jsr next
-	bne loop
+	bne !loop-
+	jmp done
 
-	lda #$00   // reset CIA2 port B to input
+slow:
+!loop:  lda mem        // read with requested memory config
+	sta $01
+	lda (start),y
+	lda #$37
+	sta $01
+	jsr write
+	jsr next
+	bne !loop-
+	
+done:	lda #$00   // reset CIA2 port B to input
 	sta $dd03
 	
-done:   :screenOn()
+	:screenOn()
 	jmp irq.done
 }
 
+peek: {
+	jsr read sta mem
+	jsr read sta bank
+	jsr read sta start
+	jsr read sta start+1
+
+	:wait()        // wait until PC has set its port to input
+	lda #$ff       // and set CIA2 port B to output
+	sta $dd03
+	
+	ldy #$00
+	ldx mem
+	stx $01
+	lda (start),y
+	ldx #$37
+	stx $01
+
+	jsr write
+
+done:	lda #$00   // reset CIA2 port B to input
+	sta $dd03
+	
+	jmp irq.done
+}
+	
+poke: {
+	jsr read sta mem
+	jsr read sta bank
+	jsr read sta start
+	jsr read sta start+1
+	jsr read
+
+	ldy #$00
+	ldx mem
+	stx $01
+	sta (start),y
+	lda #$37
+	sta $01
+
+	jmp irq.done
+}
+	
 jump: {
 	ldx #$ff txs // reset stack pointer
 
+	jsr read sta mem
+	jsr read sta bank
+
+	lda mem
+	sta $01
+	
 	jsr read pha // push high byte of jump address
 	jsr read pha // push low byte of jump address
 
@@ -160,8 +255,8 @@ run: {
 }
 	
 readHeader: {
-	jsr read // mem
-	jsr read // crt
+	jsr read sta mem
+	jsr read sta bank
 	jsr read sta start
 	jsr read sta start+1
 	jsr read sta end

@@ -1,8 +1,10 @@
 int cable_open(void);
 void cable_close(void);
-int cable_load(unsigned char memory, unsigned char cartridge, int start, int end, char* data, int size);
-int cable_save(unsigned char memory, unsigned char cartridge, int start, int end, char* data, int size);
-int cable_jump(int address);
+int cable_load(unsigned char memory, unsigned char bank, int start, int end, char* data, int size);
+int cable_save(unsigned char memory, unsigned char bank, int start, int end, char* data, int size);
+unsigned char cable_peek(unsigned char memory, unsigned char bank, int address);
+int cable_poke(unsigned char memory, unsigned char bank, int address, unsigned char value);
+int cable_jump(unsigned char memory, unsigned char bank, int address);
 void run(void);
 void cable_reset(void);
 unsigned char cable_read(void);
