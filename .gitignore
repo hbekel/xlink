@@ -2,4 +2,5 @@ c64
 libc64link.so
 server.prg
 server.sym
+rrserver.bin
 32k
