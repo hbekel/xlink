@@ -204,7 +204,7 @@ int cable_jump(unsigned char memory, unsigned char bank, int address) {
     }
     cable_write(memory);
     cable_write(bank);
-    cable_write(address >> 8);    
+    cable_write(address >> 8);    // target address is send MSB first (big-endian)
     cable_write(address & 0xff);
     
     cable_close();
@@ -234,7 +234,7 @@ void cable_reset(void) {
   }
 }
 
-unsigned char cable_read(void) {
+inline unsigned char cable_read(void) {
   char byte;
   cable_wait_strobe(NULL);
   ioctl(port, PPRDATA, &byte);
@@ -242,13 +242,13 @@ unsigned char cable_read(void) {
   return byte;
 } 
 
-void cable_write(unsigned char byte) {
+inline void cable_write(unsigned char byte) {
   ioctl(port, PPWDATA, &byte);
   cable_send_strobe();
   cable_wait_ack(NULL);  
 }
 
-int cable_write_with_timeout(unsigned char byte) {
+inline int cable_write_with_timeout(unsigned char byte) {
 
   struct timeval tv = { 0, 150*1000 };
 
@@ -257,17 +257,17 @@ int cable_write_with_timeout(unsigned char byte) {
   return cable_wait_ack(&tv);  
 }
 
-void _cable_send_signal_input(void) {
+inline void _cable_send_signal_input(void) {
   ioctl(port, PPWCONTROL, &ctrl_ack);
   ioctl(port, PPWCONTROL, &ctrl_input);  
 }
 
-void _cable_send_signal_output(void) {
+inline void _cable_send_signal_output(void) {
   ioctl(port, PPWCONTROL, &ctrl_strobe);
   ioctl(port, PPWCONTROL, &ctrl_output);
 }
 
-int _cable_receive_signal(struct timeval* timeout) {  
+inline int _cable_receive_signal(struct timeval* timeout) {  
   
   fd_set rfds;
   int ignored = 0;

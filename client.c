@@ -25,6 +25,12 @@ void fail(const char* message) {
   exit(EXIT_FAILURE);    
 }
 
+void debug(void) {
+  if(debugging)
+    fprintf(stderr, "%s (mem=0x%02X bank=0x%02X range=0x%04X-0x%04X) %s\n",
+	   command, memory, bank, start, end, argument);
+} 
+
 void load(char* filename) {
 
   FILE *file;
@@ -71,7 +77,7 @@ void load(char* filename) {
     // determine memory setup
   if (memory == 0xff) {
     
-    if(end >= 0xD000 && start < 0xE000)
+    if(end > 0xD000 && start < 0xE000)
       memory = 0x34; // write to ram below io by default
     else 
       memory = 0x37;    
@@ -82,6 +88,7 @@ void load(char* filename) {
   fread(data, sizeof(char), size, file);
   fclose(file);  
 
+  debug();
   cable_load(memory, bank, start, end, data, size);
 
   free(data);
@@ -108,7 +115,7 @@ void save(const char* filename) {
   // determine memory setup
   if (memory == 0xff) {
     
-    if(end >= 0xD000 && start < 0xE000)
+    if(end > 0xD000 && start < 0xE000)
       memory = 0x34; // read from ram below io by default
     else 
       memory = 0x37;    
@@ -127,6 +134,7 @@ void save(const char* filename) {
     exit(EXIT_FAILURE);
   }
 
+  debug();
   cable_save(memory, bank, start, end, data, size);
 
   fwrite(data, sizeof(char), size, file);
@@ -143,7 +151,7 @@ void peek(const char* argument) {
   int address = strtol(argument, NULL, 0);
 
   if (memory == 0xff)
-    memory == 0x37;
+    memory = 0x37;
 
   printf("%d\n", cable_peek(memory, bank, address));
 }
@@ -169,7 +177,7 @@ void poke(char* argument) {
   value = strtol(val, NULL, 0);
 
   if (memory == 0xff)
-    memory == 0x37;
+    memory = 0x37;
 
   cable_poke(memory, bank, address, value);
 }
@@ -182,7 +190,7 @@ void jump(const char* argument) {
   int address = strtol(argument, NULL, 0);
 
   if (memory == 0xff)
-    memory == 0x37;
+    memory = 0x37;
 
   cable_jump(memory, bank, address);
 }
@@ -202,12 +210,6 @@ void version(void) {
 void usage(void) {
   printf("Usage...\n");
 }
-
-void debug(void) {
-  if(debugging)
-    printf("%s (mem 0x%02X crt 0x%02X start 0x%04X end 0x%04X) %s\n",
-	   command, memory, bank, start, end, argument);
-} 
 
 int main(int argc, char **argv) {
   
@@ -307,8 +309,6 @@ int main(int argc, char **argv) {
   if(strncmp(command, "reset", 5) == 0) {
     reset();
   }
-
-  debug();
 
   exit(EXIT_SUCCESS);
 }

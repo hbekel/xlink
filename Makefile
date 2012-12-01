@@ -1,13 +1,13 @@
 all: libc64link.so c64 server.prg
 
 libc64link.so: c64link.c c64link.h
-	gcc -Wall -O2 -shared -fPIC -o libc64link.so c64link.c
+	gcc -Wall -O3 -shared -fPIC -o libc64link.so c64link.c
 
 c64: libc64link.so client.c
-	gcc -L. -lc64link -o c64 client.c	
+	gcc -L. -lc64link -Wall -O3 -o c64 client.c	
 
 server.prg: server.asm
-	kasm -showmem -time -o server.prg server.asm
+	kasm -showmem -time -symbolfile -o server.prg server.asm
 
 install: libc64link.so
 	cp c64link.h /usr/include
@@ -23,3 +23,4 @@ clean:
 	[ -f libc64link.so ] && rm -v libc64link.so || true
 	[ -f c64 ] && rm -v c64 || true
 	[ -f server.prg ] && rm -v server.prg || true
+	[ -f server.sym ] && rm -v server.sym || true

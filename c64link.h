@@ -5,11 +5,11 @@ int cable_save(unsigned char memory, unsigned char bank, int start, int end, cha
 unsigned char cable_peek(unsigned char memory, unsigned char bank, int address);
 int cable_poke(unsigned char memory, unsigned char bank, int address, unsigned char value);
 int cable_jump(unsigned char memory, unsigned char bank, int address);
-void run(void);
+void cable_run(void);
 void cable_reset(void);
-unsigned char cable_read(void);
-void cable_write(unsigned char byte);
-int cable_write_with_timeout(unsigned char byte);
-void _cable_send_signal_input(void);
-void _cable_send_signal_output(void);
-int _cable_receive_signal(struct timeval* timeout); 
+__inline__ unsigned char cable_read(void);
+__inline__ void cable_write(unsigned char byte);
+__inline__ int cable_write_with_timeout(unsigned char byte);
+__inline__ void _cable_send_signal_input(void);
+__inline__ void _cable_send_signal_output(void);
+__inline__ int _cable_receive_signal(struct timeval* timeout); 
