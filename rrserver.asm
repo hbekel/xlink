@@ -237,7 +237,7 @@ save: {
 	jmp slow	
 
 fast:	ldx high       // prepare fastwrite
-!loop:  lda (start),y  // read with normal memory config
+!loop:  jsr ram.read
 	:fastwrite()
 	:next()
 	jmp done
@@ -245,7 +245,7 @@ fast:	ldx high       // prepare fastwrite
 slow:
 !loop:  lda mem        // read with requested memory config
 	sta $01
-	lda (start),y
+	jsr ram.read
 	ldx #$37
 	stx $01
 	:write()
@@ -271,7 +271,7 @@ peek: {
 	ldy #$00
 	ldx mem
 	stx $01
-	lda (start),y
+	jsr ram.read
 	ldx #$37
 	stx $01
 
@@ -366,6 +366,14 @@ dorts:	lda #$48   // enable rr bank 0
 	sta $de00
 	lda #$00
 	rts
+
+read:	lda #$1a       // disable rr
+	sta $de00
+	lda (start),y  // read from ram
+	ldy #$18       // enable rr
+	sty $de00
+	ldy #$00
+	rts	
 	
 jump:   lda #$48   // enable rr bank 0
 	sta $de00
