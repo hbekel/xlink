@@ -12,7 +12,7 @@ jmp install
 .var mem   = $fc    // Memory config
 .var bank  = $fd    // bank config
 .var low   = $fe    // $dd00 | #$04 (ack bit low)
-.var high  = $ff    // $dd00 & #$fb /ack bit high);
+.var high  = $ff    // $dd00 & #$fb (ack bit high)
 
 .var relink   = $a533 // Relink Basic program
 .var insnewl  = $a659 // Insert new line into BASIC program
@@ -100,7 +100,8 @@ push:	pha
 	sta bend
 	lda end+1
 	sta bend+1
-	jsr relink      
+	jsr relink
+done:	
 }
 	
 .macro screenOff() {

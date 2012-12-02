@@ -12,7 +12,7 @@ jmp rom.install
 .var mem   = $fc    // Memory config
 .var bank  = $fd    // bank config
 .var low   = $fe    // $dd00 | #$04 (ack bit low)
-.var high  = $ff    // $dd00 & #$fb /ack bit high);
+.var high  = $ff    // $dd00 & #$fb (ack bit high)
 
 .var relink   = $a533 // Relink Basic program
 .var insnewl  = $a659 // Insert new line into BASIC program
@@ -100,7 +100,8 @@ push:	pha
 	sta bend
 	lda end+1
 	sta bend+1
-	jsr relink      
+	jsr relink
+done:	
 }
 
 .macro screenOff() {
@@ -239,12 +240,8 @@ fast:	ldy #$00
 
 slow:	ldx high        // prepare fastack
 !loop:  :wait()
-	ldy mem         // write with requested memory config
-	sty $01
-	ldy #$00
-	sta (start),y
-	lda #$37
-	sta $01
+	lda $dd01
+	jsr ram.write
 	:fastack()
 	:next()
 
@@ -263,27 +260,12 @@ save: {
 
 	ldy #$00
 
-	lda mem        // check if specific memory config was requested
-	cmp #$37
-	beq fast
-	jmp slow	
-
-fast:	ldx high       // prepare fastwrite
+	ldx high       // prepare fastwrite
 !loop:  jsr ram.read
 	:fastwrite()
 	:next()
-	jmp done
-
-slow:
-!loop:  lda mem        // read with requested memory config
-	sta $01
-	jsr ram.read
-	ldx #$37
-	stx $01
-	:write()
-	:next()
 	
-done:	lda #$00   // reset CIA2 port B to input
+done:	lda #$00       // reset CIA2 port B to input
 	sta $dd03
 	
 	:screenOn()
@@ -303,7 +285,7 @@ peek: {
 	ldy #$00
 	ldx mem
 	stx $01
-	jsr ram.read
+	jsr ram.read   // fixme: need to do this from ram!
 	ldx #$37
 	stx $01
 
@@ -320,14 +302,7 @@ poke: {
 	jsr read sta bank
 	jsr read sta start
 	jsr read sta start+1
-	jsr read
-
-	ldy #$00
-	ldx mem
-	stx $01
-	sta (start),y
-	lda #$37
-	sta $01
+	jsr read jsr ram.write
 
 	jmp irq.done
 }
@@ -353,6 +328,13 @@ jump: {
 
 run: {
 	jsr uninstall
+
+	ldx #$ff txs     // reset stack pointer
+	lda #$01 sta $cc // cursor off
+
+	jsr insnewl     // run BASIC program
+	jsr restxtpt
+
 	jmp ram.run
 }
 
@@ -385,7 +367,7 @@ loop:	sta $0400,x
 	
 ram: { // copied to $02a7
 .pseudopc $02a7 {
-
+	
 irq:	lda #$18   // enable rr bank 3
 	sta $de00	  	
 	jmp rom.irq // jump to service irq routine in rom
@@ -396,16 +378,27 @@ dorti:	lda #$48   // reset rr bank
 
 dorts:	lda #$48   // enable rr bank 0
 	sta $de00
-	lda #$00
 	rts
 
 read:	lda #$1a       // disable rr
 	sta $de00
+	lda mem
+	sta $01
 	lda (start),y  // read from ram
+	ldy #$37
+	sty $01
 	ldy #$18       // enable rr
 	sty $de00
 	ldy #$00
-	rts	
+	rts
+
+write:	ldy mem 
+	sty $01
+	ldy #$00
+	sta (start),y
+	lda #$37
+	sta $01
+	rts
 	
 jump:   lda #$48   // enable rr bank 0
 	sta $de00
@@ -414,16 +407,11 @@ jump:   lda #$48   // enable rr bank 0
 run:    lda #$48   // enable rr bank 0
 	sta $de00
 
-	ldx #$ff txs     // reset stack pointer
-	lda #$01 sta $cc // cursor off
-
-	jsr insnewl     // run BASIC program
-	jsr restxtpt
 	jmp warmst
 }
 }
 eof:
 
-
+.print "ramcode end: 0x" + toHexString(eof-ram+ram.irq)
 
 	
