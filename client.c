@@ -94,9 +94,10 @@ void load(char* filename) {
   free(data);
 }
 
-void save(const char* filename) {
+void save(char* filename) {
   
   FILE *file;
+  char *suffix;
   int size;
   char *data;
 
@@ -104,13 +105,17 @@ void save(const char* filename) {
     fail("c64link: error: no file specified\n");
 
   if(start < 0 || start > 0xffff)
-    fail("c64link: error: no start address specified or out of range");
+    fail("c64link: error: no start address specified or out of range\n");
 
   if(start < 0 || start > 0xffff)
-    fail("c64link: error: no end address specified or out of range");  
+    fail("c64link: error: no end address specified or out of range\n");  
 
   if(start >= end)
-    fail("c64link: error: start address greater or equal to end address");  
+    fail("c64link: error: start address greater or equal to end address\n");  
+
+  size = end-start;
+
+  suffix = (filename + strlen(filename)-4);
 
   // determine memory setup
   if (memory == 0xff) {
@@ -120,8 +125,6 @@ void save(const char* filename) {
     else 
       memory = 0x37;    
   }
-
-  size = end-start;
 
   data = (char*) calloc(size, sizeof(char));
 
@@ -137,6 +140,9 @@ void save(const char* filename) {
   debug();
   cable_save(memory, bank, start, end, data, size);
 
+  if (strncmp(suffix, ".prg", 4) == 0)
+    fwrite(&start, sizeof(char), 2, file);
+  
   fwrite(data, sizeof(char), size, file);
   fclose(file);
 

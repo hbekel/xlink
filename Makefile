@@ -12,7 +12,7 @@ server.prg: server.asm
 rrserver.bin: rrserver.asm
 	kasm -showmem -time -binfile -o rrserver.bin rrserver.asm
 
-install: libc64link.so
+install: libc64link.so c64
 	cp c64link.h /usr/include
 	cp libc64link.so /usr/lib
 	cp c64 /usr/bin

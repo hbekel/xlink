@@ -1,17 +1,20 @@
-.pc = $1000
+.pc = $c000
 
 jmp install
 
 //------------------------------------------------------------------------------
 	
-.var start = $c1    // Transfer start address
-.var end   = $c3    // Transfer end address
-
+.var start  = $c1    // Transfer start address
+.var end    = $c3    // Transfer end address
+.var bstart = $2b    // Start of Basic program text
+.var bend   = $2d    // End of Basic program text
+	
 .var mem   = $fc    // Memory config
 .var bank  = $fd    // bank config
 .var low   = $fe    // $dd00 | #$04 (ack bit low)
 .var high  = $ff    // $dd00 & #$fb /ack bit high);
-	
+
+.var relink   = $a533 // Relink Basic program
 .var insnewl  = $a659 // Insert new line into BASIC program
 .var restxtpt = $a68e // Reset BASIC text pointer
 .var warmst   = $a7ae // Basic warm start (e.g. RUN)
@@ -72,6 +75,33 @@ check:	lda start+1
 	cmp end
 	bne !loop-
 }
+
+.macro checkBasic() {
+	lda start
+	cmp bstart
+	bne no
+	lda start+1
+	cmp bstart+1
+	bne no
+
+yes:	lda #$00
+	jmp push
+
+no:     lda #$01
+
+push:	pha
+}
+
+.macro relinkBasic() {
+	pla             // recall result of checkBasic             
+	bne done        // not a Basic program, done
+
+	lda end         // else adjust basic end address and relink
+	sta bend
+	lda end+1
+	sta bend+1
+	jsr relink      
+}
 	
 .macro screenOff() {
 	lda #$0b
@@ -95,7 +125,7 @@ readHeader: {
 
 read: { :read() rts }
 write: { :write() rts }
-
+	
 //------------------------------------------------------------------------------
 	
 install: {
@@ -169,6 +199,7 @@ done:	jmp $ea31
 load: {
 	:screenOff()
 	jsr readHeader
+	:checkBasic()
 	
 	lda mem         // check if specific memory config was requested
 	cmp #$37
@@ -196,7 +227,8 @@ slow:	ldx high        // prepare fastack
 	:fastack()
 	:next()
 
-done:   :screenOn()
+done:	:relinkBasic()
+	:screenOn()
 	jmp irq.done
 }
 
