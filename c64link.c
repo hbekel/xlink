@@ -18,8 +18,8 @@
 
 #define CABLE_LOAD 0x01
 #define CABLE_SAVE 0x02
-#define CABLE_PEEK 0x03
-#define CABLE_POKE 0x04
+#define CABLE_POKE 0x03
+#define CABLE_PEEK 0x04
 #define CABLE_JUMP 0x05
 #define CABLE_RUN  0x06
 

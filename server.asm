@@ -22,8 +22,8 @@ jmp install
 .namespace Command {
 .label load  = $01
 .label save  = $02
-.label peek  = $03
-.label poke  = $04
+.label poke  = $03
+.label peek  = $04
 .label jump  = $05
 .label run   = $06
 }
@@ -204,8 +204,7 @@ load: {
 	
 	lda mem         // check if specific memory config was requested
 	cmp #$37
-	beq fast
-	jmp slow
+	bne slow
 	
 fast:	ldy #$00
 	ldx high        // prepare fastack
@@ -219,7 +218,7 @@ fast:	ldy #$00
 
 slow:	ldx high        // prepare fastack
 !loop:  :wait()
-	ldy mem         // write with requested memory config
+	ldy #$33        // write to ram with io disabled
 	sty $01
 	ldy #$00
 	sta (start),y
@@ -269,6 +268,23 @@ done:	lda #$00   // reset CIA2 port B to input
 	:screenOn()
 	jmp irq.done
 }
+	
+poke: {
+	jsr read sta mem
+	jsr read sta bank
+	jsr read sta start
+	jsr read sta start+1
+	jsr read
+
+	ldy #$00
+	ldx mem
+	stx $01
+	sta (start),y
+	lda #$37
+	sta $01
+
+	jmp irq.done
+}
 
 peek: {
 	jsr read sta mem
@@ -292,23 +308,6 @@ peek: {
 done:	lda #$00   // reset CIA2 port B to input
 	sta $dd03
 	
-	jmp irq.done
-}
-	
-poke: {
-	jsr read sta mem
-	jsr read sta bank
-	jsr read sta start
-	jsr read sta start+1
-	jsr read
-
-	ldy #$00
-	ldx mem
-	stx $01
-	sta (start),y
-	lda #$37
-	sta $01
-
 	jmp irq.done
 }
 	

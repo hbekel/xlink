@@ -78,7 +78,7 @@ void load(char* filename) {
   if (memory == 0xff) {
     
     if(end > 0xD000 && start < 0xE000)
-      memory = 0x34; // write to ram below io by default
+      memory = 0x33; // write to ram below io by default
     else 
       memory = 0x37;    
   }
@@ -108,7 +108,8 @@ void save(char* filename) {
     fail("c64link: error: no start address specified or out of range\n");
 
   if(start < 0 || start > 0xffff)
-    fail("c64link: error: no end address specified or out of range\n");  
+    fail("c64link: error: no end address specified or out of range\n"); 
+  //FIXME: if no addresses are specified, save the current basic prog, if any?
 
   if(start >= end)
     fail("c64link: error: start address greater or equal to end address\n");  
@@ -117,12 +118,7 @@ void save(char* filename) {
 
   suffix = (filename + strlen(filename)-4);
 
-  // determine memory setup
   if (memory == 0xff) {
-    
-    if(end > 0xD000 && start < 0xE000)
-      memory = 0x34; // read from ram below io by default
-    else 
       memory = 0x37;    
   }
 

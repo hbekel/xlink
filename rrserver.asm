@@ -22,8 +22,8 @@ jmp rom.install
 .namespace Command {
 .label load  = $01
 .label save  = $02
-.label peek  = $03
-.label poke  = $04
+.label poke  = $03
+.label peek  = $04
 .label jump  = $05
 .label run   = $06
 }
@@ -222,26 +222,31 @@ load: {
 	:screenOff()
 	jsr readHeader
 	:checkBasic()
+
+	ldy #$00        // prepare read
+	ldx high        // prepare fastack
 	
 	lda mem         // check if specific memory config was requested
-	cmp #$37
-	beq fast
-	jmp slow
+	cmp #$37        
+	bne slow        
 	
-fast:	ldy #$00
-	ldx high        // prepare fastack
-
-!loop:  :wait()
+fast:	
+!loop:  :wait()         // write to ram with normal memory config
 	lda $dd01 
-	sta (start),y   // write with normal memory config
+	sta (start),y   
 	:fastack()
 	:next()
 	jmp done
-
-slow:	ldx high        // prepare fastack
+	                // write to ram with io disabled ($33)
+slow:	
 !loop:  :wait()
 	lda $dd01
-	jsr ram.write
+	ldy #$33
+	sty $01
+	ldy #$00
+	sta (start),y
+	lda #$37
+	sta $01
 	:fastack()
 	:next()
 
@@ -258,10 +263,36 @@ save: {
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 
-	ldy #$00
+	ldy #$00      // prepare reading
+	ldx high      // prepare fastack()
+	
+	lda mem       // check memory config...
+	and #$03
+	cmp #$03
+	bne slow      // have to read from ram unless highram and lowram are 1  
 
-	ldx high       // prepare fastwrite
-!loop:  jsr ram.read
+	lda mem       // if mem is $37, we can simply read fastest
+	cmp #$37
+	bne fast
+	
+fastest:
+!loop:  lda (start),y
+	:fastwrite()
+	:next()
+	jmp done
+
+fast:	ldy mem       // need to change memory, but cartridge is still here
+!loop:	sty $01
+	ldy #$00
+	lda (start),y
+	ldy #$37
+	sty $01
+	:fastwrite()
+	:next()
+	jmp done	
+
+slow:	
+!loop:  jsr ram.read  // need to read from ram since cartridge will be gone
 	:fastwrite()
 	:next()
 	
@@ -270,6 +301,32 @@ done:	lda #$00       // reset CIA2 port B to input
 	
 	:screenOn()
 	jmp irq.done
+}
+	
+poke: {
+	jsr read sta mem
+	jsr read sta bank
+	jsr read sta start
+	jsr read sta start+1
+
+	lda mem
+	cmp #$37
+	bne slow
+
+fast:   ldy #$00
+	jsr read
+	sta (start),y
+	jmp done
+	
+slow:	jsr read
+	ldy #$33
+	sty $01
+	ldy #$00
+	sta (start),y
+	lda #$37
+	sta $01
+
+done:	jmp irq.done
 }
 
 peek: {
@@ -281,29 +338,14 @@ peek: {
 	:wait()        // wait until PC has set its port to input
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
-	
-	ldy #$00
-	ldx mem
-	stx $01
-	jsr ram.read   // fixme: need to do this from ram!
-	ldx #$37
-	stx $01
 
+	ldy #$00
+	jsr ram.read   
 	jsr write
 
 done:	lda #$00   // reset CIA2 port B to input
 	sta $dd03
 	
-	jmp irq.done
-}
-	
-poke: {
-	jsr read sta mem
-	jsr read sta bank
-	jsr read sta start
-	jsr read sta start+1
-	jsr read jsr ram.write
-
 	jmp irq.done
 }
 	
@@ -380,24 +422,12 @@ dorts:	lda #$48   // enable rr bank 0
 	sta $de00
 	rts
 
-read:	lda #$1a       // disable rr
-	sta $de00
-	lda mem
+read:	lda mem
 	sta $01
 	lda (start),y  // read from ram
 	ldy #$37
 	sty $01
-	ldy #$18       // enable rr
-	sty $de00
 	ldy #$00
-	rts
-
-write:	ldy mem 
-	sty $01
-	ldy #$00
-	sta (start),y
-	lda #$37
-	sta $01
 	rts
 	
 jump:   lda #$48   // enable rr bank 0
