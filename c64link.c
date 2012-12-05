@@ -137,17 +137,16 @@ int cable_save(unsigned char memory,
   return false;
 }
 
-unsigned char cable_peek(unsigned char memory, unsigned char bank, int address) {
+int cable_peek(unsigned char memory, unsigned char bank, int address, unsigned char* value) {
   
   unsigned char command = CABLE_PEEK;
-  unsigned char result;
 
   if(cable_open()) {
   
     if(!cable_write_with_timeout(command)) {
       fprintf(stderr, "c64link: error: no response from C64\n");
       cable_close();
-      exit(EXIT_FAILURE);
+      return false;
     }
 
     cable_write(memory);
@@ -158,13 +157,13 @@ unsigned char cable_peek(unsigned char memory, unsigned char bank, int address) 
     ioctl(port, PPWCONTROL, &ctrl_input);
     cable_send_strobe();
 
-    result = cable_read();
+    *value = cable_read();
 
     cable_close();
 
-    return result;
+    return true;
   }
-  return 0;
+  return false;
 }
 
 int cable_poke(unsigned char memory, unsigned char bank, int address, unsigned char value) {
@@ -213,25 +212,29 @@ int cable_jump(unsigned char memory, unsigned char bank, int address) {
   return false;
 }
 
-void cable_run(void) {
+int cable_run(void) {
 
   unsigned char command = CABLE_RUN;
 
   if(cable_open()) {     
     if(!cable_write_with_timeout(command)) {
       fprintf(stderr, "c64link: error: no response from C64\n");
+      return false;
     }
     cable_close();
   }
+  return true;
 }
 
-void cable_reset(void) {
+int cable_reset(void) {
   if(cable_open()) {
     ioctl(port, PPWCONTROL, &ctrl_reset);
     usleep(100*1000);
     ioctl(port, PPWCONTROL, &ctrl_output);
     cable_close();
+    return true;
   }
+  return false;
 }
 
 inline unsigned char cable_read(void) {
