@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 
 #include "client.h"
-#include "c64link.h"
+#include "pp64.h"
 
 #define COMMAND_AUTO  0x00
 #define COMMAND_LOAD  0x01
@@ -188,24 +188,24 @@ int command_find_basic_program(Command* self) {
   int bend   = 0x0000;
   unsigned char value;
 
-  if(cable_peek(0x37, 0x10, 0x002c, &value)) {
+  if(pp64_peek(0x37, 0x10, 0x002c, &value)) {
     bstart |= value;
     bstart <<= 8;
   } 
   else return false;
 
-  if(cable_peek(0x37, 0x10, 0x002b, &value)) {
+  if(pp64_peek(0x37, 0x10, 0x002b, &value)) {
     bstart |= value;
   } 
   else return false;
 
-  if(cable_peek(0x37, 0x10, 0x002e, &value)) {
+  if(pp64_peek(0x37, 0x10, 0x002e, &value)) {
     bend |= value;
     bend <<= 8;
   } 
   else return false;
 
-  if(cable_peek(0x37, 0x10, 0x002d, &value)) {
+  if(pp64_peek(0x37, 0x10, 0x002d, &value)) {
     bend |= value;
   } 
   else return false;
@@ -356,7 +356,7 @@ int command_load(Command* self) {
 
   command_print(self);
 
-  if (!cable_load(self->memory, self->bank, self->start, self->end, data, size)) {
+  if (!pp64_load(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
     return false;
   }
@@ -419,7 +419,7 @@ int command_save(Command* self) {
 
   command_print(self);
 
-  if(!cable_save(self->memory, self->bank, self->start, self->end, data, size)) {
+  if(!pp64_save(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
     fclose(file);
     return false;
@@ -467,7 +467,7 @@ int command_poke(Command* self) {
 
   command_print(self);
 
-  return cable_poke(self->memory, self->bank, address, value);
+  return pp64_poke(self->memory, self->bank, address, value);
 }
 
 int command_peek(Command* self) {
@@ -488,7 +488,7 @@ int command_peek(Command* self) {
 
   command_print(self);
 
-  if(!cable_peek(self->memory, self->bank, address, &value)) {
+  if(!pp64_peek(self->memory, self->bank, address, &value)) {
     return false;
   }
   printf("%d\n", value);
@@ -523,17 +523,17 @@ int command_jump(Command* self) {
 
   command_print(self);
 
-  return cable_jump(self->memory, self->bank, address);
+  return pp64_jump(self->memory, self->bank, address);
 }
 
 int command_run(Command* self) {
   command_print(self);
-  return cable_run();
+  return pp64_run();
 }
 
 int command_reset(Command* self) {
   command_print(self);
-  return cable_reset();
+  return pp64_reset();
 }
 
 int main(int argc, char **argv) {
