@@ -253,7 +253,7 @@ inline void pp64_write(unsigned char byte) {
 
 inline int pp64_write_with_timeout(unsigned char byte) {
 
-  struct timeval tv = { 0, 150*1000 };
+  struct timeval tv = { 0, 250*1000 };
 
   ioctl(pp64_port, PPWDATA, &byte);
   pp64_send_strobe();

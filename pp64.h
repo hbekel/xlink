@@ -7,9 +7,9 @@ int pp64_poke(unsigned char memory, unsigned char bank, int address, unsigned ch
 int pp64_jump(unsigned char memory, unsigned char bank, int address);
 int pp64_run(void);
 int pp64_reset(void);
-__inline__ unsigned char pp64_read(void);
-__inline__ void pp64_write(unsigned char byte);
-__inline__ int pp64_write_with_timeout(unsigned char byte);
-__inline__ void _pp64_send_signal_input(void);
-__inline__ void _pp64_send_signal_output(void);
-__inline__ int _pp64_receive_signal(struct timeval* timeout); 
+unsigned char pp64_read(void);
+void pp64_write(unsigned char byte);
+int pp64_write_with_timeout(unsigned char byte);
+void _pp64_send_signal_input(void);
+void _pp64_send_signal_output(void);
+int _pp64_receive_signal(struct timeval* timeout); 
