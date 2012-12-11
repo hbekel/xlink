@@ -154,14 +154,15 @@ int command_parse_options(Command *self) {
       break;      
     }
   }
-  self->argc -= optind;
-  
-  int i;
-  for(i=0; i<self->argc; i++) {
-    free(self->argv[i]);
-    self->argv[i] = self->argv[i+optind];
-  }
 
+  if(optind > 0) {
+	  self->argc -= optind;
+	  int i;
+	  for(i=0; i<self->argc; i++) {
+		  free(self->argv[i]);
+		  self->argv[i] = self->argv[i+optind];
+	  }
+  }
   return true;
 }
 

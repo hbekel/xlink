@@ -50,16 +50,18 @@ const unsigned char pp64_ctrl_ack    = PARPORT_CONTROL_SELECT |
                                   PP64_PARPORT_CONTROL_IRQ; 
 
 int pp64_port;
+unsigned char pp64_stat;
 
 int pp64_open() {
   
   if((pp64_port = open("/dev/parport0", O_RDWR)) == -1) {
-    fprintf(stderr, "c64link: error: couldn't open /dev/parpp64_port0\n");
+    fprintf(stderr, "pp64: error: couldn't open /dev/parpp64_port0\n");
     return false;
   }
   
   ioctl(pp64_port, PPCLAIM);
-  ioctl(pp64_port, PPWCONTROL, &pp64_ctrl_output);  
+  ioctl(pp64_port, PPWCONTROL, &pp64_ctrl_output);
+  ioctl(pp64_port, PPRSTATUS, &pp64_stat);
   return true;
 }
 
@@ -79,7 +81,7 @@ int pp64_load(unsigned char memory,
   if(pp64_open()) {
 
     if(!pp64_write_with_timeout(command)) {
-      fprintf(stderr, "c64link: error: no response from C64\n");
+      fprintf(stderr, "pp64: error: no response from C64\n");
       pp64_close();
       return false;
     }
@@ -112,7 +114,7 @@ int pp64_save(unsigned char memory,
   if(pp64_open()) {
 
     if(!pp64_write_with_timeout(command)) {
-      fprintf(stderr, "c64link: error: no response from C64\n");
+      fprintf(stderr, "pp64: error: no response from C64\n");
       pp64_close();
       return false;
     }
@@ -144,7 +146,7 @@ int pp64_peek(unsigned char memory, unsigned char bank, int address, unsigned ch
   if(pp64_open()) {
   
     if(!pp64_write_with_timeout(command)) {
-      fprintf(stderr, "c64link: error: no response from C64\n");
+      fprintf(stderr, "pp64: error: no response from C64\n");
       pp64_close();
       return false;
     }
@@ -173,7 +175,7 @@ int pp64_poke(unsigned char memory, unsigned char bank, int address, unsigned ch
   if(pp64_open()) {
   
     if(!pp64_write_with_timeout(command)) {
-      fprintf(stderr, "c64link: error: no response from C64\n");
+      fprintf(stderr, "pp64: error: no response from C64\n");
       pp64_close();
       return false;
     }
@@ -218,7 +220,7 @@ int pp64_run(void) {
 
   if(pp64_open()) {     
     if(!pp64_write_with_timeout(command)) {
-      fprintf(stderr, "c64link: error: no response from C64\n");
+      fprintf(stderr, "pp64: error: no response from C64\n");
       return false;
     }
     pp64_close();
@@ -272,18 +274,13 @@ inline void _pp64_send_signal_output(void) {
 
 inline int _pp64_receive_signal(struct timeval* timeout) {  
   
-  fd_set rfds;
-  int ignored = 0;
+  unsigned char current = pp64_stat;
 
-  FD_ZERO(&rfds);
-  FD_SET(pp64_port, &rfds);
-
-  if(select(pp64_port + 1, &rfds, NULL, NULL, timeout)) {
-    ioctl(pp64_port, PPCLRIRQ, &ignored);
-    return true;
+  while(current == pp64_stat) {
+    ioctl(pp64_port, PPRSTATUS, &current);
   }
-  else {
-    return false;
-  }  
+  pp64_stat = current;
+
+  return true;
 }
 
