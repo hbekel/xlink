@@ -1,4 +1,4 @@
-.pc = $c000
+.pc = $1000
 
 jmp install
 
@@ -9,10 +9,8 @@ jmp install
 .var bstart = $2b    // Start of Basic program text
 .var bend   = $2d    // End of Basic program text
 	
-.var mem   = $fc    // Memory config
-.var bank  = $fd    // bank config
-.var low   = $fe    // $dd00 | #$04 (ack bit low)
-.var high  = $ff    // $dd00 & #$fb (ack bit high)
+.var mem   = $fe    // Memory config
+.var bank  = $ff    // bank config
 
 .var relink   = $a533 // Relink Basic program
 .var insnewl  = $a659 // Insert new line into BASIC program
@@ -35,33 +33,21 @@ loop:	lda $dd0d
 }
 
 .macro ack() { // Send handshake to PC (rising edge on CIA2 PA2 -> Parport ACK) 
-	ldx low
-	stx $dd00
-	ldx high
-	stx $dd00
+	lda $dd00
+	eor #$04
+	sta $dd00
 }
 
-.macro fastack() { // assumes ($dd00 | $04) in X
-	xaa #$fb
-	sta $dd00
-	stx $dd00
-}
-	
 .macro strobe() { :ack() }
-.macro faststrobe() { :fastack() }
 
 .macro read() {
-	:wait() lda $dd01 :ack()
+	:wait() ldx $dd01 :ack()
 }
 
 .macro write() {
 	sta $dd01 :strobe() :wait()
 }
 
-.macro fastwrite() {
-	sta $dd01 :faststrobe() :wait()
-}
-	
 .macro next() {
 	inc start
 	bne check
@@ -115,12 +101,12 @@ done:
 }
 
 readHeader: {
-	jsr read sta mem
-	jsr read sta bank
-	jsr read sta start
-	jsr read sta start+1
-	jsr read sta end
-	jsr read sta end+1
+	jsr read stx mem
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
+	jsr read stx end
+	jsr read stx end+1
 	rts
 }
 
@@ -163,12 +149,7 @@ irq: {
 	beq done  // no command
 
 	ldy $dd01 // read command
-
-	lda $dd00 // prepare ack values
-	and #$fb sta low   
-	ora #$04 sta high
-
-	:ack()   // ack command 
+	:ack()   
 
 !next:	cpy #Command.load  // dispatch command
 	bne !next+
@@ -201,30 +182,29 @@ load: {
 	:screenOff()
 	jsr readHeader
 	:checkBasic()
+
+	ldy #$00
 	
 	lda mem         // check if specific memory config was requested
 	cmp #$37
 	bne slow
 	
-fast:	ldy #$00
-	ldx high        // prepare fastack
-
+fast:	
 !loop:  :wait()
 	lda $dd01 
 	sta (start),y   // write with normal memory config
-	:fastack()
+	:ack()
 	:next()
 	jmp done
 
-slow:	ldx high        // prepare fastack
+slow:	
 !loop:  :wait()
-	ldy #$33        // write to ram with io disabled
-	sty $01
-	ldy #$00
+	ldx #$33        // write to ram with io disabled
+	stx $01
 	sta (start),y
 	lda #$37
 	sta $01
-	:fastack()
+	:ack()
 	:next()
 
 done:	:relinkBasic()
@@ -247,9 +227,9 @@ save: {
 	beq fast
 	jmp slow	
 
-fast:	ldx high       // prepare fastwrite
+fast:	
 !loop:  lda (start),y  // read with normal memory config
-	:fastwrite()
+	:write()
 	:next()
 	jmp done
 
@@ -270,13 +250,17 @@ done:	lda #$00   // reset CIA2 port B to input
 }
 	
 poke: {
-	jsr read sta mem
-	jsr read sta bank
-	jsr read sta start
-	jsr read sta start+1
-	jsr read
+	jsr read stx mem
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
 
-	ldy #$00
+	ldy #$00	
+
+	:wait()
+	lda $dd01
+	tax :ack() txa
+	
 	ldx mem
 	stx $01
 	sta (start),y
@@ -287,10 +271,10 @@ poke: {
 }
 
 peek: {
-	jsr read sta mem
-	jsr read sta bank
-	jsr read sta start
-	jsr read sta start+1
+	jsr read stx mem
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
 
 	:wait()        // wait until PC has set its port to input
 	lda #$ff       // and set CIA2 port B to output
@@ -312,13 +296,13 @@ done:	lda #$00   // reset CIA2 port B to input
 }
 	
 jump: {
-	jsr read sta mem
-	jsr read sta bank
+	jsr read stx mem
+	jsr read stx bank
 
 	ldx #$ff txs // reset stack pointer
 	
-	jsr read pha // push high byte of jump address
-	jsr read pha // push low byte of jump address
+	jsr read txa pha // push high byte of jump address
+	jsr read txa pha // push low byte of jump address
 
 	lda mem  // apply requested memory config
 	sta $01

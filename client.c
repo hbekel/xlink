@@ -34,15 +34,15 @@ char str2id(const char* arg) {
 }
 
 char* id2str(const char id) {
-  if (id == COMMAND_AUTO)   return "auto";
-  if (id == COMMAND_LOAD)   return "load";
-  if (id == COMMAND_SAVE)   return "save";
-  if (id == COMMAND_POKE)   return "poke";
-  if (id == COMMAND_PEEK)   return "peek";
-  if (id == COMMAND_JUMP)   return "jump";
-  if (id == COMMAND_RUN)    return "run";
-  if (id == COMMAND_RESET)  return "reset";
-  return "unknown";
+  if (id == COMMAND_AUTO)   return (char*) "auto";
+  if (id == COMMAND_LOAD)   return (char*) "load";
+  if (id == COMMAND_SAVE)   return (char*) "save";
+  if (id == COMMAND_POKE)   return (char*) "poke";
+  if (id == COMMAND_PEEK)   return (char*) "peek";
+  if (id == COMMAND_JUMP)   return (char*) "jump";
+  if (id == COMMAND_RUN)    return (char*) "run";
+  if (id == COMMAND_RESET)  return (char*) "reset";
+  return (char*) "unknown";
 }
 
 int valid(int address) {
@@ -50,35 +50,35 @@ int valid(int address) {
 }    
 
 Commands* commands_new() {
-  Commands* commands = calloc(1, sizeof(Commands*));
+  Commands* commands = (Commands*) calloc(1, sizeof(Commands*));
   commands->count = 0;
-  commands->items = calloc(1, sizeof(Command**));
+  commands->items = (Command**) calloc(1, sizeof(Command**));
   return commands;
 }
 
 Command* commands_add(Commands* self, Command* command) {
-  self->items = realloc(self->items, (self->count+1) * sizeof(Command*));
+  self->items = (Command**) realloc(self->items, (self->count+1) * sizeof(Command*));
   self->items[self->count] = command;
   self->count++;
   return command;
 }
 
 Command* command_new(char id) {
-  Command* command = (Command *) calloc(1, sizeof(Command));
+  Command* command = (Command*) calloc(1, sizeof(Command));
   command->id     = id;
   command->memory = 0xff;
   command->bank   = 0xff;
   command->start  = -1;
   command->end    = -1;
   command->argc   = 0;
-  command->argv   = calloc(1, sizeof(char*));
-  command_append_argument(command, "c64");
+  command->argv   = (char**) calloc(1, sizeof(char*));
+  command_append_argument(command, (char*)"c64");
   return command;
 }
 
 void command_append_argument(Command* self, char* arg) {
-  self->argv = realloc(self->argv, (self->argc+1) * sizeof(char*));
-  self->argv[self->argc] = calloc(strlen(arg)+1, sizeof(char));
+  self->argv = (char**) realloc(self->argv, (self->argc+1) * sizeof(char*));
+  self->argv[self->argc] = (char*) calloc(strlen(arg)+1, sizeof(char));
   strncpy(self->argv[self->argc], arg, strlen(arg));
   self->argc++;
 }
@@ -88,6 +88,7 @@ int command_parse_options(Command *self) {
   int option, index;
   static struct option options[] = {
     {"debug",   required_argument, 0, 'd'},
+    {"port",    required_argument, 0, 'p'},
     {"memory",  required_argument, 0, 'm'},
     {"bank",    required_argument, 0, 'b'},
     {"address", required_argument, 0, 'a'},
@@ -99,7 +100,7 @@ int command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "dm:b:a:", options, &index);
+    option = getopt_long(self->argc, self->argv, "dp:m:b:a:", options, &index);
     
     if(option == -1)
       break;
@@ -108,6 +109,11 @@ int command_parse_options(Command *self) {
     
     case 'd':
       debug = true;
+      break;
+
+    case 'p':
+      if (!pp64_configure(optarg))
+	return false; 
       break;
 
     case 'm':
@@ -446,7 +452,7 @@ int command_poke(Command* self) {
     return false;
   }
   argument = self->argv[0];
-  int comma = strcspn(argument, ",");
+  unsigned int comma = strcspn(argument, ",");
 
   if (comma == strlen(argument) || comma == strlen(argument)-1) {
     fprintf(stderr, "c64: syntax error: poke: expects <address>,<value>\n");
