@@ -46,7 +46,7 @@ char* id2str(const char id) {
 }
 
 int valid(int address) {
-  return address >= 0x0000 && address <= 0xffff; 
+  return address >= 0x0000 && address <= 0x10000; 
 }    
 
 Commands* commands_new() {
