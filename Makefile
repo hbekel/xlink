@@ -1,4 +1,4 @@
-all: c64 c64.exe servers
+all: c64 c64.exe servers kernal
 
 libpp64.so: pp64.c pp64.h
 	gcc -Wall -O3 -shared -fPIC -o libpp64.so pp64.c
@@ -17,6 +17,12 @@ server.prg: server.asm
 rrserver.bin: rrserver.asm
 	kasm -showmem -time -binfile -o rrserver.bin rrserver.asm
 
+kernal: kernal.asm tools/patch.rb
+	kasm -binfile -log kernal.log -o kernal.bin kernal.asm && \
+	cp kernal-901227-03.bin kernal-901227-03-pp64.bin && \
+	ruby ./tools/patch.rb kernal.bin kernal-901227-03-pp64.bin && \
+	rm -v kernal.bin kernal.log
+
 install: libpp64.so c64
 	cp pp64.h /usr/include
 	cp libpp64.so /usr/lib
@@ -33,3 +39,5 @@ clean:
 	[ -f c64.exe ] && rm -v c64.exe || true
 	[ -f server.prg ] && rm -v server.prg || true
 	[ -f rrserver.bin ] && rm -v rrserver.bin || true
+	[ -f kernal-901227-03-pp64.bin ] && rm -v kernal-901227-03-pp64.bin || true
+

@@ -2,5 +2,7 @@ c64
 *.so
 *.prg
 *.sym
-*.bin
 *.exe
+*.log
+rrserver.bin
+kernal-901227-03-pp64.bin
