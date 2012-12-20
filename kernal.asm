@@ -94,6 +94,12 @@ done:
 	sta $d011
 }
 
+.pc = $ea31
+wedge: {
+	jmp irq
+eof:	
+}
+	
 .pc = $f0d9
 tapeLoadDisabledMessage: {
 .text "TAPE LOAD DISABLE" .byte $c4
@@ -141,7 +147,8 @@ irq: {
 	bne done
 	jmp run
 	
-done:	jmp ($0314)
+done:	jsr $ffea
+	jmp $ea34
 eof:
 }
 	
@@ -380,12 +387,6 @@ eof:
 }
 	
 .pc = $fb8d // end of kernal "Store Tape characters" routine
-	
-.pc = $ff58  // replaces jmp (0314) in kernel irq entry routine at $ff48
-wedge: {
-	jmp irq
-eof:	
-}
 	
 .pc = $10000
 

@@ -19,7 +19,7 @@ def patch(input, output, start, stop)
 end
 
 File.open("kernal.log").each_line do |line|
-  if line =~ /PATCH 0x([0-9a-f]{4}) 0x([0-9a-f]{4})/
+  if line =~ /PATCH 0x([0-9a-f]+) 0x([0-9a-f]+)/
     patch(input, output, $1.to_i(16), $2.to_i(16))
   end
 end
