@@ -1,4 +1,4 @@
-.pc = $1000
+.pc = $c000
 
 jmp install
 

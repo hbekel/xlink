@@ -17,6 +17,7 @@
 #define COMMAND_JUMP  0x05
 #define COMMAND_RUN   0x06
 #define COMMAND_RESET 0x07
+#define COMMAND_WAIT  0x08
 
 Commands* commands;
 int debug = false;
@@ -30,6 +31,7 @@ char str2id(const char* arg) {
   if (strncmp(arg, "jump" , 4) == 0) return COMMAND_JUMP;
   if (strncmp(arg, "run"  , 3) == 0) return COMMAND_RUN;  
   if (strncmp(arg, "reset", 3) == 0) return COMMAND_RESET;  
+  if (strncmp(arg, "wait",  4) == 0) return COMMAND_WAIT;  
   return -1;
 }
 
@@ -42,6 +44,7 @@ char* id2str(const char id) {
   if (id == COMMAND_JUMP)   return (char*) "jump";
   if (id == COMMAND_RUN)    return (char*) "run";
   if (id == COMMAND_RESET)  return (char*) "reset";
+  if (id == COMMAND_WAIT)   return (char*) "wait";
   return (char*) "unknown";
 }
 
@@ -262,6 +265,12 @@ int command_dispatch(Command* self) {
 
   case COMMAND_RUN:
     if(!command_run(self))
+      return false;
+    break;
+
+
+  case COMMAND_WAIT:
+    if(!command_wait(self))
       return false;
     break;
 
@@ -536,6 +545,15 @@ int command_jump(Command* self) {
 int command_run(Command* self) {
   command_print(self);
   return pp64_run();
+}
+
+int command_wait(Command* self) {
+  int timeout = 3000;
+
+  if (self->argc > 0) {
+    timeout = strtol(self->argv[0], NULL, 0);
+  }
+  return pp64_ping(timeout);
 }
 
 int command_reset(Command* self) {

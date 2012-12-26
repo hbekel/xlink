@@ -258,6 +258,27 @@ int pp64_reset(void) {
   return false;
 }
 
+int pp64_ping(int timeout) {
+  int ready = false;
+  int start, now;
+  unsigned char ping = 0xff;
+
+  if(pp64_open()) {
+
+    start = clock() / (CLOCKS_PER_SEC / 1000);
+    
+    while(!ready) {
+      ready = pp64_send_with_timeout(ping); 
+      now = clock() / (CLOCKS_PER_SEC / 1000);
+
+      if(now - start > timeout)
+	break;
+    }
+    pp64_close();
+  }
+  return ready;
+}
+
 inline unsigned char pp64_receive(void) {
   char byte;
   pp64_wait_strobe(0);
@@ -272,7 +293,7 @@ inline void pp64_send(unsigned char byte) {
   pp64_wait_ack(0);  
 }
 
-inline int pp64_send_with_timeout(unsigned char byte) {
+int pp64_send_with_timeout(unsigned char byte) {
 
   pp64_write(byte);
   pp64_send_strobe();

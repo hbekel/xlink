@@ -21,6 +21,7 @@ int pp64_poke(unsigned char memory, unsigned char bank, int address, unsigned ch
 int pp64_jump(unsigned char memory, unsigned char bank, int address);
 int pp64_run(void);
 int pp64_reset(void);
+int pp64_ping(int timeout);
 void pp64_close(void);
 
 void pp64_init(void);

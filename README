@@ -1,0 +1,55 @@
+Bidirectional 8-bit Parallel Data Transfer between PS/2 Parallel Port
+and C64 User Port with optional reset circuit
+
+--------------------------------------------------------------------------------
+Cable
+--------------------------------------------------------------------------------
+
+This is a simple 8-bit parallel transfer cable connecting the PC
+Parallel Port to the C64 User port.
+
+The INIT line may be connected to an additional reset circuit that
+grounds the C64's RESET line via a relay when INIT is pulled low.
+
+---------------------------------------------
+PC Parallel Port   |     C64 User Port
+---------------------------------------------
+GND    (18-25)    <->    GND    (1, 12, A, N)
+D0     (2)        <->    PB0    (C) 
+D1     (3)        <->    PB1    (D) 
+D2     (4)        <->    PB2    (E) 
+D3     (5)        <->    PB3    (F) 
+D4     (6)        <->    PB4    (H) 
+D5     (7)        <->    PB5    (J) 
+D6     (8)        <->    PB6    (K) 
+D7     (9)        <->    PB7    (L) 
+BUSY   (11)       <--    PA2    (M) 
+STROBE (1)        -->    /FLAG2 (B) 
+INIT   (16)       -->   (Reset circuit) 
+
+--------------------------------------------------------------------------------
+Reset Circuit
+--------------------------------------------------------------------------------
+
+                      +5V
+                        o
+          ____       | /                                                    
+/INIT o--|____|---o--|<  T1
+           R1        |\                 T1 = 2N2907   Transistor
+                     | \                U1 = MES1A05  Relay
+                        |               D1 = 1N296    Diode
+                     ---o o--- /RES     R1 = 4.7kOhm  Resistor
+                     |  | |                                             
+                     -  ( |                                             
+                 D1  ^  ( | U1                                            
+                     |  | |                                           
+                     ---o o                                             
+                        \ /                                             
+                         o                                              
+                         GND                                            
+                                                                        
+
+--------------------------------------------------------------------------------
+
+ 
+

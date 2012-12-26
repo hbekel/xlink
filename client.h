@@ -35,4 +35,5 @@ int command_peek(Command* self);
 int command_jump(Command* self);
 int command_run(Command* self);
 int command_reset(Command* self);
+int command_wait(Command* self);
 void command_print(Command* self);
