@@ -9,6 +9,9 @@
 #include "client.h"
 #include "pp64.h"
 
+#define windows defined (WIN32) || !defined(__CYGWIN__)
+
+#define COMMAND_NONE  0x00
 #define COMMAND_AUTO  0x00
 #define COMMAND_LOAD  0x01
 #define COMMAND_SAVE  0x02
@@ -18,6 +21,7 @@
 #define COMMAND_RUN   0x06
 #define COMMAND_RESET 0x07
 #define COMMAND_WAIT  0x08
+#define COMMAND_HELP  0x09
 
 Commands* commands;
 int debug = false;
@@ -32,6 +36,7 @@ char str2id(const char* arg) {
   if (strncmp(arg, "run"  , 3) == 0) return COMMAND_RUN;  
   if (strncmp(arg, "reset", 3) == 0) return COMMAND_RESET;  
   if (strncmp(arg, "wait",  4) == 0) return COMMAND_WAIT;  
+  if (strncmp(arg, "help",  4) == 0) return COMMAND_HELP;  
   return -1;
 }
 
@@ -45,6 +50,7 @@ char* id2str(const char id) {
   if (id == COMMAND_RUN)    return (char*) "run";
   if (id == COMMAND_RESET)  return (char*) "reset";
   if (id == COMMAND_WAIT)   return (char*) "wait";
+  if (id == COMMAND_HELP)   return (char*) "help";
   return (char*) "unknown";
 }
 
@@ -91,6 +97,7 @@ int command_parse_options(Command *self) {
   int option, index;
   static struct option options[] = {
     {"debug",   required_argument, 0, 'd'},
+    {"help",    no_argument,       0, 'h'},
     {"port",    required_argument, 0, 'p'},
     {"memory",  required_argument, 0, 'm'},
     {"bank",    required_argument, 0, 'b'},
@@ -103,7 +110,7 @@ int command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "dp:m:b:a:", options, &index);
+    option = getopt_long(self->argc, self->argv, "dhp:m:b:a:", options, &index);
     
     if(option == -1)
       break;
@@ -279,6 +286,10 @@ int command_dispatch(Command* self) {
       return false;
     break;
 
+  case COMMAND_HELP:
+    if(!command_help(self))
+      return false;
+    break;
   }
   return true;
 }
@@ -561,14 +572,35 @@ int command_reset(Command* self) {
   return pp64_reset();
 }
 
+int command_help(Command *self) {
+  int id;
+  command_print(self);
+  if(self->argc == 0)
+    id = COMMAND_NONE;
+  else
+    id = str2id(self->argv[1]);
+  
+  usage(id);
+  return true;
+}
+
 int main(int argc, char **argv) {
   
   Command* command = NULL;   
   int id, i;
-  commands = commands_new();
 
-  for (i=0; i<argc; i++) {
-    if ((id = str2id(argv[i])) != -1) {
+  commands = commands_new();
+  command = commands_add(commands, command_new(COMMAND_AUTO));
+
+  if(argc <= 1) {
+    usage(COMMAND_NONE);
+    return EXIT_SUCCESS;
+  }
+
+  for (i=1; i<argc; i++) {
+    id = str2id(argv[i]);
+
+    if (id != -1 && command->id != COMMAND_HELP) {
       command = commands_add(commands, command_new(id)); 
     } else 
       command_append_argument(command, argv[i]);    
@@ -584,5 +616,133 @@ int main(int argc, char **argv) {
       return EXIT_FAILURE;
   }   
   return EXIT_SUCCESS;
+}
+
+void usage(int id) {
+
+  switch(id) {
+  case COMMAND_NONE:
+    printf("pp64 client 1.0 Copyright (C) 2012 Henning Bekel <h.bekel@googlemail.com>\n\n");
+
+    printf("Usage: c64 [<opts>] <file>.prg\n");
+    printf("       c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n\n");
+    printf("Options: \n");
+    printf("         -h, --help                    : show this help\n");
+    printf("         -d, --debug                   : enable debug messages\n");
+    printf("         -p, --port <port>             : ");
+#ifdef linux
+    printf("port device (default: /dev/parport0)\n");
+#elif windows
+    printf("port address (default: 0x378)\n");
+#endif
+    printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
+    printf("         -m, --memory                  : C64 memory config (default: 0x37)\n\n");
+    
+    printf("Commands: help  <command>              : show detailed help for <command>\n");
+    printf("          load  [<opts>] <file>        : load file into C64 memory\n");
+    printf("          save  [<opts>] <file>        : save C64 memory to file\n");
+    printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
+    printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
+    printf("          jump  [<opts>] <addr>        : jump to specified address\n");
+    printf("          run   [<opts>]               : run basic program\n");
+    printf("          wait  [<msec>]               : wait <msec>s for server (default: 3000)\n");
+    printf("          reset                        : reset C64 (only if using reset circuit)\n\n");
+    break;
+
+  case COMMAND_LOAD:
+    printf("Usage: c64 load [--address <start>[-<end>] [--memory <mem>] <file>\n");
+    printf("\n");
+    printf("Load the specified file into C64 memory\n");
+    printf("\n");
+    printf("If the filename ends with .prg, it is assumed that the file is a C64\n");
+    printf("PRG file and the first two bytes contain the C64 load address. If no\n");
+    printf("load address is specified by the user, the load address from the .prg\n");
+    printf("file is used. Otherwise the user supplied load address is used. If an\n");
+    printf("additional end address is specified, transfer will end as soon as the\n");
+    printf("end address or the end of the file is reached, whichever comes first.\n");
+    printf("\n");
+    printf("If a memory config is specified, it is poked to $01 prior to writing\n");
+    printf("the transfered value to C64 memory. The memory setting defaults to\n");
+    printf("0x37, which is the default setting in direct mode. If the file\n");
+    printf("overlaps the io area ($d000-$dfff) then the default memory config will\n");
+    printf("be changed to 0x33, so that data will always be loaded into the RAM\n");
+    printf("residing below the io area. This is a safety measure preventing\n");
+    printf("possible damage to either the PC's parallel port or the C64's CIA2.\n");
+    printf("In order to load data directly into the io area the memory config\n");
+    printf("needs to be set to 0x37 explicitly.\n");
+    printf("\n"); 
+    break;
+
+  case COMMAND_SAVE:
+    printf("Usage: c64 save [--address <start>-<end>] [--memory <mem>] file\n");
+    printf("\n");
+    printf("Save the specified C64 memory area to a file.\n");
+    printf("\n");
+    printf("If the destination filename ends with .prg then the destination file\n");
+    printf("will be prefixed with the supplied start address. If no address range\n");
+    printf("is specified, then the basic program currently residing in C64 memory\n");
+    printf("will be saved.\n");
+    printf("\n");
+    printf("If a memory config is specified, it will be poked to $01 prior to\n");
+    printf("reading the value to be transfered from C64 memory. The default value\n");
+    printf("is 0x37.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_POKE:
+    printf("Usage: c64 poke [--memory <mem>] <address>,<byte>\n");
+    printf("\n");
+    printf("Poke the specified byte to the specified address. \n");
+    printf("\n");
+    printf("If no memory config is specified, then the default memory config 0x37\n");
+    printf("will be used, so that values poked to the io area $d000-$dfff will\n");
+    printf("have the expected effect.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_PEEK:
+    printf("Usage: c64 peek [--memory <mem>] <address>\n");
+    printf("\n");
+    printf("Read the byte at the specified C64 memory address and print it on\n");
+    printf("standard output.\n");
+    printf("\n");
+    printf("If no memory config is specified, the default value 0x37 will be used.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_JUMP:
+   printf("Usage: c64 jump <address>\n");
+   printf("\n");
+   printf("Jump to the specified address in C64 memory. The stack pointer,\n");
+   printf("processor flags and registers will be reset prior to jumping.\n");
+   printf("\n");
+   break;
+
+  case COMMAND_RUN:
+    printf("Usage: c64 run\n");
+    printf("\n");
+    printf("RUN the currently loaded basic program.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_WAIT:
+    printf("Usage: c64 wait <timeout>\n");
+    printf("\n");
+    printf("Try to ping the C64 server for at most <timeout> milliseconds. If the\n");
+    printf("server responds within the specified timeout, then the next command on\n");
+    printf("the command line will be executed, otherwise the client will exit with\n");
+    printf("a negative exit status.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_RESET:
+    printf("Usage: c64 reset\n");
+    printf("\n");
+    printf("If a reset circuit is installed, this command will hold the PC's INIT\n");
+    printf("line low for a short period of time, which will ground the C64's RESET\n");
+    printf("line, performing a hardware reset.\n");
+    printf("\n");
+    break;
+  }
 }
 

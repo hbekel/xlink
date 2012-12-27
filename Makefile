@@ -17,7 +17,9 @@ server.prg: server.asm
 rrserver.bin: rrserver.asm
 	kasm -showmem -time -binfile -o rrserver.bin rrserver.asm
 
-kernal: kernal.asm tools/patch.rb
+kernal: kernal-901227-03-pp64.bin
+
+kernal-901227-03-pp64.bin: kernal.asm
 	kasm -binfile -log kernal.log -o kernal.bin kernal.asm && \
 	cp kernal-901227-03.bin kernal-901227-03-pp64.bin && \
 	ruby ./tools/patch.rb kernal.bin kernal-901227-03-pp64.bin && \
