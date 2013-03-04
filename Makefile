@@ -7,7 +7,7 @@ c64: libpp64.so client.c
 	gcc -lpp64 -L. -Wall -O3 -o c64 client.c
 
 c64.exe: client.c pp64.c
-	i486-mingw32-g++ -L./inpout32 -I./inpout32 -linpout32 -Wall -O3 -static-libgcc -o c64.exe pp64.c client.c
+	i486-mingw32-g++ -Wall -O3 -static-libgcc -o c64.exe pp64.c client.c
 
 servers: server.prg rrserver.bin
 

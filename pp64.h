@@ -35,3 +35,4 @@ int pp64_send_with_timeout(unsigned char byte);
 void pp64_send_signal_input(void);
 void pp64_send_signal_output(void);
 int pp64_receive_signal(int timeout); 
+

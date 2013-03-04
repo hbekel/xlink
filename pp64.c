@@ -12,9 +12,6 @@
 #include <sys/ioctl.h>
 #include <linux/parport.h>
 #include <linux/ppdev.h>
-
-#elif windows
-#include "inpout32.h"
 #endif
 
 #include "pp64.h"
@@ -312,12 +309,26 @@ inline void pp64_init(void) {
   pp64_stat = pp64_status();
 }
 
+#if windows
+static inline void outb(unsigned short port, unsigned char val) {
+    asm volatile( "outb %0, %1"
+                  : : "a"(val), "Nd"(port) );
+}
+
+static inline unsigned char inb(unsigned short port) {
+    unsigned char ret;
+    asm volatile( "inb %1, %0"
+                  : "=a"(ret) : "Nd"(port) );
+    return ret;
+}
+#endif
+
 inline unsigned char pp64_read(void) {
   unsigned char byte = 0;
 #ifdef linux
   ioctl(pp64_port, PPRDATA, &byte);
 #elif windows
-  byte = Inp32(pp64_port);
+  byte = inb(pp64_port);
 #endif  
   return byte;
 }
@@ -326,7 +337,7 @@ inline void pp64_write(unsigned char byte) {
 #ifdef linux
   ioctl(pp64_port, PPWDATA, &byte);
 #elif windows
-  Out32(pp64_port, byte);
+  outb(pp64_port, byte);
 #endif
 }
 
@@ -334,7 +345,7 @@ inline void pp64_control(unsigned char ctrl) {
 #ifdef linux
   ioctl(pp64_port, PPWCONTROL, &ctrl);
 #elif windows
-  Out32(pp64_port+2, ctrl);
+  outb(pp64_port+2, ctrl);
 #endif
 
 }
@@ -344,7 +355,7 @@ inline unsigned char pp64_status(void) {
 #ifdef linux
   ioctl(pp64_port, PPRSTATUS, &status);
 #elif windows
-  status = Inp32(pp64_port+1);
+  status = inb(pp64_port+1);
 #endif  
   return status;
 }
