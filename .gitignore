@@ -4,5 +4,8 @@ c64
 *.sym
 *.exe
 *.log
+*.dll
+*.stackdump
+Makefile
 rrserver.bin
 kernal-901227-03-pp64.bin

@@ -9,7 +9,8 @@
 #include "client.h"
 #include "pp64.h"
 
-#define windows defined (WIN32) || !defined(__CYGWIN__)
+#define linux defined(linux) && !defined(__CYGWIN__)
+#define windows defined (WIN32) || defined(__CYGWIN__)
 
 #define COMMAND_NONE  0x00
 #define COMMAND_AUTO  0x00
@@ -27,7 +28,7 @@ Commands* commands;
 int debug = false;
 
 char str2id(const char* arg) {
-  if (strstr(arg, "c64") != NULL) return COMMAND_AUTO;
+  if (strstr(arg, "c64") != NULL)    return COMMAND_AUTO;
   if (strncmp(arg, "load" , 4) == 0) return COMMAND_LOAD;
   if (strncmp(arg, "save" , 4) == 0) return COMMAND_SAVE;
   if (strncmp(arg, "poke" , 4) == 0) return COMMAND_POKE;
@@ -303,7 +304,7 @@ int command_auto(Command* self) {
   char *filename = self->argv[0];
   char *suffix = (filename + strlen(filename)-4);
 
-  if (strncmp(suffix, ".prg", 4) != 0) {
+  if (strncasecmp(suffix, ".prg", 4) != 0) {
     fprintf(stderr, "c64: error: autoload: not a .prg file: %s\n", filename);
     return false;
   }
@@ -346,7 +347,7 @@ int command_load(Command* self) {
   suffix = (filename + strlen(filename)-4);
 
   // get load address from .prg file
-  if (strncmp(suffix, ".prg", 4) == 0) {
+  if (strncasecmp(suffix, ".prg", 4) == 0) {
     fread(&loadAddress, sizeof(char), 2, file);
     size -= 2;
   }
@@ -452,7 +453,7 @@ int command_save(Command* self) {
     return false;
   }
 
-  if (strncmp(suffix, ".prg", 4) == 0)
+  if (strncasecmp(suffix, ".prg", 4) == 0)
     fwrite(&self->start, sizeof(char), 2, file);
   
   fwrite(data, sizeof(char), size, file);
@@ -630,7 +631,7 @@ void usage(int id) {
     printf("         -h, --help                    : show this help\n");
     printf("         -d, --debug                   : enable debug messages\n");
     printf("         -p, --port <port>             : ");
-#ifdef linux
+#if linux
     printf("port device (default: /dev/parport0)\n");
 #elif windows
     printf("port address (default: 0x378)\n");

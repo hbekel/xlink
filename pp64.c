@@ -6,9 +6,10 @@
 #include <string.h>
 #include <time.h>
 
-#define windows defined (WIN32) || !defined(__CYGWIN__)
+#define linux defined(linux) && !defined(__CYGWIN__)
+#define windows defined (WIN32) || defined(__CYGWIN__)
 
-#ifdef linux
+#if linux
 #include <sys/ioctl.h>
 #include <linux/parport.h>
 #include <linux/ppdev.h>
@@ -51,12 +52,12 @@ unsigned char pp64_stat;
 
 int pp64_configure(char* spec) {
 
-#ifdef linux
+#if linux
     pp64_device = (char*) realloc(pp64_device, (strlen(spec)+1) * sizeof(char)); 
     strncpy(pp64_device, spec, strlen(spec)+1);
 
 #elif windows
-    if (strstr(spec, "0x") == spec and strlen(spec) == 5) {
+    if (strstr(spec, "0x") == spec && strlen(spec) == 5) {
     pp64_port = strtol(spec, NULL, 0);
   }
   else {
@@ -69,7 +70,7 @@ int pp64_configure(char* spec) {
 
 int pp64_open() {
 
-#ifdef linux  
+#if linux  
   if((pp64_port = open(pp64_device, O_RDWR)) == -1) {
     fprintf(stderr, "pp64: error: couldn't open %s\n", pp64_device);
     return false;
@@ -298,7 +299,7 @@ int pp64_send_with_timeout(unsigned char byte) {
 }
 
 void pp64_close() {
-#ifdef linux
+#if linux
   ioctl(pp64_port, PPRELEASE);
   close(pp64_port);
 #endif
@@ -325,7 +326,7 @@ static inline unsigned char inb(unsigned short port) {
 
 inline unsigned char pp64_read(void) {
   unsigned char byte = 0;
-#ifdef linux
+#if linux
   ioctl(pp64_port, PPRDATA, &byte);
 #elif windows
   byte = inb(pp64_port);
@@ -334,7 +335,7 @@ inline unsigned char pp64_read(void) {
 }
 
 inline void pp64_write(unsigned char byte) {
-#ifdef linux
+#if linux
   ioctl(pp64_port, PPWDATA, &byte);
 #elif windows
   outb(pp64_port, byte);
@@ -342,7 +343,7 @@ inline void pp64_write(unsigned char byte) {
 }
 
 inline void pp64_control(unsigned char ctrl) {
-#ifdef linux
+#if linux
   ioctl(pp64_port, PPWCONTROL, &ctrl);
 #elif windows
   outb(pp64_port+2, ctrl);
@@ -352,7 +353,7 @@ inline void pp64_control(unsigned char ctrl) {
 
 inline unsigned char pp64_status(void) {
   unsigned char status = 0;
-#ifdef linux
+#if linux
   ioctl(pp64_port, PPRSTATUS, &status);
 #elif windows
   status = inb(pp64_port+1);
