@@ -4,7 +4,7 @@ libpp64.so: pp64.c pp64.h
 	gcc -Wall -O3 -shared -fPIC -o libpp64.so pp64.c
 
 c64: libpp64.so client.c
-	gcc -lpp64 -L. -Wall -O3 -o c64 client.c
+	gcc -Wall -O3 -o c64 client.c -L. -lpp64
 
 c64.exe: client.c pp64.c
 	i486-mingw32-g++ -Wall -O3 -static-libgcc -o c64.exe pp64.c client.c

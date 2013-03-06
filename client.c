@@ -5,10 +5,9 @@
 #include <getopt.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <signal.h>
 
-#define linux defined(linux) && !defined(__CYGWIN__)
-#define windows defined (WIN32) || defined(__CYGWIN__)
-
+#include "target.h"
 #include "client.h"
 #include "pp64.h"
 
@@ -627,7 +626,7 @@ void usage(int id) {
 
   switch(id) {
   case COMMAND_NONE:
-    printf("pp64 client 1.0 Copyright (C) 2012 Henning Bekel <h.bekel@googlemail.com>\n\n");
+    printf("pp64 client 1.1 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
     printf("Usage: c64 [<opts>] <file>.prg\n");
     printf("       c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n\n");

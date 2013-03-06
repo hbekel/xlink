@@ -6,16 +6,14 @@
 #include <string.h>
 #include <time.h>
 
-#define linux defined(linux) && !defined(__CYGWIN__)
-#define windows defined (WIN32) || defined(__CYGWIN__)
+#include "target.h"
+#include "pp64.h"
 
 #if linux
 #include <sys/ioctl.h>
 #include <linux/parport.h>
 #include <linux/ppdev.h>
 #endif
-
-#include "pp64.h"
 
 #define pp64_send_ack    pp64_send_signal_input
 #define pp64_send_strobe pp64_send_signal_output
