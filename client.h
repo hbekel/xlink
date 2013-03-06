@@ -40,3 +40,7 @@ int command_reset(Command* self);
 int command_wait(Command* self);
 int command_help(Command* self);
 void command_print(Command* self);
+
+#if windows
+void handle(int signal);
+#endif

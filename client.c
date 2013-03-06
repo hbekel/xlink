@@ -6,11 +6,11 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "client.h"
-#include "pp64.h"
-
 #define linux defined(linux) && !defined(__CYGWIN__)
 #define windows defined (WIN32) || defined(__CYGWIN__)
+
+#include "client.h"
+#include "pp64.h"
 
 #define COMMAND_NONE  0x00
 #define COMMAND_AUTO  0x00
@@ -586,7 +586,11 @@ int command_help(Command *self) {
 }
 
 int main(int argc, char **argv) {
-  
+
+#if windows  
+  signal(SIGILL, handle); 
+#endif 
+
   Command* command = NULL;   
   int id, i;
 
@@ -746,4 +750,13 @@ void usage(int id) {
     break;
   }
 }
+
+#if windows
+void handle(int signal) {
+  /* TODO: Check OS version, give instructions */
+  fprintf(stderr, "pp64: error: I/O port access denied\n");
+  exit(1);
+} 
+#endif
+
 
