@@ -284,8 +284,8 @@ fastest:
 	jmp done
 
 fast:
-	ldx mem       // need to change memory, but kernal is still here
-!loop:	stx $01
+!loop:	ldx mem       // need to change memory, but kernal is still here
+	stx $01
 	lda (start),y
 	ldx #$37
 	stx $01
