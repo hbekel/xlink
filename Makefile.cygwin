@@ -1,18 +1,18 @@
 all: c64 servers kernal
 
 pp64.dll: pp64.c pp64.h
-	gcc -Wall -O3 -shared -o pp64.dll pp64.c
+	i686-pc-mingw32-gcc -Wall -O3 -shared -o pp64.dll pp64.c
 
-c64: pp64.dll client.c
-	gcc -Wall -O3 -o c64 client.c -L. -lpp64
+c64: client.c client.h pp64.c pp64.h
+	i686-pc-mingw32-gcc -Wall -O3 -o c64 client.c pp64.c
 
 servers: server.prg rrserver.bin
 
 server.prg: server.asm
-	kasm -showmem -time -o server.prg server.asm
+	kasm -o server.prg server.asm
 
 rrserver.bin: rrserver.asm
-	kasm -showmem -time -binfile -o rrserver.bin rrserver.asm
+	kasm -binfile -o rrserver.bin rrserver.asm
 
 kernal: kernal-901227-03.bin kernal-901227-03-pp64.bin
 
@@ -20,7 +20,7 @@ kernal-901227-03-pp64.bin: kernal.asm
 	(cp kernal-901227-03.bin kernal-901227-03-pp64.bin && \
 	kasm -binfile -o kernal.bin kernal.asm | \
 	grep PATCH | \
-	sed -r 's/ +PATCH ([0-9]+) ([0-9]+)/dd conv=notrunc if=kernal.bin of=kernal-901227-03-pp64.bin bs=1 skip=\1 seek=\1 count=\2/' \
+	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=kernal-901227-03-pp64.bin bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
 	> patch.sh) && sh -x patch.sh && rm -v patch.sh kernal.bin
 
 install: pp64.dll c64

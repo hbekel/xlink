@@ -1,29 +1,26 @@
-all: c64 c64.exe servers kernal
+all: c64 servers kernal
 
 libpp64.so: pp64.c pp64.h
 	gcc -Wall -O3 -shared -fPIC -o libpp64.so pp64.c
 
-c64: libpp64.so client.c
+c64: libpp64.so client.c client.h
 	gcc -Wall -O3 -o c64 client.c -L. -lpp64
-
-c64.exe: client.c pp64.c
-	i486-mingw32-g++ -Wall -O3 -static-libgcc -o c64.exe pp64.c client.c
 
 servers: server.prg rrserver.bin
 
 server.prg: server.asm
-	kasm -showmem -time -o server.prg server.asm
+	kasm -o server.prg server.asm
 
 rrserver.bin: rrserver.asm
-	kasm -showmem -time -binfile -o rrserver.bin rrserver.asm
+	kasm -binfile -o rrserver.bin rrserver.asm
 
-kernal: kernal-901227-03-pp64.bin
+kernal: kernal-901227-03.bin kernal-901227-03-pp64.bin
 
 kernal-901227-03-pp64.bin: kernal.asm
 	(cp kernal-901227-03.bin kernal-901227-03-pp64.bin && \
 	kasm -binfile -o kernal.bin kernal.asm | \
 	grep PATCH | \
-	sed -r 's/ +PATCH ([0-9]+) ([0-9]+)/dd conv=notrunc if=kernal.bin of=kernal-901227-03-pp64.bin bs=1 skip=\1 seek=\1 count=\2/' \
+	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=kernal-901227-03-pp64.bin bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
 	> patch.sh) && sh -x patch.sh && rm -v patch.sh kernal.bin
 
 install: libpp64.so c64
