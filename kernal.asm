@@ -105,6 +105,12 @@ tapeLoadDisabledMessage: {
 .text "TAPE LOAD DISABLE" .byte $c4
 eof:
 }
+
+.pc = $e479
+powerUpMessage:	{
+.text "++++ COMMODORE 64 BASIC V2 ++++"
+eof:
+}
 	
 .pc = $f541 // begin of modified area in kernal "Load Tape" routine
 
@@ -395,6 +401,7 @@ eof:
 }
 
 .print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
+.print patch(powerUpMessage, powerUpMessage.eof)
 .print patch(disableTapeLoad, disableTapeLoad.eof)
 .print patch(irq, irq.eof)
 .print patch(ack, ack.eof)
