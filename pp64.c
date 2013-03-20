@@ -13,6 +13,8 @@
 #include <sys/ioctl.h>
 #include <linux/parport.h>
 #include <linux/ppdev.h>
+#elif windows
+#include <windows.h>
 #endif
 
 #define pp64_send_ack    pp64_send_signal_input
@@ -48,6 +50,17 @@ char* pp64_device = (char*) "/dev/parport0";
 int pp64_port = 0x378;
 unsigned char pp64_stat;
 
+#if windows
+typedef BOOL	(__stdcall *pp64_lpDriverOpened)(void);
+typedef void	(__stdcall *pp64_lpOutb)(short, short);
+typedef short	(__stdcall *pp64_lpInb)(short);
+
+HINSTANCE pp64_inpout32 = NULL;
+pp64_lpOutb pp64_outb;
+pp64_lpInb pp64_inb;
+pp64_lpDriverOpened pp64_driverOpened;
+#endif
+
 int pp64_configure(char* spec) {
 
 #if linux
@@ -74,10 +87,34 @@ int pp64_open() {
     return false;
   }  
   ioctl(pp64_port, PPCLAIM);
-#endif
-
   pp64_init();
   return true;
+
+#elif windows
+  if(pp64_inpout32 == NULL) {
+    
+    pp64_inpout32 = LoadLibrary( "inpout32.dll" ) ;	
+    
+    if (pp64_inpout32 != NULL) {
+      
+      pp64_driverOpened = (pp64_lpDriverOpened) GetProcAddress(pp64_inpout32, "IsInpOutDriverOpen");
+      pp64_outb = (pp64_lpOutb) GetProcAddress(pp64_inpout32, "Out32");
+      pp64_inb = (pp64_lpInb) GetProcAddress(pp64_inpout32, "Inp32");		
+      
+      if (pp64_driverOpened) {
+	pp64_init();
+	return true;
+      }
+      else {
+	fprintf(stderr, "pp64: error: failed to start inpout32 driver\n");
+      }		
+    }
+    else {
+      fprintf(stderr, "pp64: error: failed to load inpout32.dll\n");	
+    }
+  }
+  return false;
+#endif
 }
 
 int pp64_load(unsigned char memory, 
@@ -308,26 +345,12 @@ inline void pp64_init(void) {
   pp64_stat = pp64_status();
 }
 
-#if windows
-static inline void outb(unsigned short port, unsigned char val) {
-    asm volatile( "outb %0, %1"
-                  : : "a"(val), "Nd"(port) );
-}
-
-static inline unsigned char inb(unsigned short port) {
-    unsigned char ret;
-    asm volatile( "inb %1, %0"
-                  : "=a"(ret) : "Nd"(port) );
-    return ret;
-}
-#endif
-
 inline unsigned char pp64_read(void) {
   unsigned char byte = 0;
 #if linux
   ioctl(pp64_port, PPRDATA, &byte);
 #elif windows
-  byte = inb(pp64_port);
+  byte = pp64_inb(pp64_port);
 #endif  
   return byte;
 }
@@ -336,7 +359,7 @@ inline void pp64_write(unsigned char byte) {
 #if linux
   ioctl(pp64_port, PPWDATA, &byte);
 #elif windows
-  outb(pp64_port, byte);
+  pp64_outb(pp64_port, byte);
 #endif
 }
 
@@ -344,7 +367,7 @@ inline void pp64_control(unsigned char ctrl) {
 #if linux
   ioctl(pp64_port, PPWCONTROL, &ctrl);
 #elif windows
-  outb(pp64_port+2, ctrl);
+  pp64_outb(pp64_port+2, ctrl);
 #endif
 
 }
@@ -354,7 +377,7 @@ inline unsigned char pp64_status(void) {
 #if linux
   ioctl(pp64_port, PPRSTATUS, &status);
 #elif windows
-  status = inb(pp64_port+1);
+  status = pp64_inb(pp64_port+1);
 #endif  
   return status;
 }

@@ -586,10 +586,6 @@ int command_help(Command *self) {
 
 int main(int argc, char **argv) {
 
-#if windows  
-  signal(SIGILL, handle); 
-#endif 
-
   Command* command = NULL;   
   int id, i;
 
@@ -749,13 +745,5 @@ void usage(int id) {
     break;
   }
 }
-
-#if windows
-void handle(int signal) {
-  /* TODO: Check OS version, give instructions */
-  fprintf(stderr, "pp64: error: I/O port access denied\n");
-  exit(1);
-} 
-#endif
 
 
