@@ -397,7 +397,7 @@ eof:
 .pc = $10000
 
 .function patch(start, end) {
-  .return "PATCH 0x" + toHexString(start-$e000) + " 0x" + toHexString(end-$e000)
+  .return "PATCH " + toIntString(start-$e000) + " " + toIntString(end-start)
 }
 
 .print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)

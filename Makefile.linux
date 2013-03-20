@@ -20,10 +20,11 @@ rrserver.bin: rrserver.asm
 kernal: kernal-901227-03-pp64.bin
 
 kernal-901227-03-pp64.bin: kernal.asm
-	kasm -binfile -log kernal.log -o kernal.bin kernal.asm && \
-	cp kernal-901227-03.bin kernal-901227-03-pp64.bin && \
-	ruby ./tools/patch.rb kernal.bin kernal-901227-03-pp64.bin && \
-	rm -v kernal.bin kernal.log
+	(cp kernal-901227-03.bin kernal-901227-03-pp64.bin && \
+	kasm -binfile -o kernal.bin kernal.asm | \
+	grep PATCH | \
+	sed -r 's/ +PATCH ([0-9]+) ([0-9]+)/dd conv=notrunc if=kernal.bin of=kernal-901227-03-pp64.bin bs=1 skip=\1 seek=\1 count=\2/' \
+	> patch.sh) && sh -x patch.sh && rm -v patch.sh kernal.bin
 
 install: libpp64.so c64
 	cp pp64.h /usr/include
