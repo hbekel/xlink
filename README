@@ -1,5 +1,11 @@
-Bidirectional 8-bit Parallel Data Transfer between PS/2 Parallel Port
-and C64 User Port with optional reset circuit
+PP64 -- Bidirectional 8-bit Parallel Data Transfer between PS/2
+Parallel Port and C64 User Port with optional reset circuit
+
+--------------------------------------------------------------------------------
+Introduction
+--------------------------------------------------------------------------------
+
+...
 
 --------------------------------------------------------------------------------
 Cable

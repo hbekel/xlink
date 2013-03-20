@@ -66,11 +66,11 @@ pp64_lpDriverOpened pp64_driverOpened;
 int pp64_configure(char* spec) {
 
 #if linux
-    pp64_device = (char*) realloc(pp64_device, (strlen(spec)+1) * sizeof(char)); 
-    strncpy(pp64_device, spec, strlen(spec)+1);
+  pp64_device = (char*) realloc(pp64_device, (strlen(spec)+1) * sizeof(char)); 
+  strncpy(pp64_device, spec, strlen(spec)+1);
 
 #elif windows
-    if (strstr(spec, "0x") == spec && strlen(spec) == 5) {
+  if (strstr(spec, "0x") == spec && strlen(spec) == 5) {
     pp64_port = strtol(spec, NULL, 0);
   }
   else {
