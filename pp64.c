@@ -10,11 +10,13 @@
 #include "pp64.h"
 
 #if linux
-#include <sys/ioctl.h>
-#include <linux/parport.h>
-#include <linux/ppdev.h>
+  #include <sys/ioctl.h>
+  #include <linux/parport.h>
+  #include <linux/ppdev.h>
+
 #elif windows
-#include <windows.h>
+  #include <windows.h>
+
 #endif
 
 #define pp64_send_ack    pp64_send_signal_input
@@ -110,7 +112,9 @@ int pp64_open() {
       }		
     }
     else {
-      fprintf(stderr, "pp64: error: failed to load inpout32.dll\n");	
+      fprintf(stderr, "pp64: error: failed to load inpout32.dll\n\n");
+      fprintf(stderr, "Inpout32 is required for parallel port access:\n\n");    
+      fprintf(stderr, "    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");	
     }
   }
   return false;
