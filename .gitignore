@@ -6,6 +6,5 @@ c64
 *.log
 *.dll
 *.stackdump
-Makefile
 rrserver.bin
-kernal-901227-03-pp64.bin
+kernal-pp64.rom

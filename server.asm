@@ -32,7 +32,7 @@ loop:	lda $dd0d
 	beq loop
 }
 
-.macro ack() { // Send handshake to PC (rising edge on CIA2 PA2 -> Parport ACK) 
+.macro ack() { // Send handshake to PC (flip bit on CIA2 PA2 -> Parport BUSY) 
 	lda $dd00
 	eor #$04
 	sta $dd00

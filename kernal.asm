@@ -108,7 +108,7 @@ eof:
 
 .pc = $e479
 powerUpMessage:	{
-.text "++++ COMMODORE 64 BASIC V2 ++++"
+.text "**** COMMODORE 64 BASIC V2 ****"
 eof:
 }
 	

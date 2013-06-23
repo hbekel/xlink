@@ -334,7 +334,7 @@ int command_load(Command* self) {
 
   char *filename = self->argv[0];
   
-  file = fopen(filename, "r");
+  file = fopen(filename, "rb");
   
   if (file == NULL) {
     fprintf(stderr, "c64: error: load: '%s': %s\n", filename, strerror(errno));
@@ -436,7 +436,7 @@ int command_save(Command* self) {
 
   data = (char*) calloc(size, sizeof(char));
 
-  file = fopen(filename, "w");
+  file = fopen(filename, "wb");
 
   if(file == NULL) {
     fprintf(stderr, "c64link: error: '%s': %s\n", filename, strerror(errno));

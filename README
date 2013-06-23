@@ -1,4 +1,4 @@
-PP64 -- Bidirectional 8-bit Parallel Data Transfer between PS/2
+PP64 -- Bidirectional 8-bit parallel data transfers between PS/2
 Parallel Port and C64 User Port with optional reset circuit
 
 --------------------------------------------------------------------------------
@@ -11,11 +11,8 @@ Introduction
 Cable
 --------------------------------------------------------------------------------
 
-This is a simple 8-bit parallel transfer cable connecting the PC
-Parallel Port to the C64 User port.
-
-The INIT line may be connected to an additional reset circuit that
-grounds the C64's RESET line via a relay when INIT is pulled low.
+The PP64 cable is a simple 8-bit parallel transfer cable connecting
+the PC Parallel Port to the C64 User port.
 
 ---------------------------------------------
 PC Parallel Port   |     C64 User Port
@@ -31,31 +28,51 @@ D6     (8)        <->    PB6    (K)
 D7     (9)        <->    PB7    (L) 
 BUSY   (11)       <--    PA2    (M) 
 STROBE (1)        -->    /FLAG2 (B) 
-INIT   (16)       -->   (Reset circuit) 
+
+A shielded cable is highly recommended. The cable shield should be
+connected to shield ground on both sides. A 0.1uF capacitor between
+shield and ground at the c64 side can also help to decrease
+noise. Improper shielding will most likely cause transfer errors.
+
+CAUTION: There is no protection of any kind. The parallel port pins
+are directly connected to port B of CIA2. Always power down both the
+PC and C64 before inserting/removing the cable. Also turn off the C64
+during boot, reboot or shutdown of the PC.
 
 --------------------------------------------------------------------------------
-Reset Circuit
+Optional Reset Circuit
 --------------------------------------------------------------------------------
 
-                      +5V
-                        o
-          ____       | /                                                    
-/INIT o--|____|---o--|<  T1
-           R1        |\                 T1 = 2N2907   Transistor
-                     | \                U1 = MES1A05  Relay
-                        |               D1 = 1N296    Diode
-                     ---o o--- /RES     R1 = 4.7kOhm  Resistor
-                     |  | |                                             
-                     -  ( |                                             
-                 D1  ^  ( | U1                                            
-                     |  | |                                           
-                     ---o o                                             
-                        \ /                                             
-                         o                                              
-                         GND                                            
-                                                                        
+This small circuit can be used to force a hardware reset of the C64
+when the INIT line at the parallel port is pulled low.
+                  
+ INIT                      +5V                          
+  o                         o                                                          
+  |      ____               |                                            
+  o-----|____|--------------o       o RESET                                    
+  |      10k                |       |                                      
+  |                 ____    |       |                                    
+  |            ----|____|---'       |                                       
+  |            |    1.5k            |                                   
+  |            |                 |  C                        
+  |            |                 | /                                       
+  |         |  C-----------------|B                                             
+  |  ____   | /                  | \                                            
+  '-|____|--|B                   |  E                                          
+     10k    | \                     |                       
+            |  E                    |                                          
+               |                    |                                       
+               o                    o                                       
+              GND                  GND                                      
+                                                                              
+                                                                               
+INIT is pin 16 at the parallel port, RESET is pin 3 at the user port.
+GND and +5V can safely be taken from the user port as well.
+Use BC547A or equivalent transistors.
 
---------------------------------------------------------------------------------
 
- 
 
+
+                                                                               
+                                                                               
+                                                                               
