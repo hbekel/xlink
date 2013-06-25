@@ -5,7 +5,26 @@ Parallel Port and C64 User Port with optional reset circuit
 Introduction
 --------------------------------------------------------------------------------
 
-...
+Introduction
+
+PP64 is a system for fast 8-bit parallel data transfers between a C64
+and an IBM-PC using a parallel port cable connected to the C64 user
+port.
+
+A command-line client on the PC side is used to send data or commands
+to an interrupt-driven server installed on the C64. It is possible to
+load data from disk into C64 memory, save C64 memory content to disk,
+to peek and poke values to and from C64 memory, run BASIC programs,
+jump to memory addresses, even force a hardware reset of the C64.
+
+Different options exists to install the server on the C64, from a
+simple server.prg that needs to be loaded on the C64 prior to use, or
+a permanent solution that integrates a server in a modified kernal or
+a simple eprom cartridge.
+
+The underlying communication protocol is implemented in a shared
+library, allowing you to use and extend pp64's functionality for your
+own programs.
 
 --------------------------------------------------------------------------------
 Cable

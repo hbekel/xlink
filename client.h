@@ -22,6 +22,7 @@ void usage(int id);
 
 Commands* commands_new(void);
 Command* commands_add(Commands* self, Command* command);
+void commands_free(Commands* self);
 
 Command* command_new(char id);
 void command_append_argument(Command* self, char* arg);
@@ -39,7 +40,9 @@ int command_run(Command* self);
 int command_reset(Command* self);
 int command_wait(Command* self);
 int command_help(Command* self);
+int command_copy(Command* self);
 void command_print(Command* self);
+void command_free(Command* self);
 
 #if windows
 void handle(int signal);

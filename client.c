@@ -9,6 +9,7 @@
 
 #include "target.h"
 #include "client.h"
+#include "disk.h"
 #include "pp64.h"
 
 #define COMMAND_NONE  0x00
@@ -22,6 +23,7 @@
 #define COMMAND_RESET 0x07
 #define COMMAND_WAIT  0x08
 #define COMMAND_HELP  0x09
+#define COMMAND_COPY  0x0a
 
 Commands* commands;
 int debug = false;
@@ -37,6 +39,7 @@ char str2id(const char* arg) {
   if (strncmp(arg, "reset", 3) == 0) return COMMAND_RESET;  
   if (strncmp(arg, "wait",  4) == 0) return COMMAND_WAIT;  
   if (strncmp(arg, "help",  4) == 0) return COMMAND_HELP;  
+  if (strncmp(arg, "copy",  4) == 0) return COMMAND_COPY;  
   return -1;
 }
 
@@ -51,6 +54,7 @@ char* id2str(const char id) {
   if (id == COMMAND_RESET)  return (char*) "reset";
   if (id == COMMAND_WAIT)   return (char*) "wait";
   if (id == COMMAND_HELP)   return (char*) "help";
+  if (id == COMMAND_COPY)   return (char*) "copy";
   return (char*) "unknown";
 }
 
@@ -72,6 +76,16 @@ Command* commands_add(Commands* self, Command* command) {
   return command;
 }
 
+void commands_free(Commands* self) {
+  int i;
+  for(i=0; i<self->count; i++) {
+    command_free(self->items[i]);
+  }  
+
+  free(self->items);
+  free(self);
+}
+
 Command* command_new(char id) {
   Command* command = (Command*) calloc(1, sizeof(Command));
   command->id     = id;
@@ -83,6 +97,17 @@ Command* command_new(char id) {
   command->argv   = (char**) calloc(1, sizeof(char*));
   command_append_argument(command, (char*)"c64");
   return command;
+}
+
+void command_free(Command* self) {
+  int i;
+
+  for(i=0; i<self->argc; i++) {
+    free(self->argv[i]);
+  }
+
+  free(self->argv);
+  free(self);
 }
 
 void command_append_argument(Command* self, char* arg) {
@@ -288,6 +313,11 @@ int command_dispatch(Command* self) {
 
   case COMMAND_HELP:
     if(!command_help(self))
+      return false;
+    break;
+
+  case COMMAND_COPY:
+    if(!command_copy(self))
       return false;
     break;
   }
@@ -584,10 +614,59 @@ int command_help(Command *self) {
   return true;
 }
 
+int command_copy(Command *self) {
+
+  int result = true;
+
+  if (self->argc == 0) {
+    return false;
+  }
+
+  char *filename = self->argv[0];
+
+  command_print(self);
+
+  Disk* disk = disk_new(filename);
+
+  if(disk == NULL) {
+    result = false;
+  }
+
+  int t;
+  Track *track;
+
+  int s;
+  Sector *sector;
+
+  int b;
+
+  for (t=0; t < disk->size; t++) {
+    track = disk->tracks[t];
+
+    for(s=0; s < track->size; s++) {
+      sector = track->sectors[s];
+      
+      printf("\ntrack %d, sector %d:\n", sector->track, sector->number);
+      
+      for(b=0; b<sector->size; b++) {
+
+	printf("%02X ", sector->bytes[b]);
+	if((b+1) % 16 == 0) {
+	  printf("\n");
+	}
+      }
+    }
+  }
+  disk_free(disk);
+  return result;
+}
+
 int main(int argc, char **argv) {
 
   Command* command = NULL;   
-  int id, i;
+  int id, i, result;
+
+  result = EXIT_SUCCESS;
 
   commands = commands_new();
   command = commands_add(commands, command_new(COMMAND_AUTO));
@@ -609,13 +688,19 @@ int main(int argc, char **argv) {
   for (i=0; i<commands->count; i++) {
     command = commands->items[i];
 
-    if (!command_parse_options(command))
-      return EXIT_FAILURE;
+    if (!command_parse_options(command)) {
+      result = EXIT_FAILURE;
+      break;
+    }
    
-    if (!command_dispatch(command))
-      return EXIT_FAILURE;
-  }   
-  return EXIT_SUCCESS;
+    if (!command_dispatch(command)) {
+      result = EXIT_FAILURE;
+      break;
+    }
+  }
+ 
+  commands_free(commands);
+  return result;
 }
 
 void usage(int id) {

@@ -11,11 +11,11 @@ libpp64.so: pp64.c pp64.h
 pp64.dll: pp64.c pp64.h
 	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c 
 
-c64: libpp64.so client.c client.h
-	$(GCC) $(FLAGS) -o c64 client.c -L. -lpp64
+c64: libpp64.so client.c client.h disk.c disk.h
+	$(GCC) $(FLAGS) -o c64 client.c disk.c -L. -lpp64
 
-c64.exe: client.c client.h pp64.dll
-	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c -L. -lpp64 
+c64.exe: client.c client.h disk.c disk.h pp64.dll
+	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64 
 
 servers: server.prg rrserver.bin
 
