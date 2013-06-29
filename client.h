@@ -37,10 +37,12 @@ int command_poke(Command* self);
 int command_peek(Command* self);
 int command_jump(Command* self);
 int command_run(Command* self);
+int command_dos(Command* self);
+int command_backup(Command* self);
+int command_restore(Command* self);
 int command_reset(Command* self);
 int command_wait(Command* self);
 int command_help(Command* self);
-int command_copy(Command* self);
 void command_print(Command* self);
 void command_free(Command* self);
 

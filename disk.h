@@ -5,11 +5,11 @@
 #define FORTY_TRACKS_WITH_ERRORS 197376
 
 typedef struct {
-  int track;
-  int number;
+  unsigned char track;
+  unsigned char number;
   int size;
+  unsigned char error;
   unsigned char *bytes;
-  bool error;
 } Sector;
 
 typedef struct {
@@ -23,11 +23,18 @@ typedef struct {
   Track** tracks;
 } Disk;
 
-Disk* disk_new(char *filename);
+Disk* disk_new(int size);
+Disk* disk_load(char *filename);
+bool disk_each_sector(Disk *self, bool (*func) (Sector* sector));
+bool disk_save(Disk* self, char *filename);
 void disk_free(Disk *self);
 
-Track* track_new(int number, FILE* file);
+Track* track_new(int number);
+void track_load(Track* self, FILE* file);
 void track_free(Track *self);
 
-Sector* sector_new(int track, int number, FILE* file);
+Sector* sector_new(int track, int number);
+void sector_load(Sector *self, FILE* file);
+bool sector_save(Sector *self, FILE* file);
+bool sector_print(Sector *self);
 void sector_free(Sector *self);

@@ -6,6 +6,7 @@ c64
 *.log
 *.dll
 *.stackdump
+*.d64
+*.bin
+*.rom
 log
-rrserver.bin
-kernal-pp64.rom

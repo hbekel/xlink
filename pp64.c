@@ -5,6 +5,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 #include "target.h"
 #include "pp64.h"
@@ -19,8 +20,9 @@
 
 #endif
 
-#define pp64_send_ack    pp64_send_signal_input
-#define pp64_send_strobe pp64_send_signal_output
+#define pp64_send_ack          pp64_send_signal_input
+#define pp64_send_strobe       pp64_send_signal_output
+#define pp64_send_strobe_input pp64_send_signal_input
 
 #define pp64_wait_ack    pp64_receive_signal
 #define pp64_wait_strobe pp64_receive_signal
@@ -119,6 +121,27 @@ int pp64_open() {
   }
   return false;
 #endif
+}
+
+int pp64_ping(int timeout) {
+  int pong = false;
+  int start, now;
+  unsigned char ping = 0xff;
+
+  if(pp64_open()) {
+
+    start = clock() / (CLOCKS_PER_SEC / 1000);
+    
+    while(!pong) {
+      pong = pp64_send_with_timeout(ping); 
+      now = clock() / (CLOCKS_PER_SEC / 1000);
+
+      if(now - start > timeout)
+	break;
+    }
+    pp64_close();
+  }
+  return pong;
 }
 
 int pp64_load(unsigned char memory, 
@@ -279,6 +302,95 @@ int pp64_run(void) {
   return true;
 }
 
+int pp64_dos(char* cmd) {
+
+  int i;
+  unsigned char command = PP64_COMMAND_DOS;
+
+  if(pp64_open()) {
+  
+    if(!pp64_send_with_timeout(command)) {
+      fprintf(stderr, "pp64: error: no response from C64\n");
+      pp64_close();
+      return false;
+    }
+    
+    pp64_send(strlen(cmd));
+
+    for(i=0; i<strlen(cmd); i++) {
+      pp64_send(toupper(cmd[i]));
+    }
+
+    pp64_send_strobe();
+    pp64_wait_ack(0);
+
+    pp64_close();
+    return true;
+  }
+  return false;
+}
+
+int pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* data) {
+  
+  char U1[13];
+  unsigned char command = PP64_COMMAND_SECTOR_READ;
+
+  if(pp64_open()) {
+  
+    if(!pp64_send_with_timeout(command)) {
+      fprintf(stderr, "pp64: error: no response from C64\n");
+      pp64_close();
+      return false;
+    }    
+    sprintf(U1, "U1 2 0 %02d %02d", track, sector);
+
+    int i;
+    for(i=0; i<strlen(U1); i++)
+      pp64_send(U1[i]);      
+
+    pp64_control(pp64_ctrl_input);
+    pp64_send_strobe();
+
+    for(i=0; i<256; i++)
+      data[i] = pp64_receive();
+
+    pp64_wait_ack(0);
+
+    pp64_close();
+    return true;
+  }
+  return false;
+}
+
+int pp64_sector_write(unsigned char track, unsigned char sector, unsigned char *data) {
+
+  char U2[13];
+  unsigned char command = PP64_COMMAND_SECTOR_WRITE;
+
+  if(pp64_open()) {
+  
+    if(!pp64_send_with_timeout(command)) {
+      fprintf(stderr, "pp64: error: no response from C64\n");
+      pp64_close();
+      return false;
+    }
+    sprintf(U2, "U2 2 0 %02d %02d", track, sector);
+
+    int i;
+    for(i=0; i<256; i++)
+      pp64_send(data[i]);
+
+    for(i=0; i<strlen(U2); i++)
+      pp64_send(U2[i]);
+
+    pp64_wait_ack(0);
+
+    pp64_close();
+    return true;   
+  }  
+  return false;
+}
+
 int pp64_reset(void) {
   if(pp64_open()) {
 
@@ -293,27 +405,6 @@ int pp64_reset(void) {
     #endif
   }
   return false;
-}
-
-int pp64_ping(int timeout) {
-  int ready = false;
-  int start, now;
-  unsigned char ping = 0xff;
-
-  if(pp64_open()) {
-
-    start = clock() / (CLOCKS_PER_SEC / 1000);
-    
-    while(!ready) {
-      ready = pp64_send_with_timeout(ping); 
-      now = clock() / (CLOCKS_PER_SEC / 1000);
-
-      if(now - start > timeout)
-	break;
-    }
-    pp64_close();
-  }
-  return ready;
 }
 
 inline unsigned char pp64_receive(void) {

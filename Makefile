@@ -1,7 +1,9 @@
 GCC=gcc
 GCC-MINGW32=i486-mingw32-gcc
-FLAGS=-Wall -O3
+#GCC-MINGW32=i686-pc-mingw32-gcc
+FLAGS=-Wall -O3 -ggdb
 KASM=java -jar /usr/share/kickassembler/KickAss.jar
+#KASM=java -jar C:/cygwin/home/hb/opt/kasm/KickAss.jar
 
 all: c64 c64.exe servers kernal
 
@@ -14,7 +16,7 @@ pp64.dll: pp64.c pp64.h
 c64: libpp64.so client.c client.h disk.c disk.h
 	$(GCC) $(FLAGS) -o c64 client.c disk.c -L. -lpp64
 
-c64.exe: client.c client.h disk.c disk.h pp64.dll
+c64.exe: pp64.dll client.c client.h disk.c disk.h
 	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64 
 
 servers: server.prg rrserver.bin
@@ -34,6 +36,10 @@ kernal-pp64.rom: kernal.asm
 	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=kernal-pp64.rom bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
 	> patch.sh) && sh -x patch.sh && rm -v patch.sh kernal.bin
 
+install:
+	install -m755 c64 /usr/bin
+	install -m644 libpp64.so /usr/lib
+
 clean:
 	[ -f libpp64.so ] && rm -v libpp64.so || true
 	[ -f pp64.dll ] && rm -v pp64.dll || true
@@ -43,7 +49,7 @@ clean:
 	[ -f rrserver.bin ] && rm -v rrserver.bin || true
 	[ -f kernal-pp64.rom ] && rm -v kernal-pp64.rom || true
 
-dist: bindist clean
+dist: zip clean
 	(cd .. && tar vczf pp64.tar.gz pp64/)  
 
 zip: all

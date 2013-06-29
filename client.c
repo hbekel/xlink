@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <errno.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include <signal.h>
 
 #include "target.h"
@@ -12,55 +13,61 @@
 #include "disk.h"
 #include "pp64.h"
 
-#define COMMAND_NONE  0x00
-#define COMMAND_AUTO  0x00
-#define COMMAND_LOAD  0x01
-#define COMMAND_SAVE  0x02
-#define COMMAND_POKE  0x03
-#define COMMAND_PEEK  0x04
-#define COMMAND_JUMP  0x05
-#define COMMAND_RUN   0x06
-#define COMMAND_RESET 0x07
-#define COMMAND_WAIT  0x08
-#define COMMAND_HELP  0x09
-#define COMMAND_COPY  0x0a
+#define COMMAND_NONE    0x00
+#define COMMAND_AUTO    0x00
+#define COMMAND_LOAD    0x01
+#define COMMAND_SAVE    0x02
+#define COMMAND_POKE    0x03
+#define COMMAND_PEEK    0x04
+#define COMMAND_JUMP    0x05
+#define COMMAND_RUN     0x06
+#define COMMAND_RESET   0x07
+#define COMMAND_WAIT    0x08
+#define COMMAND_HELP    0x09
+#define COMMAND_DOS     0x0a
+#define COMMAND_BACKUP  0x0b
+#define COMMAND_RESTORE 0x0c
 
 Commands* commands;
 int debug = false;
 
 char str2id(const char* arg) {
-  if (strstr(arg, "c64") != NULL)    return COMMAND_AUTO;
-  if (strncmp(arg, "load" , 4) == 0) return COMMAND_LOAD;
-  if (strncmp(arg, "save" , 4) == 0) return COMMAND_SAVE;
-  if (strncmp(arg, "poke" , 4) == 0) return COMMAND_POKE;
-  if (strncmp(arg, "peek" , 4) == 0) return COMMAND_PEEK;
-  if (strncmp(arg, "jump" , 4) == 0) return COMMAND_JUMP;
-  if (strncmp(arg, "run"  , 3) == 0) return COMMAND_RUN;  
-  if (strncmp(arg, "reset", 3) == 0) return COMMAND_RESET;  
-  if (strncmp(arg, "wait",  4) == 0) return COMMAND_WAIT;  
-  if (strncmp(arg, "help",  4) == 0) return COMMAND_HELP;  
-  if (strncmp(arg, "copy",  4) == 0) return COMMAND_COPY;  
+  if (strstr(arg, "c64") != NULL)      return COMMAND_AUTO;
+  if (strncmp(arg, "load" ,   4) == 0) return COMMAND_LOAD;
+  if (strncmp(arg, "save" ,   4) == 0) return COMMAND_SAVE;
+  if (strncmp(arg, "poke" ,   4) == 0) return COMMAND_POKE;
+  if (strncmp(arg, "peek" ,   4) == 0) return COMMAND_PEEK;
+  if (strncmp(arg, "jump" ,   4) == 0) return COMMAND_JUMP;
+  if (strncmp(arg, "run"  ,   3) == 0) return COMMAND_RUN;  
+  if (strncmp(arg, "reset",   5) == 0) return COMMAND_RESET;  
+  if (strncmp(arg, "wait",    4) == 0) return COMMAND_WAIT;  
+  if (strncmp(arg, "help",    4) == 0) return COMMAND_HELP;  
+  if (strncmp(arg, "dos",     3) == 0) return COMMAND_DOS;  
+  if (strncmp(arg, "backup",  6) == 0) return COMMAND_BACKUP;  
+  if (strncmp(arg, "restore", 7) == 0) return COMMAND_RESTORE;  
   return -1;
 }
 
 char* id2str(const char id) {
-  if (id == COMMAND_AUTO)   return (char*) "auto";
-  if (id == COMMAND_LOAD)   return (char*) "load";
-  if (id == COMMAND_SAVE)   return (char*) "save";
-  if (id == COMMAND_POKE)   return (char*) "poke";
-  if (id == COMMAND_PEEK)   return (char*) "peek";
-  if (id == COMMAND_JUMP)   return (char*) "jump";
-  if (id == COMMAND_RUN)    return (char*) "run";
-  if (id == COMMAND_RESET)  return (char*) "reset";
-  if (id == COMMAND_WAIT)   return (char*) "wait";
-  if (id == COMMAND_HELP)   return (char*) "help";
-  if (id == COMMAND_COPY)   return (char*) "copy";
+  if (id == COMMAND_AUTO)    return (char*) "auto";
+  if (id == COMMAND_LOAD)    return (char*) "load";
+  if (id == COMMAND_SAVE)    return (char*) "save";
+  if (id == COMMAND_POKE)    return (char*) "poke";
+  if (id == COMMAND_PEEK)    return (char*) "peek";
+  if (id == COMMAND_JUMP)    return (char*) "jump";
+  if (id == COMMAND_RUN)     return (char*) "run";
+  if (id == COMMAND_RESET)   return (char*) "reset";
+  if (id == COMMAND_WAIT)    return (char*) "wait";
+  if (id == COMMAND_HELP)    return (char*) "help";
+  if (id == COMMAND_DOS)     return (char*) "dos";
+  if (id == COMMAND_BACKUP)  return (char*) "backup";
+  if (id == COMMAND_RESTORE) return (char*) "restore";
   return (char*) "unknown";
 }
 
 int valid(int address) {
   return address >= 0x0000 && address <= 0x10000; 
-}    
+}
 
 Commands* commands_new() {
   Commands* commands = (Commands*) calloc(1, sizeof(Commands*));
@@ -316,8 +323,18 @@ int command_dispatch(Command* self) {
       return false;
     break;
 
-  case COMMAND_COPY:
-    if(!command_copy(self))
+  case COMMAND_DOS:
+    if(!command_dos(self))
+      return false;
+    break;  
+
+  case COMMAND_BACKUP:
+    if(!command_backup(self))
+      return false;
+    break;
+
+  case COMMAND_RESTORE:
+    if(!command_restore(self))
       return false;
     break;
   }
@@ -614,7 +631,53 @@ int command_help(Command *self) {
   return true;
 }
 
-int command_copy(Command *self) {
+int command_dos(Command *self) {
+
+  if (self->argc == 0) {
+    return false;
+  }
+  return pp64_dos(self->argv[0]);
+}
+
+int command_backup(Command *self) {
+  
+  bool read_sector(Sector *sector) {
+    printf("reading track %02d, sector %02d\r", sector->track, sector->number); fflush(stdout);
+    
+    return pp64_sector_read(sector->track, sector->number, sector->bytes); 
+  }
+  
+  int result = true;
+  Disk* disk;
+
+  if (self->argc == 0) {
+    return false;
+  }
+  
+  disk = disk_new(35);
+  if(disk_each_sector(disk, &read_sector)) {
+    disk_save(disk, self->argv[0]);
+    printf("\n");
+  }
+
+  disk_free(disk);
+  return result;
+}
+
+int command_restore(Command *self) {
+
+  bool write_sector(Sector *sector) {
+
+    if (debug) {
+      sector_print(sector);
+    } 
+    else {
+      printf("writing track %02d, sector %02d\r", sector->track, sector->number);
+      fflush(stdout);
+    }
+
+    return pp64_sector_write(sector->track, sector->number, sector->bytes); 
+  }
 
   int result = true;
 
@@ -623,40 +686,24 @@ int command_copy(Command *self) {
   }
 
   char *filename = self->argv[0];
+  Disk* disk = disk_load(filename);
 
   command_print(self);
 
-  Disk* disk = disk_new(filename);
-
   if(disk == NULL) {
+    return false;
+  }
+
+  if(disk->size != 35) {
+    fprintf(stderr, "c64: error: no support for 40-track disks\n");
     result = false;
+    goto done;
   }
 
-  int t;
-  Track *track;
+  disk_each_sector(disk, &write_sector);
+  pp64_dos("I");
 
-  int s;
-  Sector *sector;
-
-  int b;
-
-  for (t=0; t < disk->size; t++) {
-    track = disk->tracks[t];
-
-    for(s=0; s < track->size; s++) {
-      sector = track->sectors[s];
-      
-      printf("\ntrack %d, sector %d:\n", sector->track, sector->number);
-      
-      for(b=0; b<sector->size; b++) {
-
-	printf("%02X ", sector->bytes[b]);
-	if((b+1) % 16 == 0) {
-	  printf("\n");
-	}
-      }
-    }
-  }
+ done:
   disk_free(disk);
   return result;
 }
@@ -711,7 +758,7 @@ void usage(int id) {
 
     printf("Usage: c64 [<opts>] <file>.prg\n");
     printf("       c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n\n");
-    printf("Options: \n");
+    printf("Options:\n");
     printf("         -h, --help                    : show this help\n");
     printf("         -d, --debug                   : enable debug messages\n");
     printf("         -p, --port <port>             : ");
@@ -723,7 +770,8 @@ void usage(int id) {
     printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
     printf("         -m, --memory                  : C64 memory config (default: 0x37)\n\n");
     
-    printf("Commands: help  <command>              : show detailed help for <command>\n");
+    printf("Commands:\n");
+    printf("          help  <command>              : show detailed help for <command>\n");
     printf("          load  [<opts>] <file>        : load file into C64 memory\n");
     printf("          save  [<opts>] <file>        : save C64 memory to file\n");
     printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
