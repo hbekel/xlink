@@ -321,7 +321,6 @@ int pp64_dos(char* cmd) {
       pp64_send(toupper(cmd[i]));
     }
 
-    pp64_send_strobe();
     pp64_wait_ack(0);
 
     pp64_close();

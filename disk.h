@@ -35,6 +35,6 @@ void track_free(Track *self);
 
 Sector* sector_new(int track, int number);
 void sector_load(Sector *self, FILE* file);
-bool sector_save(Sector *self, FILE* file);
+bool sector_equals(Sector *self, Sector* sector);
 bool sector_print(Sector *self);
 void sector_free(Sector *self);

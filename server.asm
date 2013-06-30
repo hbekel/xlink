@@ -28,15 +28,15 @@ jmp install
 .var clrchn   = $ffcc // Clear channel
 	
 .namespace Command {
-.label load         = $01
-.label save         = $02
-.label poke         = $03
-.label peek         = $04
-.label jump         = $05
-.label run          = $06
-.label dos          = $07
-.label sector_read  = $08
-.label sector_write = $09
+.label load        = $01
+.label save        = $02
+.label poke        = $03
+.label peek        = $04
+.label jump        = $05
+.label run         = $06
+.label dosCommand  = $07
+.label sectorRead  = $08
+.label sectorWrite = $09
 }
 	
 .macro wait() { // Wait for handshake from PC (falling edge on FLAG <- Parport STROBE)
@@ -188,17 +188,17 @@ irq: {
 	bne !next+
 	jmp run
 
-!next:  cpy #Command.dos
+!next:  cpy #Command.dosCommand
 	bne !next+
-	jmp dos
+	jmp dosCommand
 
-!next:	cpy #Command.sector_read
+!next:	cpy #Command.sectorRead
 	bne !next+
-	jmp sector_read
+	jmp sectorRead
 	
-!next:	cpy #Command.sector_write
+!next:	cpy #Command.sectorWrite
 	bne !next+
-	jmp sector_write
+	jmp sectorWrite
 
 !next:	
 done:	jmp $ea31
@@ -349,20 +349,83 @@ run: {
 	jmp warmst
 }
 
-dos: {
-	lda #$01  // disable system irq
-	sta $dc0d 	
+disableIrq: {
+	// some io routines use irqs and cli when done,
+	// so the sysirq needs to be disabled during io
+	lda #$01  
+	sta $dc0d
+	rts
+}
 
-	lda #$0f
+enableIrq: {
+	sei
+	lda $dc0d
+	lda #$81  
+	sta $dc0d
+	rts
+}
+	
+openBuffer: {
+	// open buffer channel
+	// open 2,8,2,"#"
+	lda #$01
+	ldx #<channel
+	ldy #>channel
+	jsr setnam
+
+	lda #$02
 	ldx $ba
 	bne skip
 	ldx #$08
-skip:	ldy #$0f	
-	jsr setlfs
-	
-	jsr open
-	bcs done
+skip:	ldy #$02
+	jsr setlfs	
 
+	jsr open
+	rts
+
+channel: .text "#"
+}	
+
+withBufferPointerReset: {
+	lda #cmdEnd-cmd
+	ldx #<cmd
+	ldy #>cmd
+	jsr setnam
+	rts
+
+cmd: .text "B-P 2 0"
+cmdEnd:	
+}
+		
+openCommandChannel: {
+	
+	// open command channel
+	// open 15,8,15	
+
+	lda #$0f
+	ldx $ba
+	ldy #$0f
+	jsr setlfs
+
+	jsr open
+	rts
+}
+
+closeAll: {
+	jsr clrchn
+
+	lda #$0f
+	jsr close
+
+	lda #$02
+	jsr close
+	rts
+}
+
+dosCommand: {
+	jsr disableIrq
+	jsr openCommandChannel
+	
 	ldx #$0f
 	jsr chkout
 
@@ -382,54 +445,19 @@ done:	jsr clrchn
 	lda #$0f
 	jsr close
 
-	jsr clrchn
-	
-	:wait()
 	:ack()
 	
-	sei
-	lda $dc0d
-	lda #$81  // enable sysirq
-	sta $dc0d
-
-	jmp $ea81
+	jsr enableIrq
+	jmp irq.done
 }
-
-sector_read: {
-	lda #$01  // disable system irq
-	sta $dc0d 		
-
-	// open buffer file
 	
-	lda #$01
-	ldx #<channel
-	ldy #>channel
-	jsr setnam
-
-	lda #$02
-	ldx $ba
-	bne skip
-	ldx #$08
-skip:	ldy #$02
-	jsr setlfs	
-
-	jsr open
-
-	// open command channel and reset buffer pointer
-	lda #cmdEnd-cmd
-	ldx #<cmd
-	ldy #>cmd
-	jsr setnam
-
-	lda #$0f
-	ldx $ba
-	ldy #$0f
-	jsr setlfs
-
-	jsr open
-
-	// select command channel
+sectorRead: {
 	
+	jsr disableIrq
+	jsr openBuffer
+	jsr withBufferPointerReset jsr openCommandChannel
+
+	// select command channel	
 	ldx #$0f
 	jsr chkout
 	
@@ -447,60 +475,22 @@ skip:	ldy #$02
 	lda #$0d
 	jsr chrout
 	
-	jsr clrchn
+	jsr closeAll
 
-	lda #$0f
-	jsr close
-
-	lda #$02
-	jsr close
-
-	// open buffer channel again
-	
-	lda #$01
-	ldx #<channel
-	ldy #>channel
-	jsr setnam
-
-	lda #$02
-	ldx $ba
-	ldy #$02
-	jsr setlfs	
-
-	jsr open
-
-	// open command channel and reset buffer pointer again
-	lda #cmdEnd-cmd
-	ldx #<cmd
-	ldy #>cmd
-	jsr setnam
-
-	lda #$0f
-	ldx $ba
-	ldy #$0f
-	jsr setlfs
-
-	jsr open
-	
+	jsr openBuffer
+	jsr withBufferPointerReset jsr openCommandChannel
+ 	
 	ldx #$02
 	jsr chkin
 
-	// read drive buffer to screen
-	
-	ldx #$00
-!loop:	jsr chrin
-	sta $0400,x
-	inx
-	bne !loop-
-	
 	:wait()        // wait until PC has set its port to input
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 	
-	// read data from screen and send it to server
+	// read data from drive buffer and send it to server
 	
 	ldx #$00
-!loop:	lda $0400,x
+!loop:	jsr chrin
 	:write()
 	inx
 	bne !loop-
@@ -508,65 +498,20 @@ skip:	ldy #$02
 	lda #$00   // reset CIA2 port B to input
 	sta $dd03	
 done:
-	jsr clrchn
+	jsr closeAll
 	
-	lda #$0f
-	jsr close
+	:ack()
 
-	lda #$02
-	jsr close
-	
-	:ack()	
-
-	sei
-	lda $dc0d
-	lda #$81  // enable sysirq
-	sta $dc0d
-	
+	jsr enableIrq
 	jmp $ea81
-
-channel: .text "#"
-
-cmd: .text "B-P 2 0"
-cmdEnd:	
 }
 	
-sector_write: {
+sectorWrite: {
 
-	lda #$01  // disable system irq
-	sta $dc0d 	
-	
-	// open buffer channel
-	
-	lda #$01
-	ldx #<channel
-	ldy #>channel
-	jsr setnam
+	jsr disableIrq
+	jsr openBuffer
+	jsr withBufferPointerReset jsr openCommandChannel
 
-	lda #$02
-	ldx $ba
-	bne skip
-	ldx #$08
-skip:	ldy #$02
-	jsr setlfs
-
-	jsr open
-	bcs done
-
-	// open the command channel
-
-	lda #cmdEnd-cmd
-	ldx #<cmd
-	ldy #>cmd
-	jsr setnam
-	lda #$0f
-	ldx $ba
-	ldy #$0f
-	jsr setlfs
-
-	jsr open
-	bcs done
-	
 	// select buffer as output
 	
 	ldx #$02
@@ -605,25 +550,10 @@ skip:	ldy #$02
 
 done:	// close files and channels	
 	
-	jsr clrchn
-
-	lda #$0f
-	jsr close
-
-	lda #$02
-	jsr close
-
+	jsr closeAll
+	
 	:ack()
 	
-	sei
-	lda $dc0d
-	lda #$81  // enable sysirq
-	sta $dc0d
-	
+	jsr enableIrq	
 	jmp $ea81
-
-channel: .text "#"
-	
-cmd: .text "B-P 2 0"
-cmdEnd:
 }

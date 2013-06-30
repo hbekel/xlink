@@ -92,8 +92,10 @@ bool disk_each_sector(Disk *self, bool (*func) (Sector* sector)) {
     
     for(s=0; s<track->size; s++) {
       sector = track->sectors[s];
-      if(!func(sector))
+      if(!func(sector)) {
+	result = false;
 	goto abort;
+      }
     }
   }
 
@@ -198,6 +200,19 @@ Sector* sector_new(int track, int number) {
 
 void sector_load(Sector* self, FILE *file) {
   fread(self->bytes, sizeof(char), self->size, file);
+}
+
+bool sector_equals(Sector* self, Sector* sector) {
+  bool result = true;
+  int i;
+
+  for(i=0; i<self->size; i++) {
+    if (self->bytes[i] != sector->bytes[i]) {
+      result = false;
+      break;
+    }
+  }
+  return result;
 }
 
 bool sector_print(Sector *self) {

@@ -27,6 +27,7 @@
 #define COMMAND_DOS     0x0a
 #define COMMAND_BACKUP  0x0b
 #define COMMAND_RESTORE 0x0c
+#define COMMAND_VERIFY  0x0d
 
 Commands* commands;
 int debug = false;
@@ -42,9 +43,9 @@ char str2id(const char* arg) {
   if (strncmp(arg, "reset",   5) == 0) return COMMAND_RESET;  
   if (strncmp(arg, "wait",    4) == 0) return COMMAND_WAIT;  
   if (strncmp(arg, "help",    4) == 0) return COMMAND_HELP;  
-  if (strncmp(arg, "dos",     3) == 0) return COMMAND_DOS;  
   if (strncmp(arg, "backup",  6) == 0) return COMMAND_BACKUP;  
   if (strncmp(arg, "restore", 7) == 0) return COMMAND_RESTORE;  
+  if (strncmp(arg, "verify",  6) == 0) return COMMAND_VERIFY;  
   return -1;
 }
 
@@ -62,11 +63,20 @@ char* id2str(const char id) {
   if (id == COMMAND_DOS)     return (char*) "dos";
   if (id == COMMAND_BACKUP)  return (char*) "backup";
   if (id == COMMAND_RESTORE) return (char*) "restore";
+  if (id == COMMAND_VERIFY)  return (char*) "verify";
   return (char*) "unknown";
 }
 
 int valid(int address) {
   return address >= 0x0000 && address <= 0x10000; 
+}
+
+void screenOn(void) {
+  pp64_poke(0x37, 0x10, 0xd011,0x1b);
+}
+
+void screenOff(void) {
+  pp64_poke(0x37, 0x10, 0xd011,0x0b);
 }
 
 Commands* commands_new() {
@@ -268,83 +278,18 @@ int command_find_basic_program(Command* self) {
   return false;
 }
 
-int command_dispatch(Command* self) {
-
-  switch(self->id) {
-
-  case COMMAND_AUTO:
-    if(command_auto(self))
-      return true;
-    break;
-
-  case COMMAND_LOAD:
-    if(!command_load(self))
-      return false;
-    break;
-
-  case COMMAND_SAVE:
-    if(!command_save(self))
-      return false;
-    break;
-
-  case COMMAND_POKE:
-    if(!command_poke(self))
-      return false;
-    break;
-
-  case COMMAND_PEEK:
-    if(!command_peek(self))
-      return false;
-    break;
-
-  case COMMAND_JUMP:
-    if(!command_jump(self))
-      return false;
-    break;
-
-  case COMMAND_RUN:
-    if(!command_run(self))
-      return false;
-    break;
-
-
-  case COMMAND_WAIT:
-    if(!command_wait(self))
-      return false;
-    break;
-
-  case COMMAND_RESET:
-    if (!command_reset(self))
-      return false;
-    break;
-
-  case COMMAND_HELP:
-    if(!command_help(self))
-      return false;
-    break;
-
-  case COMMAND_DOS:
-    if(!command_dos(self))
-      return false;
-    break;  
-
-  case COMMAND_BACKUP:
-    if(!command_backup(self))
-      return false;
-    break;
-
-  case COMMAND_RESTORE:
-    if(!command_restore(self))
-      return false;
-    break;
-  }
-  return true;
-}
-
 int command_auto(Command* self) {
 
   if (self->argc == 0) {
     return false;
+  }
+
+  if (self->argv[0][0] == '@') {
+
+    self->id = COMMAND_DOS;
+    strncpy(self->argv[0], self->argv[0]+1, strlen(self->argv[0]));
+
+    return command_execute(self);
   }
 
   char *filename = self->argv[0];
@@ -642,7 +587,7 @@ int command_dos(Command *self) {
 int command_backup(Command *self) {
   
   bool read_sector(Sector *sector) {
-    printf("reading track %02d, sector %02d\r", sector->track, sector->number); fflush(stdout);
+    printf("\rreading track %02d, sector %02d", sector->track, sector->number); fflush(stdout);
     
     return pp64_sector_read(sector->track, sector->number, sector->bytes); 
   }
@@ -654,11 +599,15 @@ int command_backup(Command *self) {
     return false;
   }
   
+  screenOff();
+
   disk = disk_new(35);
   if(disk_each_sector(disk, &read_sector)) {
     disk_save(disk, self->argv[0]);
-    printf("\n");
   }
+
+  screenOn();
+  printf("\n");
 
   disk_free(disk);
   return result;
@@ -672,7 +621,7 @@ int command_restore(Command *self) {
       sector_print(sector);
     } 
     else {
-      printf("writing track %02d, sector %02d\r", sector->track, sector->number);
+      printf("\rwriting track %02d, sector %02d", sector->track, sector->number);
       fflush(stdout);
     }
 
@@ -700,12 +649,133 @@ int command_restore(Command *self) {
     goto done;
   }
 
+  screenOff();
+
   disk_each_sector(disk, &write_sector);
   pp64_dos("I");
+
+  screenOn();
+  printf("\n");
 
  done:
   disk_free(disk);
   return result;
+}
+
+int command_verify(Command *self) {
+
+  bool verify_sector(Sector* expected) {
+
+    Sector* actual = sector_new(expected->track, expected->number);
+    int result = false;
+
+    printf("\rverifying track %02d, sector %02d...", 
+	   actual->track, actual->number); fflush(stdout);
+
+    if(!pp64_sector_read(actual->track, actual->number, actual->bytes)) {
+      goto done;
+    }
+    result = sector_equals(expected, actual);
+
+  done:
+    sector_free(actual);
+    return result;
+  }
+
+  Disk* backup;
+  int result = true;
+
+  if (self->argc == 0) {
+    return false;
+  }
+  
+  if ((backup = disk_load(self->argv[0])) == NULL) {
+    return false;
+  }
+  screenOff();
+  result = disk_each_sector(backup, &verify_sector);
+  screenOn();
+
+  printf("%s\n", result ? "OK" : "FAILED");
+  disk_free(backup);
+  return result;
+}
+
+int command_execute(Command* self) {
+
+  switch(self->id) {
+
+  case COMMAND_AUTO:
+    if(command_auto(self))
+      return true;
+    break;
+
+  case COMMAND_LOAD:
+    if(!command_load(self))
+      return false;
+    break;
+
+  case COMMAND_SAVE:
+    if(!command_save(self))
+      return false;
+    break;
+
+  case COMMAND_POKE:
+    if(!command_poke(self))
+      return false;
+    break;
+
+  case COMMAND_PEEK:
+    if(!command_peek(self))
+      return false;
+    break;
+
+  case COMMAND_JUMP:
+    if(!command_jump(self))
+      return false;
+    break;
+
+  case COMMAND_RUN:
+    if(!command_run(self))
+      return false;
+    break;
+
+  case COMMAND_WAIT:
+    if(!command_wait(self))
+      return false;
+    break;
+
+  case COMMAND_RESET:
+    if (!command_reset(self))
+      return false;
+    break;
+
+  case COMMAND_HELP:
+    if(!command_help(self))
+      return false;
+    break;
+
+  case COMMAND_DOS:
+    if(!command_dos(self))
+      return false;
+    break;  
+
+  case COMMAND_BACKUP:
+    if(!command_backup(self))
+      return false;
+    break;
+
+  case COMMAND_RESTORE:
+    if(!command_restore(self))
+      return false;
+    break;
+
+  case COMMAND_VERIFY:
+    if(!command_verify(self))
+      return false;
+    break;
+  }
+  return true;
 }
 
 int main(int argc, char **argv) {
@@ -740,7 +810,7 @@ int main(int argc, char **argv) {
       break;
     }
    
-    if (!command_dispatch(command)) {
+    if (!command_execute(command)) {
       result = EXIT_FAILURE;
       break;
     }
@@ -754,7 +824,7 @@ void usage(int id) {
 
   switch(id) {
   case COMMAND_NONE:
-    printf("pp64 client 1.1 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
+    printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
     printf("Usage: c64 [<opts>] <file>.prg\n");
     printf("       c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n\n");
