@@ -17,6 +17,8 @@ typedef struct {
 char str2id(const char* arg);
 char* id2str(const char id);
 int valid(int address);
+void screenOn(void);
+void screenOff(void);
 void version(void);
 void usage(int id);
 
@@ -41,6 +43,7 @@ int command_dos(Command* self);
 int command_backup(Command* self);
 int command_restore(Command* self);
 int command_verify(Command* self);
+int command_ready(Command* self);
 int command_reset(Command* self);
 int command_wait(Command* self);
 int command_help(Command* self);

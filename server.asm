@@ -17,16 +17,17 @@ jmp install
 .var restxtpt = $a68e // Reset BASIC text pointer
 .var warmst   = $a7ae // Basic warm start (e.g. RUN)
 
-.var setnam   = $ffbd // Set filename
-.var setlfs   = $ffba // Set logical file parameters
-.var open     = $ffc0 // Open file
-.var close    = $ffc3 // Close file
-.var chkin    = $ffc6 // Select input channel	
-.var chkout   = $ffc9 // Select output channel
-.var chrin    = $ffcf // Read character
-.var chrout   = $ffd2 // Write character
-.var clrchn   = $ffcc // Clear channel
-	
+.var setnam = $ffbd // Set filename
+.var setlfs = $ffba // Set logical file parameters
+.var open   = $ffc0 // Open file
+.var close  = $ffc3 // Close file
+.var chkin  = $ffc6 // Select input channel	
+.var chkout = $ffc9 // Select output channel
+.var chrin  = $ffcf // Read character
+.var chrout = $ffd2 // Write character
+.var clrchn = $ffcc // Clear channel
+.var readst = $ffb7 // Read status byte
+
 .namespace Command {
 .label load        = $01
 .label save        = $02
@@ -37,6 +38,7 @@ jmp install
 .label dosCommand  = $07
 .label sectorRead  = $08
 .label sectorWrite = $09
+.label driveStatus = $0a
 }
 	
 .macro wait() { // Wait for handshake from PC (falling edge on FLAG <- Parport STROBE)
@@ -200,6 +202,10 @@ irq: {
 	bne !next+
 	jmp sectorWrite
 
+!next:	cpy #Command.driveStatus
+	bne !next+
+	jmp driveStatus
+	
 !next:	
 done:	jmp $ea31
 }
@@ -386,7 +392,15 @@ skip:	ldy #$02
 channel: .text "#"
 }	
 
-withBufferPointerReset: {
+withoutCommand:	{
+	lda #$00
+	tax
+	tay
+	jsr setnam
+	rts
+}
+	
+withBufferPointerReset: {	
 	lda #cmdEnd-cmd
 	ldx #<cmd
 	ldy #>cmd
@@ -404,7 +418,9 @@ openCommandChannel: {
 
 	lda #$0f
 	ldx $ba
-	ldy #$0f
+	bne skip
+	ldx #$08
+skip:	ldy #$0f
 	jsr setlfs
 
 	jsr open
@@ -424,7 +440,7 @@ closeAll: {
 
 dosCommand: {
 	jsr disableIrq
-	jsr openCommandChannel
+	jsr withoutCommand jsr openCommandChannel
 	
 	ldx #$0f
 	jsr chkout
@@ -447,6 +463,39 @@ done:	jsr clrchn
 
 	:ack()
 	
+	jsr enableIrq
+	jmp irq.done
+}
+
+driveStatus: {
+	jsr disableIrq
+	jsr withoutCommand jsr openCommandChannel
+
+	ldx #$0f
+	jsr chkin	
+
+	:wait()        // wait until PC has set its port to input
+	lda #$ff       // and set CIA2 port B to output
+	sta $dd03
+	
+loop:	jsr readst
+	bne done
+	jsr chrin
+	:write()
+	jmp loop
+
+done:  	lda #$ff   // send 0xff as EOT marker to the client
+	:write()
+
+	lda #$00   // reset CIA2 port B to input
+	sta $dd03	
+	
+	lda #$0f
+	jsr close
+	jsr clrchn
+	
+	:ack()
+
 	jsr enableIrq
 	jmp irq.done
 }

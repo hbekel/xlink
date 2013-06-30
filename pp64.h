@@ -14,6 +14,7 @@
 #define PP64_COMMAND_DOS          0x07
 #define PP64_COMMAND_SECTOR_READ  0x08
 #define PP64_COMMAND_SECTOR_WRITE 0x09
+#define PP64_COMMAND_DRIVE_STATUS 0x0a
 
 int pp64_configure(char* spec);
 int pp64_open(void);
@@ -27,6 +28,7 @@ int pp64_run(void);
 int pp64_dos(char* cmd);
 int pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* data);
 int pp64_sector_write(unsigned char track, unsigned char sector, unsigned char* data);
+int pp64_drive_status(unsigned char* status);
 int pp64_reset(void);
 void pp64_close(void);
 

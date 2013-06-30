@@ -12,14 +12,30 @@
 .var insnewl  = $a659 // Insert new line into BASIC program
 .var restxtpt = $a68e // Reset BASIC text pointer
 .var warmst   = $a7ae // Basic warm start (e.g. RUN)
+
+.var setnam = $ffbd // Set filename
+.var setlfs = $ffba // Set logical file parameters
+.var open   = $ffc0 // Open file
+.var close  = $ffc3 // Close file
+.var chkin  = $ffc6 // Select input channel	
+.var chkout = $ffc9 // Select output channel
+.var chrin  = $ffcf // Read character
+.var chrout = $ffd2 // Write character
+.var clrchn = $ffcc // Clear channel
+.var readst = $ffb7 // Read status byte
 	
 .namespace Command {
-.label load  = $01
-.label save  = $02
-.label poke  = $03
-.label peek  = $04
-.label jump  = $05
-.label run   = $06
+.label load        = $01
+.label save        = $02
+.label poke        = $03
+.label peek        = $04
+.label jump        = $05
+.label run         = $06
+.label dosCommand  = $07
+.label sectorRead  = $08
+.label sectorWrite = $09
+.label driveStatus = $0a
+
 }
 
 .macro wait() { 
@@ -113,7 +129,6 @@ eof:
 }
 	
 .pc = $f541 // begin of modified area in kernal "Load Tape" routine
-
 disableTapeLoad: {
 ldy #$1b
 jsr $f12f
@@ -150,13 +165,34 @@ irq: {
 	jmp jump
 
 !next:	cpy #Command.run
-	bne done
+	bne !next+
 	jmp run
+
+!next:  cpy #Command.dosCommand
+	bne !next+
+	jmp dosCommand
+
+!next:	cpy #Command.sectorRead
+	bne !next+
+	jmp sectorRead
 	
+!next:	cpy #Command.sectorWrite
+	bne !next+
+	jmp sectorWrite
+
+!next:	cpy #Command.driveStatus
+	bne !next+
+	jmp driveStatus
+
+!next:
 done:	jsr $ffea
 	jmp $ea34
 eof:
 }
+
+.pc = $f5ab // end of kernal "Load Tape" routine
+
+.pc = $f82e // begin of kernal "Check Tape Status" routine
 	
 wait: {
 loop:   lda $dd0d
@@ -181,7 +217,7 @@ read: {
 	rts
 eof:
 }
-
+	
 write: {
 	sta $dd01
 	jsr ack
@@ -190,9 +226,6 @@ write: {
 eof:
 }
 	
-.pc = $f5ab // end of kernal "Load Tape" routine
-
-.pc = $f92c // begin of kernal "Read Tape Bits" routine
 
 ram: {
 
@@ -391,15 +424,277 @@ run: {
 	jmp warmst
 eof:
 }
+
+disableIrq: {
+	// some io routines use irqs and cli when done,
+	// so the sysirq needs to be disabled during io
+	lda #$01  
+	sta $dc0d
+	rts
+eof:	
+}
+
+enableIrq: {
+	sei
+	lda $dc0d
+	lda #$81  
+	sta $dc0d
+	rts
+eof:	
+}
 	
-.pc = $fb8d // end of kernal "Store Tape characters" routine
+openBuffer: {
+	// open buffer channel
+	// open 2,8,2,"#"
+	lda #$01
+	ldx #<channel
+	ldy #>channel
+	jsr setnam
+
+	lda #$02
+	ldx $ba
+	bne skip
+	ldx #$08
+skip:	ldy #$02
+	jsr setlfs	
+
+	jsr open
+	rts
+
+channel: .text "#"
+eof:	
+}	
+
+withoutCommand:	{
+	lda #$00
+	tax
+	tay
+	jsr setnam
+	rts
+eof:	
+}
+	
+withBufferPointerReset: {	
+	lda #cmdEnd-cmd
+	ldx #<cmd
+	ldy #>cmd
+	jsr setnam
+	rts
+
+cmd: .text "B-P 2 0"
+cmdEnd:
+eof:	
+}
+		
+openCommandChannel: {
+	
+	// open command channel
+	// open 15,8,15	
+
+	lda #$0f
+	ldx $ba
+	bne skip
+	ldx #$08
+skip:	ldy #$0f
+	jsr setlfs
+
+	jsr open
+	rts
+eof:		
+}
+
+closeAll: {
+	jsr clrchn
+
+	lda #$0f
+	jsr close
+
+	lda #$02
+	jsr close
+	rts
+eof:	
+}
+
+dosCommand: {
+	jsr disableIrq
+	jsr withoutCommand jsr openCommandChannel
+	
+	ldx #$0f
+	jsr chkout
+
+	jsr read // length of cmd string now in x
+loop:	:wait()
+	lda $dd01
+	jsr chrout
+	:ack()
+	dex
+	bne loop
+
+	lda #$0d
+	jsr chrout
+	
+done:	jsr clrchn
+
+	lda #$0f
+	jsr close
+
+	:ack()
+	
+	jsr enableIrq
+	jmp irq.done
+eof:	
+}
+
+driveStatus: {
+	jsr disableIrq
+	jsr withoutCommand jsr openCommandChannel
+
+	ldx #$0f
+	jsr chkin	
+
+	:wait()        // wait until PC has set its port to input
+	lda #$ff       // and set CIA2 port B to output
+	sta $dd03
+	
+loop:	jsr readst
+	bne done
+	jsr chrin
+	:write()
+	jmp loop
+
+done:  	lda #$ff
+	:write()
+
+	lda #$00   // reset CIA2 port B to input
+	sta $dd03	
+	
+	lda #$0f
+	jsr close
+	jsr clrchn
+	
+	:ack()
+
+	jsr enableIrq
+	jmp irq.done
+eof:	
+}
+	
+sectorRead: {
+	
+	jsr disableIrq
+	jsr openBuffer
+	jsr withBufferPointerReset jsr openCommandChannel
+
+	// select command channel	
+	ldx #$0f
+	jsr chkout
+	
+	// read command from client and write on command channel
+
+	ldy #00
+!loop:  :wait()
+	lda $dd01 
+	jsr chrout
+	:ack()
+	iny
+	cpy #12
+	bne !loop-
+
+	lda #$0d
+	jsr chrout
+	
+	jsr closeAll
+
+	jsr openBuffer
+	jsr withBufferPointerReset jsr openCommandChannel
+ 	
+	ldx #$02
+	jsr chkin
+
+	:wait()        // wait until PC has set its port to input
+	lda #$ff       // and set CIA2 port B to output
+	sta $dd03
+	
+	// read data from drive buffer and send it to server
+	
+	ldx #$00
+!loop:	jsr chrin
+	:write()
+	inx
+	bne !loop-
+
+	lda #$00   // reset CIA2 port B to input
+	sta $dd03	
+done:
+	jsr closeAll
+	
+	:ack()
+
+	jsr enableIrq
+	jmp $ea81
+eof:	
+}
+	
+sectorWrite: {
+
+	jsr disableIrq
+	jsr openBuffer
+	jsr withBufferPointerReset jsr openCommandChannel
+
+	// select buffer as output
+	
+	ldx #$02
+	jsr chkout
+
+	// read sector data from client and write to buffer
+
+	ldy #$00	
+!loop:  :wait()
+	lda $dd01 
+	jsr chrout
+	:ack()
+	iny
+	bne !loop-
+
+	// select command channel
+	
+	ldx #$0f
+	jsr chkout
+
+	// read command from client and write on command channel
+
+	ldy #00
+!loop:  :wait()
+	lda $dd01 
+	jsr chrout
+	:ack()
+	iny
+	cpy #12
+	bne !loop-
+
+	// execute command	
+	
+	lda #$0d
+	jsr chrout 
+
+done:	// close files and channels	
+	
+	jsr closeAll
+	
+	:ack()
+	
+	jsr enableIrq	
+	jmp $ea81
+eof:	
+}
+	
+.pc = $fc92 // end of kernal "Write Tape Leader" routine
 	
 .pc = $10000
 
 .function patch(start, end) {
   .return "PATCH " + toIntString(start-$e000) + " " + toIntString(end-start)
 }
-
 .print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
 .print patch(powerUpMessage, powerUpMessage.eof)
 .print patch(disableTapeLoad, disableTapeLoad.eof)
@@ -416,7 +711,18 @@ eof:
 .print patch(peek, peek.eof)	
 .print patch(jump, jump.eof)
 .print patch(run, run.eof)
+.print patch(disableIrq, disableIrq.eof)
+.print patch(enableIrq, enableIrq.eof)
+.print patch(openBuffer, openBuffer.eof)
+.print patch(withoutCommand, withoutCommand.eof)
+.print patch(withBufferPointerReset, withBufferPointerReset.eof)
+.print patch(openCommandChannel, openCommandChannel.eof)
+.print patch(closeAll, closeAll.eof)
+.print patch(dosCommand, dosCommand.eof)
+.print patch(driveStatus, driveStatus.eof)
+.print patch(sectorRead, sectorRead.eof)
+.print patch(sectorWrite, sectorWrite.eof)
 .print patch(wedge, wedge.eof)	
 	
-.print "free: 0x" + toHexString(write.eof) + "-0xf5ab"
-.print "free: 0x" + toHexString(save.eof) + "-0xfb8d"
+.print "free: 0x" + toHexString(irq.eof) + "-0xf5ab" + ": " + toIntString($f5ab-irq.eof) + " bytes"
+.print "free: 0x" + toHexString(sectorWrite.eof) + "-0xfc92" + " " + toIntString($fc92-sectorWrite.eof) + " bytes"

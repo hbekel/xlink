@@ -176,6 +176,23 @@ void track_load(Track* self, FILE *file) {
   }
 }
 
+bool track_each_sector(Track* self, bool (*func) (Sector* sector)) {
+
+  Sector* sector;
+  int result = true;
+  int s;
+
+  for(s=0; s<self->size; s++) {
+    sector = self->sectors[s];
+    if(!func(sector)) {
+      result = false;
+      goto abort;
+    }
+  }
+ abort:
+  return result;
+}
+
 void track_free(Track* self) {
   int s;
 

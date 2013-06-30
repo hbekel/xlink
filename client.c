@@ -28,6 +28,8 @@
 #define COMMAND_BACKUP  0x0b
 #define COMMAND_RESTORE 0x0c
 #define COMMAND_VERIFY  0x0d
+#define COMMAND_STATUS  0x0e
+#define COMMAND_READY   0x0f
 
 Commands* commands;
 int debug = false;
@@ -46,6 +48,16 @@ char str2id(const char* arg) {
   if (strncmp(arg, "backup",  6) == 0) return COMMAND_BACKUP;  
   if (strncmp(arg, "restore", 7) == 0) return COMMAND_RESTORE;  
   if (strncmp(arg, "verify",  6) == 0) return COMMAND_VERIFY;  
+  if (strncmp(arg, "ready",   5) == 0) return COMMAND_READY;  
+
+  if (strncmp(arg, "@", 1) == 0) {
+    if(strlen(arg) == 1) {
+      return COMMAND_STATUS;
+    }
+    else {
+      return COMMAND_DOS;
+    }
+  }
   return -1;
 }
 
@@ -64,6 +76,8 @@ char* id2str(const char id) {
   if (id == COMMAND_BACKUP)  return (char*) "backup";
   if (id == COMMAND_RESTORE) return (char*) "restore";
   if (id == COMMAND_VERIFY)  return (char*) "verify";
+  if (id == COMMAND_STATUS)  return (char*) "status";  
+  if (id == COMMAND_READY)   return (char*) "ready";  
   return (char*) "unknown";
 }
 
@@ -282,14 +296,6 @@ int command_auto(Command* self) {
 
   if (self->argc == 0) {
     return false;
-  }
-
-  if (self->argv[0][0] == '@') {
-
-    self->id = COMMAND_DOS;
-    strncpy(self->argv[0], self->argv[0]+1, strlen(self->argv[0]));
-
-    return command_execute(self);
   }
 
   char *filename = self->argv[0];
@@ -567,11 +573,18 @@ int command_reset(Command* self) {
 int command_help(Command *self) {
   int id;
   command_print(self);
-  if(self->argc == 0)
+
+  if(self->argc == 0) {
     id = COMMAND_NONE;
-  else
-    id = str2id(self->argv[1]);
-  
+  }
+  else {
+    if(self->argv[1][0] == '@') {
+      id = COMMAND_DOS;
+    }
+    else {
+      id = str2id(self->argv[1]);
+    }
+  }
   usage(id);
   return true;
 }
@@ -581,7 +594,10 @@ int command_dos(Command *self) {
   if (self->argc == 0) {
     return false;
   }
-  return pp64_dos(self->argv[0]);
+  int result = pp64_dos(self->argv[0]);
+
+  self->id = COMMAND_STATUS;
+  return command_execute(self) && result;
 }
 
 int command_backup(Command *self) {
@@ -682,6 +698,14 @@ int command_verify(Command *self) {
     return result;
   }
 
+  bool verify_sector_skip_track_18(Sector* expected) {
+
+    if(expected->track == 18) 
+      return true;
+
+    return verify_sector(expected);
+  }
+
   Disk* backup;
   int result = true;
 
@@ -693,12 +717,39 @@ int command_verify(Command *self) {
     return false;
   }
   screenOff();
-  result = disk_each_sector(backup, &verify_sector);
+  
+  // verify track 18 first
+  result = track_each_sector(backup->tracks[17], &verify_sector);
+  
+  if (result) // verify other tracks
+    result = disk_each_sector(backup, &verify_sector_skip_track_18);
+  
   screenOn();
 
   printf("%s\n", result ? "OK" : "FAILED");
   disk_free(backup);
   return result;
+}
+
+int command_status(Command* self) {
+
+  unsigned char *status = (unsigned char*) calloc(sizeof(unsigned char), 256);
+  int result = false;
+  
+  if((result = pp64_drive_status(status))) {
+    printf("%s\n", status);
+  }
+  free(status);
+  return result;
+}
+
+int command_ready(Command* self) {
+
+  if(!pp64_ping(250)) {
+    pp64_reset();
+    return pp64_ping(3000);
+  }
+  return true;
 }
 
 int command_execute(Command* self) {
@@ -774,6 +825,16 @@ int command_execute(Command* self) {
     if(!command_verify(self))
       return false;
     break;
+
+  case COMMAND_STATUS:
+    if(!command_status(self))
+      return false;
+    break;
+
+  case COMMAND_READY:
+    if(!command_ready(self))
+      return false;
+    break;
   }
   return true;
 }
@@ -797,7 +858,11 @@ int main(int argc, char **argv) {
     id = str2id(argv[i]);
 
     if (id != -1 && command->id != COMMAND_HELP) {
-      command = commands_add(commands, command_new(id)); 
+      command = commands_add(commands, command_new(id));
+
+      if(command->id == COMMAND_DOS && strlen(argv[i]) > 1) {
+	command_append_argument(command, argv[i]+1);
+      }
     } else 
       command_append_argument(command, argv[i]);    
   }
@@ -826,7 +891,7 @@ void usage(int id) {
   case COMMAND_NONE:
     printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
-    printf("Usage: c64 [<opts>] <file>.prg\n");
+    printf("Usage: c64 [<opts>] [<file>.prg|@[<dos-command>]]\n");
     printf("       c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n\n");
     printf("Options:\n");
     printf("         -h, --help                    : show this help\n");
@@ -848,8 +913,13 @@ void usage(int id) {
     printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
     printf("          jump  [<opts>] <addr>        : jump to specified address\n");
     printf("          run   [<opts>]               : run basic program\n");
+    printf("          backup <file>                : backup disk to d64 file\n");
+    printf("          restore <file>               : restore d64 file to disk\n");
+    printf("          verify <file>                : verify disk against d64 file\n");
+    printf("          @[command]                   : read drive status or send dos command\n");    
+    printf("          ready                        : make sure the server is ready\n\n");
     printf("          wait  [<msec>]               : wait <msec>s for server (default: 3000)\n");
-    printf("          reset                        : reset C64 (only if using reset circuit)\n\n");
+    printf("          reset                        : reset C64 (only if using reset circuit)\n");
     break;
 
   case COMMAND_LOAD:
@@ -944,6 +1014,52 @@ void usage(int id) {
     printf("If a reset circuit is installed, this command will hold the PC's INIT\n");
     printf("line low for a short period of time, which will ground the C64's RESET\n");
     printf("line, performing a hardware reset.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_DOS:
+    printf("Usage: c64 @[command]\n");
+    printf("\n");
+    printf("Send the specified DOS command to the drive and report the resulting\n");
+    printf("drive status. If no command is specified, report drive status only.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_BACKUP:
+    printf("Usage: c64 backup <file>.d64\n");
+    printf("\n");
+    printf("Backup a disk to a d64 file. Reads 35 tracks from disks and saves them to\n");
+    printf("the specified file. Note that no error checking is performed and no error\n");
+    printf("information is appended to the d64 file.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_RESTORE:
+    printf("Usage: c64 restore <file>.d64\n");
+    printf("\n");
+    printf("Write a 35 track d64 file to disk. The data is written as is, i.e. without\n");
+    printf("interpreting any error information that may be included in the d64 file.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_VERIFY:
+    printf("Usage: c64 verify <file>.d64\n");
+    printf("\n");
+    printf("Verify disk against d64 file. Reads 35 tracks from disk and compares the data\n");
+    printf("against the specified d64 file. Track 18 is verified first, then the remaining\n");
+    printf("tracks are verified in order.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_READY:
+    printf("Usage: c64 ready [<commands>...]\n");
+    printf("\n");
+    printf("Makes sure that the server is ready. First the server is pinged. If it doesn't\n");
+    printf("respond immediately, the c64 is reset. If the server responds to another ping\n");
+    printf("within three seconds, then the remaining commands (if any) are executed.\n");
+    printf("\n");
+    printf("This command requires the server to be installed permanently so that it is\n");
+    printf("available after reset.\n");
     printf("\n");
     break;
   }

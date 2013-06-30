@@ -201,7 +201,7 @@ int pp64_save(unsigned char memory,
     pp64_send(end >> 8);
 
     pp64_control(pp64_ctrl_input);
-    pp64_send_strobe();
+    pp64_send_strobe_input();
 
     int i;
     for(i=0; i<size; i++)
@@ -231,7 +231,7 @@ int pp64_peek(unsigned char memory, unsigned char bank, int address, unsigned ch
     pp64_send(address >> 8);    
 
     pp64_control(pp64_ctrl_input);
-    pp64_send_strobe();
+    pp64_send_strobe_input();
 
     *value = pp64_receive();
 
@@ -348,7 +348,7 @@ int pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* d
       pp64_send(U1[i]);      
 
     pp64_control(pp64_ctrl_input);
-    pp64_send_strobe();
+    pp64_send_strobe_input();
 
     for(i=0; i<256; i++)
       data[i] = pp64_receive();
@@ -387,6 +387,32 @@ int pp64_sector_write(unsigned char track, unsigned char sector, unsigned char *
     pp64_close();
     return true;   
   }  
+  return false;
+}
+
+int pp64_drive_status(unsigned char* status) {
+
+  unsigned char command = PP64_COMMAND_DRIVE_STATUS;
+  unsigned char byte;
+  
+  if(pp64_open()) {
+  
+    if(!pp64_send_with_timeout(command)) {
+      fprintf(stderr, "pp64: error: no response from C64\n");
+      pp64_close();
+      return false;
+    }
+    pp64_control(pp64_ctrl_input);
+    pp64_send_strobe_input();
+
+    int i;
+    for(i=0; (byte = pp64_receive()) != 0xff; i++) {
+      status[i] = byte;
+    }
+
+    pp64_send_strobe_input();    
+    return true;
+  }
   return false;
 }
 

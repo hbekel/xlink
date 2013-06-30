@@ -24,17 +24,18 @@ typedef struct {
 } Disk;
 
 Disk* disk_new(int size);
-Disk* disk_load(char *filename);
-bool disk_each_sector(Disk *self, bool (*func) (Sector* sector));
+Disk* disk_load(char* filename);
+bool disk_each_sector(Disk* self, bool (*func) (Sector* sector));
 bool disk_save(Disk* self, char *filename);
-void disk_free(Disk *self);
+void disk_free(Disk* self);
 
 Track* track_new(int number);
 void track_load(Track* self, FILE* file);
-void track_free(Track *self);
+bool track_each_sector(Track* self, bool (*func) (Sector* sector));
+void track_free(Track* self);
 
 Sector* sector_new(int track, int number);
-void sector_load(Sector *self, FILE* file);
+void sector_load(Sector* self, FILE* file);
 bool sector_equals(Sector *self, Sector* sector);
 bool sector_print(Sector *self);
 void sector_free(Sector *self);

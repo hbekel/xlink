@@ -1,20 +1,20 @@
 GCC=gcc
 GCC-MINGW32=i486-mingw32-gcc
-#GCC-MINGW32=i686-pc-mingw32-gcc
 FLAGS=-Wall -O3 -ggdb
 KASM=java -jar /usr/share/kickassembler/KickAss.jar
-#KASM=java -jar C:/cygwin/home/hb/opt/kasm/KickAss.jar
 
-all: c64 c64.exe servers kernal
+all: c64 servers kernal
+
+win32: c64.exe
 
 libpp64.so: pp64.c pp64.h
 	$(GCC) $(FLAGS) -shared -fPIC -o libpp64.so pp64.c
 
-pp64.dll: pp64.c pp64.h
-	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c 
-
 c64: libpp64.so client.c client.h disk.c disk.h
 	$(GCC) $(FLAGS) -o c64 client.c disk.c -L. -lpp64
+
+pp64.dll: pp64.c pp64.h
+	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c 
 
 c64.exe: pp64.dll client.c client.h disk.c disk.h
 	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64 
@@ -36,7 +36,7 @@ kernal-pp64.rom: kernal.asm
 	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=kernal-pp64.rom bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
 	> patch.sh) && sh -x patch.sh && rm -v patch.sh kernal.bin
 
-install:
+install: c64
 	install -m755 c64 /usr/bin
 	install -m644 libpp64.so /usr/lib
 	install -m644 pp64.h /usr/include
@@ -52,10 +52,11 @@ clean:
 dist: zip clean
 	(cd .. && tar vczf pp64.tar.gz pp64/)  
 
-zip: all
+zip: all win32
 	mkdir pp64-win32
 	cp c64.exe pp64-win32
 	cp pp64.dll pp64-win32
+	cp pp64.h pp64-win32
 	cp inpout32/inpout32.dll pp64-win32
 	zip -r ../pp64-win32.zip pp64-win32
 	rm -r pp64-win32
