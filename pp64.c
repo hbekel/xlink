@@ -354,6 +354,7 @@ int pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* d
       data[i] = pp64_receive();
 
     pp64_wait_ack(0);
+    pp64_control(pp64_ctrl_output);
 
     pp64_close();
     return true;
@@ -410,7 +411,10 @@ int pp64_drive_status(unsigned char* status) {
       status[i] = byte;
     }
 
-    pp64_send_strobe_input();    
+    pp64_wait_ack(0);
+    pp64_control(pp64_ctrl_output);
+
+    pp64_close();
     return true;
   }
   return false;

@@ -891,7 +891,7 @@ void usage(int id) {
   case COMMAND_NONE:
     printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
-    printf("Usage: c64 [<opts>] [<file>.prg|@[<dos-command>]]\n");
+    printf("Usage: c64 [<opts>] [<file>.prg]\n");
     printf("       c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n\n");
     printf("Options:\n");
     printf("         -h, --help                    : show this help\n");
@@ -917,9 +917,9 @@ void usage(int id) {
     printf("          restore <file>               : restore d64 file to disk\n");
     printf("          verify <file>                : verify disk against d64 file\n");
     printf("          @[command]                   : read drive status or send dos command\n");    
-    printf("          ready                        : make sure the server is ready\n\n");
+    printf("          ready                        : make sure the server is ready\n");
     printf("          wait  [<msec>]               : wait <msec>s for server (default: 3000)\n");
-    printf("          reset                        : reset C64 (only if using reset circuit)\n");
+    printf("          reset                        : reset C64 (only if using reset circuit)\n\n");
     break;
 
   case COMMAND_LOAD:
