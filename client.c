@@ -307,6 +307,7 @@ int command_auto(Command* self) {
   }
 
   if(command_load(self)) {
+
     if(self->start == 0x0801)
       return command_run(self);
     else {
@@ -706,28 +707,29 @@ int command_verify(Command *self) {
     return verify_sector(expected);
   }
 
-  Disk* backup;
+  Disk* disk;
   int result = true;
 
   if (self->argc == 0) {
     return false;
   }
   
-  if ((backup = disk_load(self->argv[0])) == NULL) {
+  if ((disk = disk_load(self->argv[0])) == NULL) {
     return false;
   }
   screenOff();
   
   // verify track 18 first
-  result = track_each_sector(backup->tracks[17], &verify_sector);
+  result = track_each_sector(disk->tracks[17], &verify_sector);
   
   if (result) // verify other tracks
-    result = disk_each_sector(backup, &verify_sector_skip_track_18);
+    result = disk_each_sector(disk, &verify_sector_skip_track_18);
   
   screenOn();
 
   printf("%s\n", result ? "OK" : "FAILED");
-  disk_free(backup);
+
+  disk_free(disk);
   return result;
 }
 

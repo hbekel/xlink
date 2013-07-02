@@ -2,15 +2,13 @@
 
 jmp install
 
-//------------------------------------------------------------------------------
-	
 .var start  = $c1    // Transfer start address
 .var end    = $c3    // Transfer end address
 .var bstart = $2b    // Start of Basic program text
 .var bend   = $2d    // End of Basic program text
 	
-.var mem    = $fe    // Memory config
-.var bank   = $ff    // bank config
+.var mem   = $fe    // Memory config
+.var bank  = $ff    // bank config
 
 .var relink   = $a533 // Relink Basic program
 .var insnewl  = $a659 // Insert new line into BASIC program

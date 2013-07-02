@@ -35,7 +35,6 @@
 .label sectorRead  = $08
 .label sectorWrite = $09
 .label driveStatus = $0a
-
 }
 
 .macro wait() { 
@@ -50,12 +49,14 @@ loop:	lda $dd0d
 	sta $dd00
 }
 
+.macro strobe() { :ack() }
+
 .macro read() {
 	:wait() ldx $dd01 :ack()
 }
 
 .macro write() {
-	sta $dd01 :ack() :wait()
+	sta $dd01 :strobe() :wait()
 }
 
 .macro next() {
