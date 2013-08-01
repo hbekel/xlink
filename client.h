@@ -10,7 +10,8 @@ typedef struct {
   int end;
   int debug;
   int argc;
-  char **argv;  
+  char **argv; 
+  int offset;
 } Command;
 
 typedef struct {

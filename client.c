@@ -92,9 +92,9 @@ void screenOff(void) {
 }
 
 Commands* commands_new() {
-  Commands* commands = (Commands*) calloc(1, sizeof(Commands*));
+  Commands* commands = (Commands*) calloc(1, sizeof(Commands));
   commands->count = 0;
-  commands->items = (Command**) calloc(1, sizeof(Command**));
+  commands->items = (Command**) calloc(1, sizeof(Command*));
   return commands;
 }
 
@@ -117,8 +117,8 @@ int commands_each(Commands* commands, int (*func) (Command* command)) {
 }
 
 void commands_free(Commands* self) {
-  int i;
-  for(i=0; i<self->count; i++) {
+
+  for(int i=0; i<self->count; i++) {
     command_free(self->items[i]);
   }  
   free(self->items);
@@ -129,14 +129,14 @@ Command* command_new(int *argc, char ***argv) {
 
   Command* command = (Command*) calloc(1, sizeof(Command));
 
-  command->id      = COMMAND_AUTO;
-  command->command = NULL;
-  command->memory  = 0xff;
-  command->bank    = 0xff;
-  command->start   = -1;
-  command->end     = -1;
-  command->argc    = 0;
-  command->argv    = (char**) calloc(1, sizeof(char*));
+  command->id        = COMMAND_AUTO;
+  command->command   = NULL;
+  command->memory    = 0xff;
+  command->bank      = 0xff;
+  command->start     = -1;
+  command->end       = -1;
+  command->argc      = 0;
+  command->argv      = (char**) calloc(1, sizeof(char*));
   
   command_append_argument(command, (char*)"getopt");
   command_consume_arguments(command, argc, argv);
@@ -146,12 +146,15 @@ Command* command_new(int *argc, char ***argv) {
 }
 
 void command_free(Command* self) {
-  int i;
 
-  for(i=0; i<self->argc; i++) {
+  free(self->command);
+
+  self->argc += self->offset;
+  self->argv -= self->offset;
+
+  for(int i=0; i<self->argc; i++) {
     free(self->argv[i]);
   }
-
   free(self->argv);
   free(self);
 }
@@ -189,7 +192,7 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
 void command_append_argument(Command* self, char* arg) {
   self->argv = (char**) realloc(self->argv, (self->argc+1) * sizeof(char*));
   self->argv[self->argc] = (char*) calloc(strlen(arg)+1, sizeof(char));
-  strncpy(self->argv[self->argc], arg, strlen(arg)+1);
+  strncpy(self->argv[self->argc], arg, strlen(arg));
   self->argc++;
 }
 
@@ -272,13 +275,9 @@ int command_parse_options(Command *self) {
     }
   }
 
-  if(optind > 0) {
-    self->argc -= optind;
-
-    for(int i=0; i<self->argc; i++) {
-      self->argv[i] = self->argv[i+optind];
-    }
-  }
+  self->argc -= optind;
+  self->argv += optind;
+  self->offset = optind;
   return true;
 }
 
@@ -809,7 +808,6 @@ int command_execute(Command* self) {
 
 int main(int argc, char **argv) {
 
-  Commands *commands = commands_new();
   int result = EXIT_SUCCESS;
 
   if (argc <= 1) {
@@ -821,8 +819,9 @@ int main(int argc, char **argv) {
     usage(COMMAND_AUTO);
     return result;
   }
-
   argc--; argv++;
+
+  Commands *commands = commands_new();
 
   while(argc > 0) {
     commands_add(commands, command_new(&argc, &argv));
