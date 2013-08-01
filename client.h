@@ -3,13 +3,14 @@
 
 typedef struct {
   char id;
+  char *command;
   unsigned char memory;
   unsigned char bank;
   int start;
   int end;
   int debug;
   int argc;
-  char **argv;
+  char **argv;  
 } Command;
 
 typedef struct {
@@ -27,9 +28,11 @@ void usage(int id);
 
 Commands* commands_new(void);
 Command* commands_add(Commands* self, Command* command);
+int commands_each(Commands* commands, int (*func) (Command* command));
 void commands_free(Commands* self);
 
-Command* command_new(char id);
+Command* command_new(int *argc, char ***argv);
+void command_consume_arguments(Command *self, int *argc, char ***argv);
 void command_append_argument(Command* self, char* arg);
 int command_parse_options(Command *self);
 char *command_get_name(Command* self);

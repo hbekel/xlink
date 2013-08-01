@@ -10,4 +10,5 @@ c64
 *.bin
 *.rom
 extensions.c
+compile-extension
 log

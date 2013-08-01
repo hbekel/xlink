@@ -13,7 +13,6 @@
 #include "disk.h"
 #include "pp64.h"
 
-#define COMMAND_NONE    0x00
 #define COMMAND_AUTO    0x00
 #define COMMAND_LOAD    0x01
 #define COMMAND_SAVE    0x02
@@ -30,10 +29,13 @@
 #define COMMAND_STATUS  0x0d
 #define COMMAND_READY   0x0e
 
+#define MODE_EXECUTE 0x00
+#define MODE_HELP 0x01
+
 int debug = false;
+int mode  = MODE_EXECUTE;
 
 char str2id(const char* arg) {
-  if (strstr(arg, "c64") != NULL)      return COMMAND_AUTO;
   if (strncmp(arg, "load" ,   4) == 0) return COMMAND_LOAD;
   if (strncmp(arg, "save" ,   4) == 0) return COMMAND_SAVE;
   if (strncmp(arg, "poke" ,   4) == 0) return COMMAND_POKE;
@@ -55,7 +57,7 @@ char str2id(const char* arg) {
       return COMMAND_DOS;
     }
   }
-  return -1;
+  return COMMAND_AUTO;
 }
 
 char* id2str(const char id) {
@@ -103,26 +105,43 @@ Command* commands_add(Commands* self, Command* command) {
   return command;
 }
 
+int commands_each(Commands* commands, int (*func) (Command* command)) {
+  int result = true;
+
+  for(int i=0; i<commands->count; i++) {
+    if(!(result = func(commands->items[i]))) {
+      break;
+    }
+  }
+  return result;
+}
+
 void commands_free(Commands* self) {
   int i;
   for(i=0; i<self->count; i++) {
     command_free(self->items[i]);
   }  
-
   free(self->items);
   free(self);
 }
 
-Command* command_new(char id) {
+Command* command_new(int *argc, char ***argv) {
+
   Command* command = (Command*) calloc(1, sizeof(Command));
-  command->id     = id;
-  command->memory = 0xff;
-  command->bank   = 0xff;
-  command->start  = -1;
-  command->end    = -1;
-  command->argc   = 0;
-  command->argv   = (char**) calloc(1, sizeof(char*));
-  command_append_argument(command, (char*)"c64");
+
+  command->id      = COMMAND_AUTO;
+  command->command = NULL;
+  command->memory  = 0xff;
+  command->bank    = 0xff;
+  command->start   = -1;
+  command->end     = -1;
+  command->argc    = 0;
+  command->argv    = (char**) calloc(1, sizeof(char*));
+  
+  command_append_argument(command, (char*)"getopt");
+  command_consume_arguments(command, argc, argv);
+  command_parse_options(command);
+
   return command;
 }
 
@@ -137,10 +156,40 @@ void command_free(Command* self) {
   free(self);
 }
 
+void command_consume_arguments(Command *self, int *argc, char ***argv) {
+  
+  int has_next(void) {
+    return (*argc) > 0;
+  }
+
+  void next(void) {
+    (*argc)--; 
+    (*argv)++;
+  }    
+
+  char *current(void) {
+    return (*argv)[0];
+  }
+
+  self->command = (char *) calloc(strlen(current())+1, sizeof(char));
+  strncpy(self->command, current(), strlen(current()));
+
+  self->id = str2id(current());
+  if(self->id) {
+      next();
+    }
+
+  for(;has_next();next()) {
+
+    if(str2id(current())) break;
+    command_append_argument(self, current());
+  }
+}
+
 void command_append_argument(Command* self, char* arg) {
   self->argv = (char**) realloc(self->argv, (self->argc+1) * sizeof(char*));
   self->argv[self->argc] = (char*) calloc(strlen(arg)+1, sizeof(char));
-  strncpy(self->argv[self->argc], arg, strlen(arg));
+  strncpy(self->argv[self->argc], arg, strlen(arg)+1);
   self->argc++;
 }
 
@@ -224,12 +273,11 @@ int command_parse_options(Command *self) {
   }
 
   if(optind > 0) {
-	  self->argc -= optind;
-	  int i;
-	  for(i=0; i<self->argc; i++) {
-		  free(self->argv[i]);
-		  self->argv[i] = self->argv[i+optind];
-	  }
+    self->argc -= optind;
+
+    for(int i=0; i<self->argc; i++) {
+      self->argv[i] = self->argv[i+optind];
+    }
   }
   return true;
 }
@@ -295,7 +343,7 @@ int command_find_basic_program(Command* self) {
 int command_auto(Command* self) {
 
   if (self->argc == 0) {
-    return false;
+    return true;
   }
 
   char *filename = self->argv[0];
@@ -551,29 +599,13 @@ int command_reset(Command* self) {
 }
 
 int command_help(Command *self) {
-  int id;
-
-  if(self->argc == 0) {
-    id = COMMAND_NONE;
-  }
-  else {
-    if(self->argv[1][0] == '@') {
-      id = COMMAND_DOS;
-    }
-    else {
-      id = str2id(self->argv[1]);
-    }
-  }
-  usage(id);
+  mode = MODE_HELP;
   return true;
 }
 
 int command_dos(Command *self) {
 
-  if (self->argc == 0) {
-    return false;
-  }
-  int result = pp64_dos(self->argv[0]);
+  int result = pp64_dos(self->command+1);
 
   self->id = COMMAND_STATUS;
   return command_execute(self) && result;
@@ -736,128 +768,55 @@ int command_execute(Command* self) {
 
   command_print(self);
 
+  if(mode == MODE_HELP) {
+    usage(self->id);
+    return true;
+  }
+
   switch(self->id) {
 
-  case COMMAND_AUTO:
-    if(command_auto(self))
-      return true;
-    break;
-
-  case COMMAND_LOAD:
-    if(!command_load(self))
-      return false;
-    break;
-
-  case COMMAND_SAVE:
-    if(!command_save(self))
-      return false;
-    break;
-
-  case COMMAND_POKE:
-    if(!command_poke(self))
-      return false;
-    break;
-
-  case COMMAND_PEEK:
-    if(!command_peek(self))
-      return false;
-    break;
-
-  case COMMAND_JUMP:
-    if(!command_jump(self))
-      return false;
-    break;
-
-  case COMMAND_RUN:
-    if(!command_run(self))
-      return false;
-    break;
-
-  case COMMAND_RESET:
-    if (!command_reset(self))
-      return false;
-    break;
-
-  case COMMAND_HELP:
-    if(!command_help(self))
-      return false;
-    break;
-
-  case COMMAND_DOS:
-    if(!command_dos(self))
-      return false;
-    break;  
-
-  case COMMAND_BACKUP:
-    if(!command_backup(self))
-      return false;
-    break;
-
-  case COMMAND_RESTORE:
-    if(!command_restore(self))
-      return false;
-    break;
-
-  case COMMAND_VERIFY:
-    if(!command_verify(self))
-      return false;
-    break;
-
-  case COMMAND_STATUS:
-    if(!command_status(self))
-      return false;
-    break;
-
-  case COMMAND_READY:
-    if(!command_ready(self))
-      return false;
-    break;
+  case COMMAND_AUTO    : return command_auto(self);
+  case COMMAND_LOAD    : return command_load(self);
+  case COMMAND_SAVE    : return command_save(self);
+  case COMMAND_POKE    : return command_poke(self);
+  case COMMAND_PEEK    : return command_peek(self);
+  case COMMAND_JUMP    : return command_jump(self);
+  case COMMAND_RUN     : return command_run(self);
+  case COMMAND_RESET   : return command_reset(self);
+  case COMMAND_HELP    : return command_help(self);
+  case COMMAND_DOS     : return command_dos(self);
+  case COMMAND_BACKUP  : return command_backup(self);
+  case COMMAND_RESTORE : return command_restore(self);
+  case COMMAND_VERIFY  : return command_verify(self);
+  case COMMAND_STATUS  : return command_status(self);
+  case COMMAND_READY   : return command_ready(self);
   }
-  return true;
+  return false;
 }
 
 int main(int argc, char **argv) {
 
-  int id, i, result;
-  result = EXIT_SUCCESS;
-
   Commands *commands = commands_new();
-  Command *command = commands_add(commands, command_new(COMMAND_AUTO));
+  int result = EXIT_SUCCESS;
 
-  if(argc <= 1) {
-    usage(COMMAND_NONE);
-    return EXIT_SUCCESS;
+  if (argc <= 1) {
+    usage(COMMAND_AUTO);
+    return result;
+  }
+  
+  if(argc == 2 && str2id(argv[1]) == COMMAND_HELP) {
+    usage(COMMAND_AUTO);
+    return result;
   }
 
-  for (i=1; i<argc; i++) {
-    id = str2id(argv[i]);
+  argc--; argv++;
 
-    if (id != -1 && command->id != COMMAND_HELP) {
-      command = commands_add(commands, command_new(id));
-      
-      if(command->id == COMMAND_DOS && strlen(argv[i]) > 1) {
-	command_append_argument(command, argv[i]+1);
-      }
-    } 
-    else {
-      command_append_argument(command, argv[i]);    
-    }
+  while(argc > 0) {
+    commands_add(commands, command_new(&argc, &argv));
   }
 
-  for (i=0; i<commands->count; i++) {
-    command = commands->items[i];
+  result = commands_each(commands, &command_execute) ? EXIT_SUCCESS : EXIT_FAILURE;
 
-    if (!command_parse_options(command)) {
-      result = EXIT_FAILURE;
-      break;
-    }
-   
-    if (!command_execute(command)) {
-      result = EXIT_FAILURE;
-      break;
-    }
-  }
- 
   commands_free(commands);
   return result;
 }
@@ -865,7 +824,7 @@ int main(int argc, char **argv) {
 void usage(int id) {
 
   switch(id) {
-  case COMMAND_NONE:
+  case COMMAND_AUTO:
     printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
     printf("Usage: c64 [<opts>] [<file>.prg]\n");

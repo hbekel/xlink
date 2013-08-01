@@ -1,6 +1,6 @@
 GCC=gcc
 GCC-MINGW32=i486-mingw32-gcc
-FLAGS=-Wall -O3
+FLAGS=-Wall -O3 -std=gnu99
 KASM=java -jar /usr/share/kickassembler/KickAss.jar
 
 all: linux win32 servers kernal
@@ -57,6 +57,7 @@ clean:
 	[ -f rrserver.bin ] && rm -v rrserver.bin || true
 	[ -f kernal-pp64.rom ] && rm -v kernal-pp64.rom || true
 	[ -f tools/compile-extension ] && rm -v tools/compile-extension || true
+	[ -f log ] && rm -v log || true
 
 dist: zip clean
 	(cd .. && tar vczf pp64.tar.gz pp64/)  
