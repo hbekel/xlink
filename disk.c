@@ -10,12 +10,17 @@
 Disk* disk_new(int size) {
   
   Disk* disk = (Disk*) calloc(1, sizeof(Disk)); 
-  
+
+  disk->name = (char *) calloc(17, sizeof(char));
+  strncpy(disk->name, "UNKNOWN", 16);
+
+  disk->id[0] = disk->id[1] = '0';
+  disk->id[2] = '\0';
+
   disk->size = size;
   disk->tracks = (Track**) calloc(disk->size, sizeof(Track*));
 
-  int i;
-  for (i=0; i<disk->size; i++) {
+  for (int i=0; i<disk->size; i++) {
     disk->tracks[i] = track_new(i+1);      
   }
   return disk;
@@ -28,7 +33,6 @@ Disk* disk_load(char *filename) {
   struct stat st;
   long filesize;
   int size;
-  int i;
 
   if ((file = fopen(filename, "rb")) == NULL) {
     fprintf(stderr, "error loading d64 file: '%s': %s\n", filename, strerror(errno));
@@ -55,7 +59,7 @@ Disk* disk_load(char *filename) {
 
   disk = disk_new(size);
 
-  for (i=0; i<disk->size; i++) {
+  for (int i=0; i<disk->size; i++) {
     track_load(disk->tracks[i], file);      
   }
 
@@ -73,24 +77,34 @@ Disk* disk_load(char *filename) {
     }
     disk_each_sector(disk, &sector_set_error);
   }
-
   fclose(file);
+  
+  Sector *bam = disk->tracks[17]->sectors[0];
+
+  for(int i=0; i<16; i++) {
+    disk->name[i] = bam->bytes[0x90+i];
+    disk->name[i] = (unsigned char) disk->name[i] == 0xa0 ? '\0' : disk->name[i];
+  }
+
+  for(int i=0; i<2; i++) {
+    disk->id[i] = bam->bytes[0xa2+i];
+  }
+
   return disk;
 }
 
 bool disk_each_sector(Disk *self, bool (*func) (Sector* sector)) {
   
-  int t, s;
   bool result = true;
 
   Track *track;
   Sector *sector;
 
 
-  for(t=0; t<self->size; t++) {
+  for(int t=0; t<self->size; t++) {
     track = self->tracks[t];
     
-    for(s=0; s<track->size; s++) {
+    for(int s=0; s<track->size; s++) {
       sector = track->sectors[s];
       if(!func(sector)) {
 	result = false;
@@ -127,18 +141,17 @@ bool disk_save(Disk* self, char *filename) {
 }
 
 void disk_free(Disk* self) {
-  int t;
 
-  for(t=0; t<self->size; t++) {
+  free(self->name);
+
+  for(int t=0; t<self->size; t++) {
     track_free(self->tracks[t]);
-  }
+  }  
   free(self->tracks);
   free(self);
 }
 
 Track* track_new(int number) {  
-
-  int i = 0;
 
   Track* track = (Track*) calloc(1, sizeof(Track));
 
@@ -163,15 +176,15 @@ Track* track_new(int number) {
   
   track->sectors = (Sector**) calloc(track->size, sizeof(Sector*));
 
-  for(i=0; i<track->size; i++) {
+  for(int i=0; i<track->size; i++) {
     track->sectors[i] = sector_new(track->number, i);
   }
   return track;
 }
 
 void track_load(Track* self, FILE *file) {
-  int i;
-  for(i=0; i<self->size; i++) {
+
+  for(int i=0; i<self->size; i++) {
     sector_load(self->sectors[i], file);
   }
 }
@@ -180,9 +193,8 @@ bool track_each_sector(Track* self, bool (*func) (Sector* sector)) {
 
   Sector* sector;
   int result = true;
-  int s;
 
-  for(s=0; s<self->size; s++) {
+  for(int s=0; s<self->size; s++) {
     sector = self->sectors[s];
     if(!func(sector)) {
       result = false;
@@ -194,9 +206,8 @@ bool track_each_sector(Track* self, bool (*func) (Sector* sector)) {
 }
 
 void track_free(Track* self) {
-  int s;
 
-  for(s=0; s<self->size; s++) {
+  for(int s=0; s<self->size; s++) {
     sector_free(self->sectors[s]);
   }
   free(self->sectors);
@@ -221,9 +232,8 @@ void sector_load(Sector* self, FILE *file) {
 
 bool sector_equals(Sector* self, Sector* sector) {
   bool result = true;
-  int i;
 
-  for(i=0; i<self->size; i++) {
+  for(int i=0; i<self->size; i++) {
     if (self->bytes[i] != sector->bytes[i]) {
       result = false;
       break;
@@ -234,10 +244,9 @@ bool sector_equals(Sector* self, Sector* sector) {
 
 bool sector_print(Sector *self) {
   
-  int i;
   printf("%d:%d (%02X)\n", self->track, self->number, self->error);
 
-  for(i=0; i<self->size; i++) {
+  for(int i=0; i<self->size; i++) {
 
     printf("%02X ", (unsigned char) self->bytes[i]);
 

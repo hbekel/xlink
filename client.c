@@ -669,11 +669,23 @@ int command_restore(Command *self) {
     return false;
   }
 
-  if(disk->size != 35) {
-    fprintf(stderr, "c64: error: no support for 40-track disks\n");
+  char *format_disk = (char *) calloc(2+16+1+2+1, sizeof(char));
+  snprintf(format_disk, 2+16+1+2, "N:%s,%s", disk->name, disk->id);
+
+  if(disk->size > 35) {
+    fprintf(stderr, "c64: error: no support for disks > 35 tracks\n");
     result = false;
     goto done;
   }
+
+  printf("formatting disk: \"%s,%s\"...", disk->name, disk->id); fflush(stdout);
+
+  if(!(pp64_dos(format_disk) && pp64_dos("I"))) {
+    printf("FAILED\n");
+    result = false;
+    goto done;
+  }
+  printf("OK\n");
 
   screenOff();
 
@@ -684,6 +696,7 @@ int command_restore(Command *self) {
   printf("\n");
 
  done:
+  free(format_disk);
   disk_free(disk);
   return result;
 }

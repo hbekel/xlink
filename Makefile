@@ -1,6 +1,6 @@
 GCC=gcc
 GCC-MINGW32=i486-mingw32-gcc
-FLAGS=-Wall -O3 -std=gnu99
+FLAGS=-std=gnu99 -Wall -O3
 KASM=java -jar /usr/share/kickassembler/KickAss.jar
 
 all: linux win32 servers kernal

@@ -22,6 +22,8 @@ typedef struct {
 } Track;
 
 typedef struct {
+  char *name;
+  char id[3];
   int size;
   Track** tracks;
 } Disk;
