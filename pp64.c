@@ -80,6 +80,7 @@ const unsigned char pp64_ctrl_ack    = PP64_PARPORT_CONTROL_SELECT |
                                        PP64_PARPORT_CONTROL_INPUT | 
                                        PP64_PARPORT_CONTROL_STROBE |
                                        PP64_PARPORT_CONTROL_IRQ; 
+
 #if linux
 static char* pp64_device = (char*) "/dev/parport0";
 #endif
@@ -611,5 +612,4 @@ static inline int pp64_receive_signal(int timeout) {
 
   return true;
 }
-
 

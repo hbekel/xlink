@@ -112,18 +112,18 @@ closeAll: {
 driveStatus: {
 offset:	
 .pseudopc $033c {	
-address:			
+address:	
 	jsr lib.disableIrq
 	jsr lib.withoutCommand jsr lib.openCommandChannel
 
-	ldx #$0f
+	ldx #$0f       // open command channel as input
 	jsr chkin	
-
+	
 	:wait()        // wait until PC has set its port to input
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 	
-loop:	jsr readst
+loop:	jsr readst    // send status
 	bne done
 	jsr chrin
 	:write()

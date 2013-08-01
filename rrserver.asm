@@ -1,119 +1,9 @@
 .pc = $9990
 
-jmp rom.install
+.import source "server.h"
+
+//TODO: mem | 0x80
 	
-//------------------------------------------------------------------------------
-	
-.var start  = $c1    // Transfer start address
-.var end    = $c3    // Transfer end address
-.var bstart = $2b    // Start of Basic program text
-.var bend   = $2d    // End of Basic program text
-
-.var mem   = $fe    // Memory config
-.var bank  = $ff    // bank config
-
-.var relink   = $a533 // Relink Basic program
-.var insnewl  = $a659 // Insert new line into BASIC program
-.var restxtpt = $a68e // Reset BASIC text pointer
-.var warmst   = $a7ae // Basic warm start (e.g. RUN)
-
-.namespace Command {
-.label load  = $01
-.label save  = $02
-.label poke  = $03
-.label peek  = $04
-.label jump  = $05
-.label run   = $06
-}
-	
-.macro wait() { // Wait for handshake from PC (falling edge on FLAG <- Parport STROBE)
-loop:	lda $dd0d
-	and #$10
-	beq loop
-}
-
-.macro ack() { // Send handshake to PC (rising edge on CIA2 PA2 -> Parport ACK) 
-	lda $dd00
-	eor #$04
-	sta $dd00
-}
-
-.macro strobe() { :ack() }
-
-.macro read() {
-	:wait() ldx $dd01 :ack()
-}
-
-.macro write() {
-	sta $dd01 :strobe() :wait()
-}
-
-.macro next() {
-	inc start
-	bne check
-	inc start+1
-
-check:	lda start+1
-	cmp end+1
-	bne !loop-
-
-	lda start
-	cmp end
-	bne !loop-
-}
-
-.macro checkBasic() {
-	lda start
-	cmp bstart
-	bne no
-	lda start+1
-	cmp bstart+1
-	bne no
-
-yes:	lda #$00
-	jmp push
-
-no:     lda #$01
-
-push:	pha
-}
-
-.macro relinkBasic() {
-	pla             // recall result of checkBasic             
-	bne done        // not a Basic program, done
-
-	lda end         // else adjust basic end address and relink
-	sta bend
-	lda end+1
-	sta bend+1
-	jsr relink
-done:	
-}
-
-.macro screenOff() {
-	lda #$0b
-	sta $d011
-}
-
-.macro screenOn() {
-	lda #$1b
-	sta $d011
-}
-
-readHeader: {
-	jsr read stx mem
-	jsr read stx bank
-	jsr read stx start
-	jsr read stx start+1
-	jsr read stx end
-	jsr read stx end+1
-	rts
-}
-
-read: { :read() rts }
-write: { :write() rts }
-
-//------------------------------------------------------------------------------
 rom: {
 install: {
 	
@@ -144,7 +34,7 @@ install:
 	stx $0315	
 	cli
 
-	ldx #eof-ram-1 // install ramcode
+	ldx #ram.eof-ram-1 // install ramcode
 copy:	lda ram,x
 	sta $02a7,x
 	dex
@@ -194,9 +84,14 @@ irq: {
 	jmp jump
 
 !next:	cpy #Command.run
-	bne done
+	bne !next+
 	jmp run
+
+!next:	cpy #Command.extend
+	bne !next+
+	jmp extend
 	
+!next:	
 done:	jmp ram.dorti
 }
 
@@ -361,6 +256,19 @@ run: {
 	jmp ram.run
 }
 
+extend:	{
+	lda #>return pha
+	lda #<return pha
+	
+	jsr read txa pha 
+	jsr read txa pha
+	
+	rts
+	
+return: nop
+	jmp irq.done
+}
+	
 showmsg: {
 	ldx #$27
 loop:	lda msg,x
@@ -420,9 +328,22 @@ run:    lda #$48   // enable rr bank 0
 
 	jmp warmst
 }
-}
 eof:
+}
 
-.print "ramcode end: 0x" + toHexString(eof-ram+ram.irq)
+readHeader: {
+	jsr read stx mem
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
+	jsr read stx end
+	jsr read stx end+1
+	rts
+}
+
+read: { :read() rts }
+write: { :write() rts }
+	
+.print "ramcode end: 0x" + toHexString(ram.eof-ram+ram.irq)
 
 	
