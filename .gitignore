@@ -9,4 +9,5 @@ c64
 *.d64
 *.bin
 *.rom
+extensions.c
 log

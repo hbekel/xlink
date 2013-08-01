@@ -239,7 +239,7 @@ bool sector_print(Sector *self) {
 
   for(i=0; i<self->size; i++) {
 
-    printf("%02X ", (char) self->bytes[i]);
+    printf("%02X ", (unsigned char) self->bytes[i]);
 
     if ((i+1) % 24 == 0) {
       printf("\n");

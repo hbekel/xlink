@@ -1,3 +1,6 @@
+#ifndef DISK_H
+#define DISK_H
+
 #define THIRTY_FIVE_TRACKS 174848
 #define THIRTY_FIVE_TRACKS_WITH_ERRORS 175531
 
@@ -39,3 +42,5 @@ void sector_load(Sector* self, FILE* file);
 bool sector_equals(Sector *self, Sector* sector);
 bool sector_print(Sector *self);
 void sector_free(Sector *self);
+
+#endif // DISK_H

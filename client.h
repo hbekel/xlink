@@ -1,3 +1,6 @@
+#ifndef CLIENT_H
+#define CLIENT_H
+
 typedef struct {
   char id;
   unsigned char memory;
@@ -53,3 +56,5 @@ void command_free(Command* self);
 #if windows
 void handle(int signal);
 #endif
+
+#endif // CLIENT_H

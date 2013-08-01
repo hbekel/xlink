@@ -31,10 +31,7 @@
 .label peek        = $04
 .label jump        = $05
 .label run         = $06
-.label dosCommand  = $07
-.label sectorRead  = $08
-.label sectorWrite = $09
-.label driveStatus = $0a
+.label extend      = $07
 }
 
 .macro wait() { 
@@ -100,15 +97,21 @@ push:	pha
 	jsr relink
 done:	
 }
-	
+
 .macro screenOff() {
+	bit mem
+	bmi skip
 	lda #$0b
 	sta $d011
+skip:	
 }
 
 .macro screenOn() {
+	bit mem
+	bmi skip
 	lda #$1b
 	sta $d011
+skip:	
 }
 
 .pc = $ea31
@@ -169,21 +172,9 @@ irq: {
 	bne !next+
 	jmp run
 
-!next:  cpy #Command.dosCommand
+!next:	cpy #Command.extend
 	bne !next+
-	jmp dosCommand
-
-!next:	cpy #Command.sectorRead
-	bne !next+
-	jmp sectorRead
-	
-!next:	cpy #Command.sectorWrite
-	bne !next+
-	jmp sectorWrite
-
-!next:	cpy #Command.driveStatus
-	bne !next+
-	jmp driveStatus
+	jmp extend
 
 !next:
 done:	jsr $ffea
@@ -264,13 +255,15 @@ eof:
 }
 
 load: {
-	:screenOff()
 	jsr readHeader
+	:screenOff()
+	
 	:checkBasic()
 
 	ldy #$00
 	
-	lda mem         // check if specific memory config was requested
+	lda mem // check if specific memory config was requested
+	and #$7f
 	cmp #$37
 	bne slow
 	
@@ -299,9 +292,9 @@ eof:
 }
 
 save: {
-	:screenOff()
 	jsr readHeader
-
+	:screenOff()
+	
 	:wait()        // wait until PC has set its port to input
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
@@ -426,266 +419,17 @@ run: {
 eof:
 }
 
-disableIrq: {
-	// some io routines use irqs and cli when done,
-	// so the sysirq needs to be disabled during io
-	lda #$01  
-	sta $dc0d
-	rts
-eof:	
-}
-
-enableIrq: {
-	sei
-	lda $dc0d
-	lda #$81  
-	sta $dc0d
-	rts
-eof:	
-}
+extend:	{
+	lda #>return pha
+	lda #<return pha
 	
-openBuffer: {
-	// open buffer channel
-	// open 2,8,2,"#"
-	lda #$01
-	ldx #<channel
-	ldy #>channel
-	jsr setnam
-
-	lda #$02
-	ldx $ba
-	bne skip
-	ldx #$08
-skip:	ldy #$02
-	jsr setlfs	
-
-	jsr open
-	rts
-
-channel: .text "#"
-eof:	
-}	
-
-withoutCommand:	{
-	lda #$00
-	tax
-	tay
-	jsr setnam
-	rts
-eof:	
-}
+	jsr read txa pha 
+	jsr read txa pha
 	
-withBufferPointerReset: {	
-	lda #cmdEnd-cmd
-	ldx #<cmd
-	ldy #>cmd
-	jsr setnam
 	rts
-
-cmd: .text "B-P 2 0"
-cmdEnd:
-eof:	
-}
-		
-openCommandChannel: {
 	
-	// open command channel
-	// open 15,8,15	
-
-	lda #$0f
-	ldx $ba
-	bne skip
-	ldx #$08
-skip:	ldy #$0f
-	jsr setlfs
-
-	jsr open
-	rts
-eof:		
-}
-
-closeAll: {
-	jsr clrchn
-
-	lda #$0f
-	jsr close
-
-	lda #$02
-	jsr close
-	rts
-eof:	
-}
-
-dosCommand: {
-	jsr disableIrq
-	jsr withoutCommand jsr openCommandChannel
-	
-	ldx #$0f
-	jsr chkout
-
-	jsr read // length of cmd string now in x
-loop:	:wait()
-	lda $dd01
-	jsr chrout
-	:ack()
-	dex
-	bne loop
-
-	lda #$0d
-	jsr chrout
-	
-done:	jsr clrchn
-
-	lda #$0f
-	jsr close
-
-	:ack()
-	
-	jsr enableIrq
+return: nop
 	jmp irq.done
-eof:	
-}
-
-driveStatus: {
-	jsr disableIrq
-	jsr withoutCommand jsr openCommandChannel
-
-	ldx #$0f
-	jsr chkin	
-
-	:wait()        // wait until PC has set its port to input
-	lda #$ff       // and set CIA2 port B to output
-	sta $dd03
-	
-loop:	jsr readst
-	bne done
-	jsr chrin
-	:write()
-	jmp loop
-
-done:  	lda #$ff
-	:write()
-
-	lda #$00   // reset CIA2 port B to input
-	sta $dd03	
-	
-	lda #$0f
-	jsr close
-	jsr clrchn
-	
-	:ack()
-
-	jsr enableIrq
-	jmp irq.done
-eof:	
-}
-	
-sectorRead: {
-	
-	jsr disableIrq
-	jsr openBuffer
-	jsr withBufferPointerReset jsr openCommandChannel
-
-	// select command channel	
-	ldx #$0f
-	jsr chkout
-	
-	// read command from client and write on command channel
-
-	ldy #00
-!loop:  :wait()
-	lda $dd01 
-	jsr chrout
-	:ack()
-	iny
-	cpy #12
-	bne !loop-
-
-	lda #$0d
-	jsr chrout
-	
-	jsr closeAll
-
-	jsr openBuffer
-	jsr withBufferPointerReset jsr openCommandChannel
- 	
-	ldx #$02
-	jsr chkin
-
-	:wait()        // wait until PC has set its port to input
-	lda #$ff       // and set CIA2 port B to output
-	sta $dd03
-	
-	// read data from drive buffer and send it to server
-	
-	ldx #$00
-!loop:	jsr chrin
-	:write()
-	inx
-	bne !loop-
-
-	lda #$00   // reset CIA2 port B to input
-	sta $dd03	
-done:
-	jsr closeAll
-	
-	:ack()
-
-	jsr enableIrq
-	jmp $ea81
-eof:	
-}
-	
-sectorWrite: {
-
-	jsr disableIrq
-	jsr openBuffer
-	jsr withBufferPointerReset jsr openCommandChannel
-
-	// select buffer as output
-	
-	ldx #$02
-	jsr chkout
-
-	// read sector data from client and write to buffer
-
-	ldy #$00	
-!loop:  :wait()
-	lda $dd01 
-	jsr chrout
-	:ack()
-	iny
-	bne !loop-
-
-	// select command channel
-	
-	ldx #$0f
-	jsr chkout
-
-	// read command from client and write on command channel
-
-	ldy #00
-!loop:  :wait()
-	lda $dd01 
-	jsr chrout
-	:ack()
-	iny
-	cpy #12
-	bne !loop-
-
-	// execute command	
-	
-	lda #$0d
-	jsr chrout 
-
-done:	// close files and channels	
-	
-	jsr closeAll
-	
-	:ack()
-	
-	jsr enableIrq	
-	jmp $ea81
 eof:	
 }
 	
@@ -712,18 +456,8 @@ eof:
 .print patch(peek, peek.eof)	
 .print patch(jump, jump.eof)
 .print patch(run, run.eof)
-.print patch(disableIrq, disableIrq.eof)
-.print patch(enableIrq, enableIrq.eof)
-.print patch(openBuffer, openBuffer.eof)
-.print patch(withoutCommand, withoutCommand.eof)
-.print patch(withBufferPointerReset, withBufferPointerReset.eof)
-.print patch(openCommandChannel, openCommandChannel.eof)
-.print patch(closeAll, closeAll.eof)
-.print patch(dosCommand, dosCommand.eof)
-.print patch(driveStatus, driveStatus.eof)
-.print patch(sectorRead, sectorRead.eof)
-.print patch(sectorWrite, sectorWrite.eof)
+.print patch(extend, extend.eof)
 .print patch(wedge, wedge.eof)	
 	
 .print "free: 0x" + toHexString(irq.eof) + "-0xf5ab" + ": " + toIntString($f5ab-irq.eof) + " bytes"
-.print "free: 0x" + toHexString(sectorWrite.eof) + "-0xfc92" + " " + toIntString($fc92-sectorWrite.eof) + " bytes"
+.print "free: 0x" + toHexString(extend.eof) + "-0xfc92" + " " + toIntString($fc92-extend.eof) + " bytes"

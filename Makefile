@@ -1,23 +1,30 @@
 GCC=gcc
 GCC-MINGW32=i486-mingw32-gcc
-FLAGS=-Wall -O3 -ggdb
+FLAGS=-Wall -O3
 KASM=java -jar /usr/share/kickassembler/KickAss.jar
 
-all: c64 servers kernal
+all: linux win32 servers kernal
 
+linux: c64
 win32: c64.exe
 
-libpp64.so: pp64.c pp64.h
-	$(GCC) $(FLAGS) -shared -fPIC -o libpp64.so pp64.c
+libpp64.so: pp64.c pp64.h extension.c extension.h extensions.c
+	$(GCC) $(FLAGS) -shared -fPIC -o libpp64.so pp64.c extension.c
 
 c64: libpp64.so client.c client.h disk.c disk.h
 	$(GCC) $(FLAGS) -o c64 client.c disk.c -L. -lpp64
 
-pp64.dll: pp64.c pp64.h
-	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c 
+pp64.dll: pp64.c pp64.h extension.c extension.h extensions.c
+	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c extension.c 
 
-c64.exe: pp64.dll client.c client.h disk.c disk.h
+c64.exe: pp64.dll client.c client.h disk.c disk.h 
 	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64 
+
+extensions.c: tools/compile-extension extensions.asm
+	$(KASM) -binfile -o extensions.bin extensions.asm | grep compile-extension | bash > extensions.c && rm extensions.bin
+
+compile-extension: tools/compile-extension.c
+	$(GCC) $(FLAGS) -o tools/compile-extension tools/compile-extension.c
 
 servers: server.prg rrserver.bin
 
@@ -45,9 +52,11 @@ clean:
 	[ -f pp64.dll ] && rm -v pp64.dll || true
 	[ -f c64 ] && rm -v c64 || true
 	[ -f c64.exe ] && rm -v c64.exe || true
+	[ -f extensions.c ] && rm -v extensions.c || true
 	[ -f server.prg ] && rm -v server.prg || true
 	[ -f rrserver.bin ] && rm -v rrserver.bin || true
 	[ -f kernal-pp64.rom ] && rm -v kernal-pp64.rom || true
+	[ -f tools/compile-extension ] && rm -v tools/compile-extension || true
 
 dist: zip clean
 	(cd .. && tar vczf pp64.tar.gz pp64/)  

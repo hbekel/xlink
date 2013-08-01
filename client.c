@@ -22,16 +22,14 @@
 #define COMMAND_JUMP    0x05
 #define COMMAND_RUN     0x06
 #define COMMAND_RESET   0x07
-#define COMMAND_WAIT    0x08
-#define COMMAND_HELP    0x09
-#define COMMAND_DOS     0x0a
-#define COMMAND_BACKUP  0x0b
-#define COMMAND_RESTORE 0x0c
-#define COMMAND_VERIFY  0x0d
-#define COMMAND_STATUS  0x0e
-#define COMMAND_READY   0x0f
+#define COMMAND_HELP    0x08
+#define COMMAND_DOS     0x09
+#define COMMAND_BACKUP  0x0a
+#define COMMAND_RESTORE 0x0b
+#define COMMAND_VERIFY  0x0c
+#define COMMAND_STATUS  0x0d
+#define COMMAND_READY   0x0e
 
-Commands* commands;
 int debug = false;
 
 char str2id(const char* arg) {
@@ -43,7 +41,6 @@ char str2id(const char* arg) {
   if (strncmp(arg, "jump" ,   4) == 0) return COMMAND_JUMP;
   if (strncmp(arg, "run"  ,   3) == 0) return COMMAND_RUN;  
   if (strncmp(arg, "reset",   5) == 0) return COMMAND_RESET;  
-  if (strncmp(arg, "wait",    4) == 0) return COMMAND_WAIT;  
   if (strncmp(arg, "help",    4) == 0) return COMMAND_HELP;  
   if (strncmp(arg, "backup",  6) == 0) return COMMAND_BACKUP;  
   if (strncmp(arg, "restore", 7) == 0) return COMMAND_RESTORE;  
@@ -70,7 +67,6 @@ char* id2str(const char id) {
   if (id == COMMAND_JUMP)    return (char*) "jump";
   if (id == COMMAND_RUN)     return (char*) "run";
   if (id == COMMAND_RESET)   return (char*) "reset";
-  if (id == COMMAND_WAIT)    return (char*) "wait";
   if (id == COMMAND_HELP)    return (char*) "help";
   if (id == COMMAND_DOS)     return (char*) "dos";
   if (id == COMMAND_BACKUP)  return (char*) "backup";
@@ -245,7 +241,11 @@ char* command_get_name(Command* self) {
 void command_print(Command* self) {
   if(debug) {
     printf("%s -m 0x%02X -b 0x%02X -a 0x%04X-0x%04X ", 
-	   command_get_name(self), self->memory, self->bank, self->start, self->end);
+	   command_get_name(self), 
+	   (unsigned char) self->memory, 
+	   (unsigned char) self->bank, 
+	   (unsigned short) self->start, 
+	   (unsigned short) self->end);
     
     int i;
     for (i=0; i<self->argc; i++) {
@@ -380,8 +380,6 @@ int command_load(Command* self) {
   fread(data, sizeof(char), size, file);
   fclose(file);  
 
-  command_print(self);
-
   if (!pp64_load(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
     return false;
@@ -443,8 +441,6 @@ int command_save(Command* self) {
     return false;
   }
 
-  command_print(self);
-
   if(!pp64_save(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
     fclose(file);
@@ -491,8 +487,6 @@ int command_poke(Command* self) {
   if (self->bank == 0xff)
     self->bank = 0x10;
 
-  command_print(self);
-
   return pp64_poke(self->memory, self->bank, address, value);
 }
 
@@ -511,8 +505,6 @@ int command_peek(Command* self) {
 
   if (self->bank == 0xff)
     self->bank = 0x10;
-
-  command_print(self);
 
   if(!pp64_peek(self->memory, self->bank, address, &value)) {
     return false;
@@ -547,33 +539,19 @@ int command_jump(Command* self) {
   if (self->bank == 0xff)
     self->bank = 0x10;
 
-  command_print(self);
-
   return pp64_jump(self->memory, self->bank, address);
 }
 
 int command_run(Command* self) {
-  command_print(self);
   return pp64_run();
 }
 
-int command_wait(Command* self) {
-  int timeout = 3000;
-
-  if (self->argc > 0) {
-    timeout = strtol(self->argv[0], NULL, 0);
-  }
-  return pp64_ping(timeout);
-}
-
 int command_reset(Command* self) {
-  command_print(self);
   return pp64_reset();
 }
 
 int command_help(Command *self) {
   int id;
-  command_print(self);
 
   if(self->argc == 0) {
     id = COMMAND_NONE;
@@ -604,7 +582,7 @@ int command_dos(Command *self) {
 int command_backup(Command *self) {
   
   bool read_sector(Sector *sector) {
-    printf("\rreading track %02d, sector %02d", sector->track, sector->number); fflush(stdout);
+    printf("\rreading track %02d, sector %02d", sector->track, sector->number); fflush(stdout);    
     
     return pp64_sector_read(sector->track, sector->number, sector->bytes); 
   }
@@ -615,12 +593,13 @@ int command_backup(Command *self) {
   if (self->argc == 0) {
     return false;
   }
-  
+  char *filename = self->argv[0];
+
   screenOff();
 
   disk = disk_new(35);
   if(disk_each_sector(disk, &read_sector)) {
-    disk_save(disk, self->argv[0]);
+    disk_save(disk, filename);
   }
 
   screenOn();
@@ -646,15 +625,13 @@ int command_restore(Command *self) {
   }
 
   int result = true;
-
+  
   if (self->argc == 0) {
     return false;
   }
 
   char *filename = self->argv[0];
   Disk* disk = disk_load(filename);
-
-  command_print(self);
 
   if(disk == NULL) {
     return false;
@@ -699,7 +676,7 @@ int command_verify(Command *self) {
     return result;
   }
 
-  bool verify_sector_skip_track_18(Sector* expected) {
+  bool verify_sector_skipping_track_18(Sector* expected) {
 
     if(expected->track == 18) 
       return true;
@@ -723,7 +700,7 @@ int command_verify(Command *self) {
   result = track_each_sector(disk->tracks[17], &verify_sector);
   
   if (result) // verify other tracks
-    result = disk_each_sector(disk, &verify_sector_skip_track_18);
+    result = disk_each_sector(disk, &verify_sector_skipping_track_18);
   
   screenOn();
 
@@ -738,9 +715,10 @@ int command_status(Command* self) {
   unsigned char *status = (unsigned char*) calloc(sizeof(unsigned char), 256);
   int result = false;
   
-  if((result = pp64_drive_status(status))) {
+  if(pp64_drive_status(status)) {
     printf("%s\n", status);
   }
+
   free(status);
   return result;
 }
@@ -755,6 +733,8 @@ int command_ready(Command* self) {
 }
 
 int command_execute(Command* self) {
+
+  command_print(self);
 
   switch(self->id) {
 
@@ -790,11 +770,6 @@ int command_execute(Command* self) {
 
   case COMMAND_RUN:
     if(!command_run(self))
-      return false;
-    break;
-
-  case COMMAND_WAIT:
-    if(!command_wait(self))
       return false;
     break;
 
@@ -843,13 +818,11 @@ int command_execute(Command* self) {
 
 int main(int argc, char **argv) {
 
-  Command* command = NULL;   
   int id, i, result;
-
   result = EXIT_SUCCESS;
 
-  commands = commands_new();
-  command = commands_add(commands, command_new(COMMAND_AUTO));
+  Commands *commands = commands_new();
+  Command *command = commands_add(commands, command_new(COMMAND_AUTO));
 
   if(argc <= 1) {
     usage(COMMAND_NONE);
@@ -861,12 +834,14 @@ int main(int argc, char **argv) {
 
     if (id != -1 && command->id != COMMAND_HELP) {
       command = commands_add(commands, command_new(id));
-
+      
       if(command->id == COMMAND_DOS && strlen(argv[i]) > 1) {
 	command_append_argument(command, argv[i]+1);
       }
-    } else 
+    } 
+    else {
       command_append_argument(command, argv[i]);    
+    }
   }
 
   for (i=0; i<commands->count; i++) {
@@ -908,20 +883,22 @@ void usage(int id) {
     printf("         -m, --memory                  : C64 memory config (default: 0x37)\n\n");
     
     printf("Commands:\n");
-    printf("          help  <command>              : show detailed help for <command>\n");
+    printf("          help  [<command>]            : show detailed help for command\n");
+    printf("          ready                        : try to make sure the server is ready\n");
+    printf("          reset                        : reset C64 (only if using reset circuit)\n");
+    printf("\n");
     printf("          load  [<opts>] <file>        : load file into C64 memory\n");
     printf("          save  [<opts>] <file>        : save C64 memory to file\n");
     printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
     printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
     printf("          jump  [<opts>] <addr>        : jump to specified address\n");
     printf("          run   [<opts>]               : run basic program\n");
+    printf("\n");
+    printf("          @[<dos-command>]             : read drive status or send dos command\n");    
     printf("          backup <file>                : backup disk to d64 file\n");
     printf("          restore <file>               : restore d64 file to disk\n");
     printf("          verify <file>                : verify disk against d64 file\n");
-    printf("          @[command]                   : read drive status or send dos command\n");    
-    printf("          ready                        : make sure the server is ready\n");
-    printf("          wait  [<msec>]               : wait <msec>s for server (default: 3000)\n");
-    printf("          reset                        : reset C64 (only if using reset circuit)\n\n");
+    printf("\n");
     break;
 
   case COMMAND_LOAD:
@@ -997,16 +974,6 @@ void usage(int id) {
     printf("Usage: c64 run\n");
     printf("\n");
     printf("RUN the currently loaded basic program.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_WAIT:
-    printf("Usage: c64 wait <timeout>\n");
-    printf("\n");
-    printf("Try to ping the C64 server for at most <timeout> milliseconds. If the\n");
-    printf("server responds within the specified timeout, then the next command on\n");
-    printf("the command line will be executed, otherwise the client will exit with\n");
-    printf("a negative exit status.\n");
     printf("\n");
     break;
 
