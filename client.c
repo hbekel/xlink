@@ -29,11 +29,11 @@
 #define COMMAND_STATUS  0x0d
 #define COMMAND_READY   0x0e
 
-#define MODE_EXECUTE 0x00
+#define MODE_EXEC 0x00
 #define MODE_HELP 0x01
 
 int debug = false;
-int mode  = MODE_EXECUTE;
+int mode  = MODE_EXEC;
 
 char str2id(const char* arg) {
   if (strncmp(arg, "load" ,   4) == 0) return COMMAND_LOAD;
@@ -598,6 +598,12 @@ int command_reset(Command* self) {
 }
 
 int command_help(Command *self) {
+
+  if (self->argc > 0) {
+    fprintf(stderr, "c64: unknown command: %s\n", self->argv[0]);
+    return false;
+  }
+
   mode = MODE_HELP;
   return true;
 }
@@ -781,7 +787,7 @@ int command_execute(Command* self) {
   command_print(self);
 
   if(mode == MODE_HELP) {
-    usage(self->id);
+    help(self->id);
     return true;
   }
 
@@ -811,12 +817,12 @@ int main(int argc, char **argv) {
   int result = EXIT_SUCCESS;
 
   if (argc <= 1) {
-    usage(COMMAND_AUTO);
+    usage();
     return result;
   }
   
   if(argc == 2 && str2id(argv[1]) == COMMAND_HELP) {
-    usage(COMMAND_AUTO);
+    usage();
     return result;
   }
   argc--; argv++;
@@ -833,10 +839,7 @@ int main(int argc, char **argv) {
   return result;
 }
 
-void usage(int id) {
-
-  switch(id) {
-  case COMMAND_AUTO:
+void usage(void) {
     printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
     printf("Usage: c64 [<opts>] [<file>.prg]\n");
@@ -870,6 +873,13 @@ void usage(int id) {
     printf("          restore <file>               : restore d64 file to disk\n");
     printf("          verify <file>                : verify disk against d64 file\n");
     printf("\n");
+}
+
+void help(int id) {
+
+  switch(id) {
+  case COMMAND_AUTO:
+    usage();
     break;
 
   case COMMAND_LOAD:

@@ -25,7 +25,8 @@ int valid(int address);
 void screenOn(void);
 void screenOff(void);
 void version(void);
-void usage(int id);
+void usage(void);
+void help(int id);
 
 Commands* commands_new(void);
 Command* commands_add(Commands* self, Command* command);
