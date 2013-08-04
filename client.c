@@ -91,10 +91,16 @@ void screenOff(void) {
   pp64_poke(0x37, 0x10, 0xd011,0x0b);
 }
 
-Commands* commands_new() {
+Commands* commands_new(int argc, char **argv) {
+
   Commands* commands = (Commands*) calloc(1, sizeof(Commands));
   commands->count = 0;
   commands->items = (Command**) calloc(1, sizeof(Command*));
+
+  while(argc > 0) {
+    commands_add(commands, command_new(&argc, &argv));
+  }  
+
   return commands;
 }
 
@@ -114,6 +120,10 @@ int commands_each(Commands* commands, int (*func) (Command* command)) {
     }
   }
   return result;
+}
+
+int commands_execute(Commands* commands) {
+  return commands_each(commands, &command_execute);
 }
 
 void commands_free(Commands* self) {
@@ -398,7 +408,7 @@ int command_load(Command* self) {
   }
   else {
     if (self->start == -1) {      
-      fprintf(stderr, "c64link: error: load: not a .prg file and no start address specified\n");
+      fprintf(stderr, "c64: error: load: not a .prg file and no start address specified\n");
       fclose(file);
       return false;
     }
@@ -452,18 +462,18 @@ int command_save(Command* self) {
 
   if(self->start == -1) {
     if(!command_find_basic_program(self)) {
-      fprintf(stderr, "c64link: error: no start address specified and no basic program in memory\n");
+      fprintf(stderr, "c64: error: no start address specified and no basic program in memory\n");
       return false;
     }
   }
 
   if(self->start == -1) {                   
-    fprintf(stderr, "c64link: error: no start address specified\n");
+    fprintf(stderr, "c64: error: no start address specified\n");
     return false;
   }
   else {
     if(self->end == -1) {                   
-      fprintf(stderr, "c64link: error: no end address specified\n");
+      fprintf(stderr, "c64: error: no end address specified\n");
       return false;
     }
   }
@@ -483,7 +493,7 @@ int command_save(Command* self) {
   file = fopen(filename, "wb");
 
   if(file == NULL) {
-    fprintf(stderr, "c64link: error: '%s': %s\n", filename, strerror(errno));
+    fprintf(stderr, "c64: error: '%s': %s\n", filename, strerror(errno));
     free(data);
     return false;
   }
@@ -814,28 +824,23 @@ int command_execute(Command* self) {
 
 int main(int argc, char **argv) {
 
-  int result = EXIT_SUCCESS;
-
   if (argc <= 1) {
     usage();
-    return result;
+    return EXIT_FAILURE;
   }
   
   if(argc == 2 && str2id(argv[1]) == COMMAND_HELP) {
     usage();
-    return result;
+    return EXIT_SUCCESS;
   }
   argc--; argv++;
 
-  Commands *commands = commands_new();
+  Commands *commands = commands_new(argc, argv);
 
-  while(argc > 0) {
-    commands_add(commands, command_new(&argc, &argv));
-  }
-
-  result = commands_each(commands, &command_execute) ? EXIT_SUCCESS : EXIT_FAILURE;
+  int result = commands_execute(commands) ? EXIT_SUCCESS : EXIT_FAILURE;
 
   commands_free(commands);
+
   return result;
 }
 

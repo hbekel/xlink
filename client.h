@@ -28,9 +28,10 @@ void version(void);
 void usage(void);
 void help(int id);
 
-Commands* commands_new(void);
+Commands* commands_new(int argc, char **argv);
 Command* commands_add(Commands* self, Command* command);
 int commands_each(Commands* commands, int (*func) (Command* command));
+int commands_execute(Commands* commands);
 void commands_free(Commands* self);
 
 Command* command_new(int *argc, char ***argv);
