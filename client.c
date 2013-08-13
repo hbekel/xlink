@@ -7,8 +7,11 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "target.h"
+#include "stringlist.h"
 #include "client.h"
 #include "disk.h"
 #include "pp64.h"
@@ -829,9 +832,16 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
   
-  if(argc == 2 && str2id(argv[1]) == COMMAND_HELP) {
-    usage();
-    return EXIT_SUCCESS;
+  if(argc == 2) {
+    if (strncmp(argv[1], "help", 4) == 0) {
+      usage();
+      return EXIT_SUCCESS;
+    }
+
+    if (strncmp(argv[1], "shell", 5) == 0) {
+      shell();
+      return EXIT_SUCCESS;
+    }
   }
   argc--; argv++;
 
@@ -842,6 +852,99 @@ int main(int argc, char **argv) {
   commands_free(commands);
 
   return result;
+}
+
+void shell(void) {
+
+  extern char **completion_matches();
+
+  static char* known_commands[15] = { 
+    "help", 
+    "load", 
+    "save",
+    "peek",
+    "poke",
+    "jump",
+    "run",
+    "backup",
+    "restore",
+    "reset",
+    "ready",
+    "exit",
+    "quit",
+    "ping",
+    NULL };
+
+  char *dupstr(char *s) {
+    char *r = calloc(strlen(s) + 1, sizeof(char));
+    strncpy(r, s, strlen(s));
+    return r;
+  }
+  
+  char *command_generator(char *text, int state) {
+    static int list_index, len;
+    char *name;
+    
+    if (!state) {
+      list_index = 0;
+      len = strlen(text);
+    }
+    while ((name = known_commands[list_index])) {
+      list_index++;
+      
+      if (strncmp(name, text, len) == 0)
+	return dupstr(name);
+    }
+    return ((char *)NULL);
+  }
+  
+  char **shell_completion(char *text, int start, int end) {
+    return (char **) completion_matches(text, command_generator);
+  }
+
+  int shell_command(char *line) {
+    if(strncmp(line, "help", 4) == 0) {
+      usage();
+      return true;
+    }
+
+    if((strncmp(line, "quit", 4) == 0) ||
+       (strncmp(line, "exit", 4) == 0)) {
+      exit(EXIT_SUCCESS);
+    }
+    return false;
+  }
+  
+  char *line;
+  char *prompt = "c64> ";
+
+  Commands* commands;
+  StringList *arguments;
+  
+  rl_attempted_completion_function = (CPPFunction *) shell_completion;
+  
+  while((line = readline(prompt))) {      
+    
+    if(strlen > 0) {
+      add_history(line);
+
+      if(!shell_command(line)) {
+
+	arguments = stringlist_new();
+	stringlist_append_tokenized(arguments, line, " \t");
+
+	commands = commands_new(arguments->size, arguments->strings);
+	commands_execute(commands);
+	
+	commands_free(commands);
+	stringlist_free(arguments);
+      }
+      debug = false;
+      mode = MODE_EXEC;
+    }    
+    free(line);
+  }
+  printf("\n");
 }
 
 void usage(void) {

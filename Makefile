@@ -11,14 +11,14 @@ win32: c64.exe
 libpp64.so: pp64.c pp64.h extension.c extension.h extensions.c
 	$(GCC) $(FLAGS) -shared -fPIC -o libpp64.so pp64.c extension.c
 
-c64: libpp64.so client.c client.h disk.c disk.h
-	$(GCC) $(FLAGS) -o c64 client.c disk.c -L. -lpp64
+c64: libpp64.so client.c client.h stringlist.c stringlist.h disk.c disk.h
+	$(GCC) $(FLAGS) -o c64 client.c stringlist.c disk.c -L. -lpp64 -lreadline
 
 pp64.dll: pp64.c pp64.h extension.c extension.h extensions.c
 	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c extension.c 
 
-c64.exe: pp64.dll client.c client.h disk.c disk.h 
-	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64 
+c64.exe: pp64.dll client.c client.h stringlist.c stringlist.h disk.c disk.h 
+	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c stringlist.c disk.c -L. -lpp64 -lreadline -lpdcurses
 
 extensions.c: tools/compile-extension extensions.asm
 	$(KASM) -binfile -o extensions.bin extensions.asm | grep compile-extension | bash > extensions.c && rm extensions.bin
