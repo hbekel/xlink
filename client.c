@@ -881,6 +881,15 @@ void shell(void) {
     return r;
   }
   
+  void trim(char * const a)
+  {
+    char *p = a, *q = a;
+    while (isspace(*q)) ++q;
+    while (*q) *p++ = *q++;
+    *p = '\0';
+    while (p > a && isspace(*--p)) *p = '\0';
+  }
+
   char *command_generator(char *text, int state) {
     static int list_index, len;
     char *name;
@@ -903,7 +912,7 @@ void shell(void) {
   }
 
   int shell_command(char *line) {
-    if(strncmp(line, "help", 4) == 0) {
+    if(strcmp(line, "help") == 0) {
       usage();
       return true;
     }
@@ -920,11 +929,14 @@ void shell(void) {
 
   Commands* commands;
   StringList *arguments;
-  
+
+  rl_variable_bind("expand-tilde", "on");  
   rl_attempted_completion_function = (CPPFunction *) shell_completion;
   
   while((line = readline(prompt))) {      
-    
+
+    trim(line);
+
     if(strlen > 0) {
       add_history(line);
 
