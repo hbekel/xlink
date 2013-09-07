@@ -31,6 +31,7 @@
 #define COMMAND_VERIFY  0x0c
 #define COMMAND_STATUS  0x0d
 #define COMMAND_READY   0x0e
+#define COMMAND_PING    0x0f
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -51,6 +52,7 @@ char str2id(const char* arg) {
   if (strncmp(arg, "restore", 7) == 0) return COMMAND_RESTORE;  
   if (strncmp(arg, "verify",  6) == 0) return COMMAND_VERIFY;  
   if (strncmp(arg, "ready",   5) == 0) return COMMAND_READY;  
+  if (strncmp(arg, "ping",    4) == 0) return COMMAND_PING;  
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -79,6 +81,7 @@ char* id2str(const char id) {
   if (id == COMMAND_VERIFY)  return (char*) "verify";
   if (id == COMMAND_STATUS)  return (char*) "status";  
   if (id == COMMAND_READY)   return (char*) "ready";  
+  if (id == COMMAND_PING)    return (char*) "ping";  
   return (char*) "unknown";
 }
 
@@ -795,6 +798,10 @@ int command_ready(Command* self) {
   return true;
 }
 
+int command_ping(Command* self) {
+  return pp64_ping(250);
+}
+
 int command_execute(Command* self) {
 
   command_print(self);
@@ -821,6 +828,7 @@ int command_execute(Command* self) {
   case COMMAND_VERIFY  : return command_verify(self);
   case COMMAND_STATUS  : return command_status(self);
   case COMMAND_READY   : return command_ready(self);
+  case COMMAND_PING    : return command_ping(self);
   }
   return false;
 }
@@ -1130,6 +1138,13 @@ void help(int id) {
     printf("\n");
     printf("This command requires the server to be installed permanently so that it is\n");
     printf("available after reset.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_PING:
+    printf("Usage: c64 ping\n");
+    printf("\n");
+    printf("Ping the server, exit successfully if the server responds.\n");
     printf("\n");
     break;
   }

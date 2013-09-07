@@ -54,6 +54,7 @@ int command_backup(Command* self);
 int command_restore(Command* self);
 int command_verify(Command* self);
 int command_ready(Command* self);
+int command_ping(Command* self);
 int command_reset(Command* self);
 int command_wait(Command* self);
 int command_help(Command* self);
