@@ -835,23 +835,24 @@ int command_execute(Command* self) {
 
 int main(int argc, char **argv) {
 
-  if (argc <= 1) {
+  argc--; argv++;
+
+  if (argc == 0) {
     usage();
     return EXIT_FAILURE;
   }
   
-  if(argc == 2) {
-    if (strncmp(argv[1], "help", 4) == 0) {
+  if(argc == 1) {
+    if (strncmp(argv[0], "help", 4) == 0) {
       usage();
       return EXIT_SUCCESS;
     }
 
-    if (strncmp(argv[1], "shell", 5) == 0) {
+    if (strncmp(argv[0], "shell", 5) == 0) {
       shell();
       return EXIT_SUCCESS;
     }
   }
-  argc--; argv++;
 
   Commands *commands = commands_new(argc, argv);
 
