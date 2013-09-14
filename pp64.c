@@ -501,6 +501,7 @@ static int pp64_open() {
   return true;
 
 #elif windows
+
   if(pp64_inpout32 == NULL) {
     
     pp64_inpout32 = LoadLibrary( "inpout32.dll" ) ;	
@@ -511,12 +512,12 @@ static int pp64_open() {
       pp64_outb = (pp64_lpOutb) GetProcAddress(pp64_inpout32, "Out32");
       pp64_inb = (pp64_lpInb) GetProcAddress(pp64_inpout32, "Inp32");		
       
-      if (pp64_driverOpened) {
-	pp64_init();
-	return true;
+      if (pp64_driverOpened()) {
+        pp64_init();
+        return true;
       }
       else {
-	fprintf(stderr, "pp64: error: failed to start inpout32 driver\n");
+        fprintf(stderr, "pp64: error: failed to start inpout32 driver\n");
       }		
     }
     else {
@@ -524,8 +525,10 @@ static int pp64_open() {
       fprintf(stderr, "Inpout32 is required for parallel port access:\n\n");    
       fprintf(stderr, "    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");	
     }
+    return false;
   }
-  return false;
+  pp64_init();
+  return true;
 #endif
 }
 
