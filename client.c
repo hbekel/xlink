@@ -16,6 +16,7 @@
 #include "disk.h"
 #include "pp64.h"
 
+#define COMMAND_NONE    0x00
 #define COMMAND_AUTO    0x00
 #define COMMAND_LOAD    0x01
 #define COMMAND_SAVE    0x02
@@ -83,6 +84,10 @@ char* id2str(const char id) {
   if (id == COMMAND_READY)   return (char*) "ready";  
   if (id == COMMAND_PING)    return (char*) "ping";  
   return (char*) "unknown";
+}
+
+int isCommand(const char *str) {
+  return str2id(str) > COMMAND_NONE;
 }
 
 int valid(int address) {
@@ -193,15 +198,19 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
   self->command = (char *) calloc(strlen(current())+1, sizeof(char));
   strncpy(self->command, current(), strlen(current()));
 
-  self->id = str2id(current());
-  if(self->id) {
-      next();
-    }
+  if(isCommand(self->command)) {
+    self->id = str2id(current());
+    next();
+  }
 
   for(;has_next();next()) {
 
-    if(str2id(current())) break;
-    command_append_argument(self, current());
+    if(isCommand(current())) {
+      break;
+    }
+    else {
+      command_append_argument(self, current());
+    }
   }
 }
 
@@ -243,7 +252,7 @@ int command_parse_options(Command *self) {
 
     case 'p':
       if (!pp64_configure(optarg))
-	return false; 
+        return false; 
       break;
 
     case 'm':
@@ -258,34 +267,34 @@ int command_parse_options(Command *self) {
       self->start = strtol(optarg, NULL, 0);
 
       if ((end = strstr(optarg, "-")) != NULL) {
-	self->end = strtol(end+1, NULL, 0);
+        self->end = strtol(end+1, NULL, 0);
       }
 
       if (!valid(self->start)) {
-	fprintf(stderr, "c64: error: %s: start address out of range: 0x%04X\n",
-		command_get_name(self), self->start);
-	return false;
+        fprintf(stderr, "c64: error: %s: start address out of range: 0x%04X\n",
+                command_get_name(self), self->start);
+        return false;
       }
 
       if(self->end != -1) {
-
-	if (!valid(self->end)) {
-	  fprintf(stderr, "c64: error: %s: end address out of range: 0x%04X\n",
-		  command_get_name(self), self->end);
-	  return false;
-	}
+        
+        if (!valid(self->end)) {
+          fprintf(stderr, "c64: error: %s: end address out of range: 0x%04X\n",
+                  command_get_name(self), self->end);
+          return false;
+        }
 	
-	if (self->end < self->start) {
-	  fprintf(stderr, "c64: error: %s: end address before start address: 0x%04X > 0x%04X\n",
-		  command_get_name(self), self->end, self->start);
-	  return false;
-	}
+        if (self->end < self->start) {
+          fprintf(stderr, "c64: error: %s: end address before start address: 0x%04X > 0x%04X\n",
+                  command_get_name(self), self->end, self->start);
+          return false;
+        }
 	
-	if (self->start == self->end) {
-	  fprintf(stderr, "c64: error: %s: start address equals end address: 0x%04X == 0x%04X\n",
-		  command_get_name(self), self->end, self->start);
-	  return false;	
-	}
+        if (self->start == self->end) {
+          fprintf(stderr, "c64: error: %s: start address equals end address: 0x%04X == 0x%04X\n",
+                  command_get_name(self), self->end, self->start);
+          return false;	
+        }
       }
       break;      
     }
@@ -690,8 +699,10 @@ int command_restore(Command *self) {
     return false;
   }
 
-  char *format_disk = (char *) calloc(2+16+1+2+1, sizeof(char));
-  snprintf(format_disk, 2+16+1+2, "N:%s,%s", disk->name, disk->id);
+  int size = 2+16+1+2+1; 
+
+  char *format_disk = (char *) calloc(size, sizeof(char));
+  snprintf(format_disk, size, "N:%s,%s", disk->name, disk->id);
 
   if(disk->size > 35) {
     fprintf(stderr, "c64: error: no support for disks > 35 tracks\n");
@@ -830,6 +841,7 @@ int command_execute(Command* self) {
   case COMMAND_READY   : return command_ready(self);
   case COMMAND_PING    : return command_ping(self);
   }
+  
   return false;
 }
 
@@ -911,7 +923,7 @@ void shell(void) {
       list_index++;
       
       if (strncmp(name, text, len) == 0)
-	return dupstr(name);
+        return dupstr(name);
     }
     return ((char *)NULL);
   }
@@ -925,7 +937,7 @@ void shell(void) {
       usage();
       return true;
     }
-
+    
     if((strncmp(line, "quit", 4) == 0) ||
        (strncmp(line, "exit", 4) == 0)) {
       exit(EXIT_SUCCESS);
@@ -951,14 +963,14 @@ void shell(void) {
 
       if(!shell_command(line)) {
 
-	arguments = stringlist_new();
-	stringlist_append_tokenized(arguments, line, " \t");
+        arguments = stringlist_new();
+        stringlist_append_tokenized(arguments, line, " \t");
 
-	commands = commands_new(arguments->size, arguments->strings);
-	commands_execute(commands);
-	
-	commands_free(commands);
-	stringlist_free(arguments);
+        commands = commands_new(arguments->size, arguments->strings);
+        commands_execute(commands);
+        
+        commands_free(commands);
+        stringlist_free(arguments);
       }
       debug = false;
       mode = MODE_EXEC;
