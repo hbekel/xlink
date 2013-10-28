@@ -66,8 +66,8 @@ This small circuit can be used to force a hardware reset of the C64
 when the INIT line at the parallel port is pulled low.
                   
  INIT                      +5V                          
-  o                         o                                                          
-  |      ____               |                                            
+  o                         o                                          
+  |      ____               |                                  
   o-----|____|--------------o       o RESET                                    
   |      10k                |       |                                      
   |                 ____    |       |                                    
