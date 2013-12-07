@@ -5,6 +5,8 @@
 #include "extension.h"
 #include "pp64.h"
 
+extern int pp64_extend(int address);
+
 Extension *extension_new(short address, short size, char* code) {
   
   Extension *extension = (Extension*) calloc(1, sizeof(Extension));

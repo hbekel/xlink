@@ -13,7 +13,6 @@ int pp64_peek(unsigned char memory, unsigned char bank, int address, unsigned ch
 int pp64_poke(unsigned char memory, unsigned char bank, int address, unsigned char value);
 int pp64_jump(unsigned char memory, unsigned char bank, int address);
 int pp64_run(void);
-int pp64_extend(int address);
 
 int pp64_dos(char* cmd);
 int pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* data);

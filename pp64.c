@@ -312,7 +312,7 @@ int pp64_drive_status(unsigned char* status) {
 
       int i;
       for(i=0; (byte = pp64_receive()) != 0xff; i++) {
-	status[i] = byte;
+        status[i] = byte;
       }
 
       pp64_wait_ack(0);
@@ -344,7 +344,7 @@ int pp64_dos(char* cmd) {
 
       int i;
       for(i=0; i<strlen(cmd); i++) {
-	pp64_send(toupper(cmd[i]));
+        pp64_send(toupper(cmd[i]));
       }
 
       pp64_wait_ack(0);
@@ -376,13 +376,13 @@ int pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* d
 
       int i;
       for(i=0; i<strlen(U1); i++)
-	pp64_send(U1[i]);      
+        pp64_send(U1[i]);      
       
       pp64_control(pp64_ctrl_input);
       pp64_send_strobe_input();
       
       for(i=0; i<256; i++)
-	data[i] = pp64_receive();
+        data[i] = pp64_receive();
       
       pp64_wait_ack(0);
       pp64_control(pp64_ctrl_output);
@@ -414,10 +414,10 @@ int pp64_sector_write(unsigned char track, unsigned char sector, unsigned char *
 
       int i;
       for(i=0; i<256; i++)
-	pp64_send(data[i]);
+        pp64_send(data[i]);
       
       for(i=0; i<strlen(U2); i++)
-	pp64_send(U2[i]);
+        pp64_send(U2[i]);
       
       pp64_wait_ack(0);
       
