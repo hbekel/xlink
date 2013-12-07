@@ -879,7 +879,7 @@ void shell(void) {
 
   extern char **completion_matches();
 
-  static char* known_commands[15] = { 
+  static char* known_commands[16] = { 
     "help", 
     "load", 
     "save",
@@ -889,6 +889,7 @@ void shell(void) {
     "run",
     "backup",
     "restore",
+    "verify",
     "reset",
     "ready",
     "exit",
