@@ -100,4 +100,3 @@ skip:
 	sta $d011
 skip:	
 }
-	

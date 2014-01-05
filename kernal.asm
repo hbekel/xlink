@@ -327,6 +327,7 @@ eof:
 .function patch(start, end) {
   .return "PATCH " + toIntString(start-$e000) + " " + toIntString(end-start)
 }
+    
 .print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
 .print patch(powerUpMessage, powerUpMessage.eof)
 .print patch(disableTapeLoad, disableTapeLoad.eof)

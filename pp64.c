@@ -13,6 +13,7 @@
 #include "pp64.h"
 
 #if linux
+  #include <sys/io.h>
   #include <sys/ioctl.h>
   #include <linux/parport.h>
   #include <linux/ppdev.h>
@@ -23,7 +24,6 @@
 #endif
 
 #define PP64_PARPORT_CONTROL_STROBE 0x01
-#define PP64_PARPORT_CONTROL_AUTOFD 0x02
 #define PP64_PARPORT_CONTROL_INIT   0x04
 #define PP64_PARPORT_CONTROL_SELECT 0x08
 #define PP64_PARPORT_CONTROL_IRQ    0x10
@@ -36,6 +36,10 @@
 #define PP64_COMMAND_JUMP         0x05
 #define PP64_COMMAND_RUN          0x06
 #define PP64_COMMAND_EXTEND       0x07
+
+#define PP64_COMMAND_STREAM_PEEK  0x01
+#define PP64_COMMAND_STREAM_POKE  0x02
+#define PP64_COMMAND_STREAM_CLOSE 0x03 
 
 static void pp64_init(void);
 static int pp64_open(void);
@@ -67,9 +71,6 @@ const unsigned char pp64_ctrl_input  = PP64_PARPORT_CONTROL_SELECT |
                                        PP64_PARPORT_CONTROL_INPUT |
                                        PP64_PARPORT_CONTROL_IRQ;
 
-const unsigned char pp64_ctrl_reset  = PP64_PARPORT_CONTROL_SELECT | 
-                                       PP64_PARPORT_CONTROL_IRQ;
-
 const unsigned char pp64_ctrl_strobe = PP64_PARPORT_CONTROL_SELECT | 
                                        PP64_PARPORT_CONTROL_INIT | 
                                        PP64_PARPORT_CONTROL_STROBE |
@@ -81,21 +82,25 @@ const unsigned char pp64_ctrl_ack    = PP64_PARPORT_CONTROL_SELECT |
                                        PP64_PARPORT_CONTROL_STROBE |
                                        PP64_PARPORT_CONTROL_IRQ; 
 
-#if linux
-static char* pp64_device = (char*) "/dev/parport0";
-#endif
+const unsigned char pp64_ctrl_reset  = PP64_PARPORT_CONTROL_SELECT | 
+                                       PP64_PARPORT_CONTROL_IRQ;
+
 static int pp64_port = 0x378;
 static unsigned char pp64_stat;
+static bool pp64_opened = false;
 
-#if windows
-typedef BOOL	(__stdcall *pp64_lpDriverOpened)(void);
-typedef void	(__stdcall *pp64_lpOutb)(short, short);
-typedef short	(__stdcall *pp64_lpInb)(short);
+#if linux
+ static char* pp64_device = (char*) "/dev/parport0";
 
-static HINSTANCE pp64_inpout32 = NULL;
-static pp64_lpOutb pp64_outb;
-static pp64_lpInb pp64_inb;
-static pp64_lpDriverOpened pp64_driverOpened;
+#elif windows
+  typedef BOOL	(__stdcall *pp64_lpDriverOpened)(void);
+  typedef void	(__stdcall *pp64_lpOutb)(short, short);
+  typedef short	(__stdcall *pp64_lpInb)(short);
+ 
+  static HINSTANCE pp64_inpout32 = NULL;
+  static pp64_lpOutb pp64_outb;
+  static pp64_lpInb pp64_inb;
+  static pp64_lpDriverOpened pp64_driverOpened;
 #endif
 
 int pp64_configure(char* spec) {
@@ -146,13 +151,13 @@ int pp64_load(unsigned char memory,
   unsigned char command = PP64_COMMAND_LOAD;
   
   if(pp64_open()) {
-
+    
     if(!pp64_send_with_timeout(command)) {
       fprintf(stderr, "pp64: error: no response from C64\n");
       pp64_close();
       return false;
     }
-
+    
     pp64_send(memory);
     pp64_send(bank);
     pp64_send(start & 0xff);
@@ -428,16 +433,85 @@ int pp64_sector_write(unsigned char track, unsigned char sector, unsigned char *
   
   extension_free(lib);
   extension_free(sector_write);
+  return result;
+}
 
+int pp64_stream_open() {
+
+  int result = true;
+  Extension *stream_open = EXTENSION_STREAM_OPEN;
+
+  if (extension_load(stream_open) && extension_init(stream_open)) {
+      if (!pp64_open()) {
+        result = false;
+      }
+  }
+  
+  extension_free(stream_open);
+  return result;  
+}
+
+int pp64_stream_poke(int address, unsigned char value) {
+
+  unsigned char command = PP64_COMMAND_STREAM_POKE;  
+  
+  if(!pp64_send_with_timeout(command)) {
+      fprintf(stderr, "pp64: error: no response from C64\n");
+      return false;
+  }
+  pp64_init();
+
+  pp64_send(address & 0xff);
+  pp64_send(address >> 8);
+  pp64_send(value);
+  return true;
+}
+
+int pp64_stream_peek(int address, unsigned char* value) {
+
+  unsigned char command = PP64_COMMAND_STREAM_PEEK;
+
+  if(!pp64_send_with_timeout(command)) {
+      fprintf(stderr, "pp64: error: no response from C64\n");
+      return false;
+  }
+  pp64_init();
+
+  pp64_send(address & 0xff);
+  pp64_send(address >> 8);
+
+  pp64_control(pp64_ctrl_input);
+  pp64_send_strobe_input();
+
+  *value = pp64_receive();
+
+  pp64_wait_ack(0);
+  pp64_control(pp64_ctrl_output);
+
+  return true;
+}
+
+int pp64_stream_close(void) {
+  
+  int result = true;
+  unsigned char command = PP64_COMMAND_STREAM_CLOSE;
+  
+  if(!pp64_send_with_timeout(command)) {
+    fprintf(stderr, "pp64: error: no response from C64\n");
+    result = false;
+  }
+  pp64_close();
   return result;
 }
 
 int pp64_extend(int address) {
-
-  unsigned char command = PP64_COMMAND_EXTEND;
-
-  if(pp64_open()) {
   
+  unsigned char command = PP64_COMMAND_EXTEND;
+  
+  address--;
+  
+  if(pp64_open()) {
+    
     if(!pp64_send_with_timeout(command)) {
       fprintf(stderr, "pp64: error: no response from C64\n");
       pp64_close();
@@ -447,7 +521,7 @@ int pp64_extend(int address) {
     // just push it on the stack and rts
     
     pp64_send(address >> 8);       // first the highbyte,
-    pp64_send((address & 0xff)-1); // then the lowbyte-1
+    pp64_send(address & 0xff); // then the lowbyte-1
     
     pp64_close();
     return true;
@@ -461,7 +535,7 @@ int pp64_reset(void) {
     pp64_control(pp64_ctrl_reset);
     usleep(100*1000);
     pp64_control(pp64_ctrl_output);
-
+    
     pp64_close();
     return true;
   }
@@ -491,12 +565,19 @@ static inline int pp64_send_with_timeout(unsigned char byte) {
 
 static int pp64_open() {
 
-#if linux  
+  if(pp64_opened) {
+    fprintf(stderr, "pp64: warning: failed to open: already opened\n");
+    return false;
+  }
+
+#if linux
   if((pp64_port = open(pp64_device, O_RDWR)) == -1) {
+
     fprintf(stderr, "pp64: error: couldn't open %s\n", pp64_device);
     return false;
   }  
   ioctl(pp64_port, PPCLAIM);
+ 
   pp64_init();
   return true;
 
@@ -526,22 +607,33 @@ static int pp64_open() {
       fprintf(stderr, "    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");	
     }
     return false;
-  }
+  }  
   pp64_init();
   return true;
 #endif
 }
 
 static inline void pp64_close() {
+  if(!pp64_opened) {
+    fprintf(stderr, "pp64: warning: failed to close: already closed\n");
+  }
+
 #if linux
   ioctl(pp64_port, PPRELEASE);
   close(pp64_port);
 #endif
+
+  pp64_opened = false;
 }
 
 static inline void pp64_init(void) {
+  pp64_opened = true;
   pp64_control(pp64_ctrl_output);
   pp64_stat = pp64_status();
+
+#if linux
+  ioctl(pp64_port, PPSETFLAGS, PP_FASTWRITE | PP_FASTREAD);
+#endif
 }
 
 static inline unsigned char pp64_read(void) {
@@ -564,6 +656,9 @@ static inline void pp64_write(unsigned char byte) {
 
 static inline void pp64_control(unsigned char ctrl) {
 #if linux
+  int direction = ctrl & PP64_PARPORT_CONTROL_INPUT;
+  ioctl(pp64_port, PPDATADIR, &direction);
+
   ioctl(pp64_port, PPWCONTROL, &ctrl);
 #elif windows
   pp64_outb(pp64_port+2, ctrl);
@@ -608,7 +703,7 @@ static inline int pp64_receive_signal(int timeout) {
 
       now = clock() / (CLOCKS_PER_SEC / 1000);  
       if (now - start >= timeout)
-	return false;
+        return false;
     }
   }
   pp64_stat = current;

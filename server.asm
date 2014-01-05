@@ -3,21 +3,21 @@
 .import source "server.h"
 	
 install: {
-	lda #$00  // set CIA2 port B to input
+        lda #$00  // set CIA2 port B to input
 	sta $dd03
-	
+  
 	lda $dd02 // set CIA2 PA2 to output
-	ora #$04
+        ora #$04
 	sta $dd02
 
 	lda $dd0d // clear stale handshake
 
-	sei
-	lda #<irq // setup irq
-	ldx #>irq
-	sta $0314
-	stx $0315	
-	cli
+        sei
+        lda #<irq // setup irq
+        ldx #>irq
+        sta $0314
+        stx $0315       
+        cli
 	
 	rts
 }

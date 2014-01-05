@@ -6,7 +6,7 @@ int main(int argc, char **argv) {
   FILE *f;
 
   if(argc < 6) {
-    fprintf(stderr, "Usage: asm2char <file> <varname> <offset> <length>\n");
+    fprintf(stderr, "Usage: compile-extension.c <file> <varname> <offset> <length>\n");
     return EXIT_FAILURE;
   }
 

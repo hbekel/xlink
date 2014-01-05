@@ -12,7 +12,7 @@ Extension *extension_new(short address, short size, char* code) {
   Extension *extension = (Extension*) calloc(1, sizeof(Extension));
   extension->address = address;
   extension->size = size;
-  extension-> code = code;
+  extension->code = code;
   return extension;
 }
 

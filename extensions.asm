@@ -24,7 +24,7 @@ disableIrq: {
 	// some io routines use irqs and cli when done,
 	// so the sysirq needs to be disabled during io
 	lda #$01  
-	sta $dc0d
+        sta $dc0d
 	rts
 }
 
@@ -111,7 +111,7 @@ closeAll: {
 	
 driveStatus: {
 offset:	
-.pseudopc $033c {	
+.pseudopc $0334 {	
 address:	
 	jsr lib.disableIrq
 	jsr lib.withoutCommand jsr lib.openCommandChannel
@@ -151,7 +151,7 @@ done:  	lda #$ff   // send 0xff as EOT marker to the client
 	
 dosCommand: {
 offset:
-.pseudopc $033c {
+.pseudopc $0334 {
 address:	
 	jsr lib.disableIrq
 	jsr lib.withoutCommand jsr lib.openCommandChannel
@@ -187,7 +187,7 @@ done:	jsr clrchn
 	
 sectorRead: {
 offset:
-.pseudopc $033c {
+.pseudopc $0334 {
 address:		
 	jsr lib.disableIrq
 	jsr lib.openBuffer
@@ -248,7 +248,7 @@ done:
 
 sectorWrite: {
 offset:
-.pseudopc $033c {
+.pseudopc $0334 {
 address:	
 	jsr lib.disableIrq
 	jsr lib.openBuffer
@@ -301,7 +301,79 @@ done:	// close files and channels
 }
 .label size=*-offset
 }
+
+//------------------------------------------------------------------------------
+    
+.namespace Stream {
+.label peek  = $01
+.label poke  = $02
+.label close = $03
+}
+    
+streamOpen: {
+offset:
+.pseudopc $0334 {
+address:
+
+stream:	:read()
 	
+!next:	cpx #Stream.peek
+	bne !next+
+	jmp peek
+	
+!next:	cpx #Stream.poke
+	bne !next+
+	jmp poke
+	
+!next:	cpx #Stream.close
+	bne !next+
+	jmp close
+	
+!next:  jmp stream
+
+peek: {
+
+.var low = addr+1
+.var high = addr+2
+
+        :read()
+        stx low
+        :read()
+        stx high
+
+	:wait()        
+	lda #$ff       
+	sta $dd03
+    
+addr:   lda $ffff
+        :write()
+
+        lda #$00       
+	sta $dd03	
+	:ack()
+	
+done:	jmp stream
+}
+
+poke: {
+
+.var low = addr+1    
+.var high = addr+2
+    
+        :read()
+        stx low
+        :read()
+        stx high
+        :read()	
+addr:	stx $ffff
+        jmp stream
+}
+
+close:	rts
+}
+.label size=*-offset
+}
+    
 .function extension(name, address, offset, size) {
   .return "tools/compile-extension extensions.bin " + name + " " +
 	toIntString(address) + " " +
@@ -314,3 +386,4 @@ done:	// close files and channels
 .print extension("DOS_COMMAND", dosCommand.address, dosCommand.offset, dosCommand.size)
 .print extension("SECTOR_READ", sectorRead.address, sectorRead.offset, sectorRead.size)
 .print extension("SECTOR_WRITE", sectorWrite.address, sectorWrite.offset, sectorWrite.size)
+.print extension("STREAM_OPEN", streamOpen.address, streamOpen.offset, streamOpen.size)    

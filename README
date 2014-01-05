@@ -1,9 +1,9 @@
 PP64 -- Bidirectional 8-bit parallel data transfers between PS/2
 Parallel Port and C64 User Port with optional reset circuit
 
---------------------------------------------------------------------------------
+---------------------------------------------------------------------
 Introduction
---------------------------------------------------------------------------------
+---------------------------------------------------------------------
 
 Introduction
 
@@ -26,41 +26,41 @@ The underlying communication protocol is implemented in a shared
 library, allowing you to use and extend pp64's functionality for your
 own programs.
 
---------------------------------------------------------------------------------
+----------------------------------------------------------------------
 Cable
---------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
 The PP64 cable is a simple 8-bit parallel transfer cable connecting
 the PC Parallel Port to the C64 User port.
 
----------------------------------------------
-PC Parallel Port   |     C64 User Port
----------------------------------------------
-GND    (18-25)    <->    GND    (1, 12, A, N)
-D0     (2)        <->    PB0    (C) 
-D1     (3)        <->    PB1    (D) 
-D2     (4)        <->    PB2    (E) 
-D3     (5)        <->    PB3    (F) 
-D4     (6)        <->    PB4    (H) 
-D5     (7)        <->    PB5    (J) 
-D6     (8)        <->    PB6    (K) 
-D7     (9)        <->    PB7    (L) 
-BUSY   (11)       <--    PA2    (M) 
-STROBE (1)        -->    /FLAG2 (B) 
+       ---------------------------------------------
+       PC Parallel Port   |     C64 User Port
+       ---------------------------------------------
+       GND    (18-25)    <->    GND    (1, 12, A, N)
+       D0     (2)        <->    PB0    (C) 
+       D1     (3)        <->    PB1    (D) 
+       D2     (4)        <->    PB2    (E) 
+       D3     (5)        <->    PB3    (F) 
+       D4     (6)        <->    PB4    (H) 
+       D5     (7)        <->    PB5    (J) 
+       D6     (8)        <->    PB6    (K) 
+       D7     (9)        <->    PB7    (L) 
+       BUSY   (11)       <--    PA2    (M) 
+       STROBE (1)        -->    /FLAG2 (B) 
 
-A shielded cable is highly recommended. The cable shield should be
-connected to shield ground on both sides. A 0.1uF capacitor between
-shield and ground at the c64 side can also help to decrease
-noise. Improper shielding will most likely cause transfer errors.
+A shielded cable is recommended. The cable shield should be connected
+to shield ground on both sides. A 0.1uF capacitor between shield and
+ground at the c64 side can also help to decrease noise. Improper
+shielding will most likely cause transfer errors.
 
 CAUTION: There is no protection of any kind. The parallel port pins
 are directly connected to port B of CIA2. Always power down both the
 PC and C64 before inserting/removing the cable. Also turn off the C64
 during boot, reboot or shutdown of the PC.
 
---------------------------------------------------------------------------------
+----------------------------------------------------------------------
 Optional Reset Circuit
---------------------------------------------------------------------------------
+----------------------------------------------------------------------
 
 This small circuit can be used to force a hardware reset of the C64
 when the INIT line at the parallel port is pulled low.
@@ -88,10 +88,3 @@ when the INIT line at the parallel port is pulled low.
 INIT is pin 16 at the parallel port, RESET is pin 3 at the user port.
 GND and +5V can safely be taken from the user port as well.
 Use BC547A or equivalent transistors.
-
-
-
-
-                                                                               
-                                                                               
-                                                                               
