@@ -7,13 +7,16 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
-#include <readline/readline.h>
-#include <readline/history.h>
+
+#if linux
+  #include <readline/readline.h>
+  #include <readline/history.h>
+#endif 
 
 #include "target.h"
-#include "stringlist.h"
 #include "client.h"
 #include "disk.h"
+#include "util.h"
 #include "pp64.h"
 
 #define COMMAND_NONE    0x00
@@ -33,6 +36,7 @@
 #define COMMAND_STATUS  0x0d
 #define COMMAND_READY   0x0e
 #define COMMAND_PING    0x0f
+#define COMMAND_TEST    0x10
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -54,6 +58,7 @@ char str2id(const char* arg) {
   if (strncmp(arg, "verify",  6) == 0) return COMMAND_VERIFY;  
   if (strncmp(arg, "ready",   5) == 0) return COMMAND_READY;  
   if (strncmp(arg, "ping",    4) == 0) return COMMAND_PING;  
+  if (strncmp(arg, "test",    3) == 0) return COMMAND_TEST;  
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -83,6 +88,7 @@ char* id2str(const char id) {
   if (id == COMMAND_STATUS)  return (char*) "status";  
   if (id == COMMAND_READY)   return (char*) "ready";  
   if (id == COMMAND_PING)    return (char*) "ping";  
+  if (id == COMMAND_TEST)    return (char*) "test";  
   return (char*) "unknown";
 }
 
@@ -95,11 +101,11 @@ int valid(int address) {
 }
 
 void screenOn(void) {
-  pp64_poke(0x37, 0x10, 0xd011,0x1b);
+  pp64_poke(0x37, 0x10, 0xd011, 0x1b);
 }
 
 void screenOff(void) {
-  pp64_poke(0x37, 0x10, 0xd011,0x0b);
+  pp64_poke(0x37, 0x10, 0xd011, 0x0b);
 }
 
 Commands* commands_new(int argc, char **argv) {
@@ -161,7 +167,6 @@ Command* command_new(int *argc, char ***argv) {
   
   command_append_argument(command, (char*)"getopt");
   command_consume_arguments(command, argc, argv);
-  command_parse_options(command);
 
   return command;
 }
@@ -222,11 +227,12 @@ void command_append_argument(Command* self, char* arg) {
 }
 
 int command_parse_options(Command *self) {
-
+  
   int option, index;
   static struct option options[] = {
     {"debug",   required_argument, 0, 'd'},
     {"help",    no_argument,       0, 'h'},
+    {"level",   required_argument, 0, 'l'},
     {"port",    required_argument, 0, 'p'},
     {"memory",  required_argument, 0, 'm'},
     {"bank",    required_argument, 0, 'b'},
@@ -239,7 +245,7 @@ int command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "dhp:m:b:a:", options, &index);
+    option = getopt_long(self->argc, self->argv, "dhl:p:m:b:a:", options, &index);
     
     if(option == -1)
       break;
@@ -250,8 +256,12 @@ int command_parse_options(Command *self) {
       debug = true;
       break;
 
+    case 'l':
+      logger->set(optarg);
+      break;
+
     case 'p':
-      if (!pp64_configure(optarg))
+      if (!pp64_setup(optarg))
         return false; 
       break;
 
@@ -271,7 +281,7 @@ int command_parse_options(Command *self) {
       }
 
       if (!valid(self->start)) {
-        fprintf(stderr, "c64: error: %s: start address out of range: 0x%04X\n",
+        logger->error("%s: start address out of range: 0x%04X",
                 command_get_name(self), self->start);
         return false;
       }
@@ -279,19 +289,19 @@ int command_parse_options(Command *self) {
       if(self->end != -1) {
         
         if (!valid(self->end)) {
-          fprintf(stderr, "c64: error: %s: end address out of range: 0x%04X\n",
+          logger->error("%s: end address out of range: 0x%04X",
                   command_get_name(self), self->end);
           return false;
         }
 	
         if (self->end < self->start) {
-          fprintf(stderr, "c64: error: %s: end address before start address: 0x%04X > 0x%04X\n",
+          logger->error("%s: end address before start address: 0x%04X > 0x%04X",
                   command_get_name(self), self->end, self->start);
           return false;
         }
 	
         if (self->start == self->end) {
-          fprintf(stderr, "c64: error: %s: start address equals end address: 0x%04X == 0x%04X\n",
+          logger->error("%s: start address equals end address: 0x%04X == 0x%04X",
                   command_get_name(self), self->end, self->start);
           return false;	
         }
@@ -622,6 +632,10 @@ int command_reset(Command* self) {
   return pp64_reset();
 }
 
+int command_test(Command* self) {
+  return pp64_test(self->argv[0], self->argv[1]);
+}
+
 int command_help(Command *self) {
 
   if (self->argc > 0) {
@@ -635,10 +649,10 @@ int command_help(Command *self) {
 
 int command_dos(Command *self) {
 
-  int result = pp64_dos(self->command+1);
-
-  self->id = COMMAND_STATUS;
-  return command_execute(self) && result;
+  if (pp64_dos(self->command+1)) {
+    return command_status(self);
+  }
+  return false;
 }
 
 int command_backup(Command *self) {
@@ -789,11 +803,12 @@ int command_verify(Command *self) {
 
 int command_status(Command* self) {
 
-  unsigned char *status = (unsigned char*) calloc(sizeof(unsigned char), 256);
+  char *status = (char*) calloc(sizeof(unsigned char), 256);
   int result = false;
   
   if(pp64_drive_status(status)) {
     printf("%s\n", status);
+    result = true;
   }
 
   free(status);
@@ -802,15 +817,22 @@ int command_status(Command* self) {
 
 int command_ready(Command* self) {
 
-  if(!pp64_ping(250)) {
+  int timeout = 3000;
+
+  if(!pp64_ping()) {
     pp64_reset();
-    return pp64_ping(3000);
+    
+    while(timeout) {
+      if(pp64_ping()) return true;
+      timeout-=100;
+    }
+    return false;
   }
   return true;
 }
 
 int command_ping(Command* self) {
-  return pp64_ping(250);
+  return pp64_ping();
 }
 
 int command_execute(Command* self) {
@@ -820,6 +842,10 @@ int command_execute(Command* self) {
   if(mode == MODE_HELP) {
     help(self->id);
     return true;
+  }
+
+  if(!command_parse_options(self)) {
+    return false;
   }
 
   switch(self->id) {
@@ -840,12 +866,15 @@ int command_execute(Command* self) {
   case COMMAND_STATUS  : return command_status(self);
   case COMMAND_READY   : return command_ready(self);
   case COMMAND_PING    : return command_ping(self);
+  case COMMAND_TEST    : return command_test(self);
   }
   
   return false;
 }
 
 int main(int argc, char **argv) {
+
+  logger->enter(argv[0]);
 
   argc--; argv++;
 
@@ -860,10 +889,13 @@ int main(int argc, char **argv) {
       return EXIT_SUCCESS;
     }
 
+#if linux
     if (strncmp(argv[0], "shell", 5) == 0) {
       shell();
       return EXIT_SUCCESS;
     }
+#endif
+
   }
 
   Commands *commands = commands_new(argc, argv);
@@ -875,6 +907,7 @@ int main(int argc, char **argv) {
   return result;
 }
 
+#if linux
 void shell(void) {
 
   extern char **completion_matches();
@@ -980,6 +1013,7 @@ void shell(void) {
   }
   printf("\n");
 }
+#endif
 
 void usage(void) {
     printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
@@ -1000,6 +1034,9 @@ void usage(void) {
     
     printf("Commands:\n");
     printf("          help  [<command>]            : show detailed help for command\n");
+#if linux
+    printf("          shell                        : enter interactive command shell\n");
+#endif
     printf("          ready                        : try to make sure the server is ready\n");
     printf("          reset                        : reset C64 (only if using reset circuit)\n");
     printf("\n");

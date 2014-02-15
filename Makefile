@@ -1,6 +1,6 @@
 GCC=gcc
 GCC-MINGW32=i486-mingw32-gcc
-FLAGS=-std=gnu99 -Wall -O3
+FLAGS=-std=gnu99 -Wall -O3 -I.
 KASM=java -jar /usr/share/kickassembler/KickAss.jar
 
 all: linux win32 servers kernal
@@ -8,17 +8,28 @@ all: linux win32 servers kernal
 linux: c64
 win32: c64.exe
 
-libpp64.so: pp64.c pp64.h extension.c extension.h extensions.c
-	$(GCC) $(FLAGS) -shared -fPIC -o libpp64.so pp64.c extension.c
+libpp64.so: pp64.c pp64.h \
+	driver/driver.c driver/driver.h \
+	driver/usb.c driver/usb.h \
+	driver/protocol.h \
+	driver/parport.c driver/parport.h \
+	extension.c extension.h extensions.c \
+	util.c util.h 
+	$(GCC) $(FLAGS) -shared -fPIC -o libpp64.so pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
 
-c64: libpp64.so client.c client.h stringlist.c stringlist.h disk.c disk.h
-	$(GCC) $(FLAGS) -o c64 client.c stringlist.c disk.c -L. -lpp64 -lreadline
+c64: libpp64.so client.c client.h disk.c disk.h
+	$(GCC) $(FLAGS) -o c64 client.c disk.c -L. -lpp64 -lreadline
 
-pp64.dll: pp64.c pp64.h extension.c extension.h extensions.c
-	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c extension.c 
+pp64.dll: pp64.c pp64.h \
+	driver/driver.c driver/driver.h \
+	driver/usb.c driver/usb.h \
+	driver/parport.c driver/parport.h \
+	extension.c extension.h extensions.c \
+	util.c util.h
+	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
 
-c64.exe: pp64.dll client.c client.h stringlist.c stringlist.h disk.c disk.h 
-	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c stringlist.c disk.c -L. -lpp64 -lreadline -lpdcurses
+c64.exe: pp64.dll client.c client.h disk.c disk.h 
+	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64
 
 extensions.c: tools/compile-extension extensions.asm
 	$(KASM) -binfile -o extensions.bin extensions.asm | grep compile-extension | bash > extensions.c && rm extensions.bin
