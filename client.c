@@ -44,6 +44,8 @@
 int debug = false;
 int mode  = MODE_EXEC;
 
+//------------------------------------------------------------------------------
+
 char str2id(const char* arg) {
   if (strncmp(arg, "load" ,   4) == 0) return COMMAND_LOAD;
   if (strncmp(arg, "save" ,   4) == 0) return COMMAND_SAVE;
@@ -71,6 +73,8 @@ char str2id(const char* arg) {
   return COMMAND_AUTO;
 }
 
+//------------------------------------------------------------------------------
+
 char* id2str(const char id) {
   if (id == COMMAND_AUTO)    return (char*) "auto";
   if (id == COMMAND_LOAD)    return (char*) "load";
@@ -92,21 +96,31 @@ char* id2str(const char id) {
   return (char*) "unknown";
 }
 
+//------------------------------------------------------------------------------
+
 int isCommand(const char *str) {
   return str2id(str) > COMMAND_NONE;
 }
+
+//------------------------------------------------------------------------------
 
 int valid(int address) {
   return address >= 0x0000 && address <= 0x10000; 
 }
 
+//------------------------------------------------------------------------------
+
 void screenOn(void) {
   pp64_poke(0x37, 0x10, 0xd011, 0x1b);
 }
 
+//------------------------------------------------------------------------------
+
 void screenOff(void) {
   pp64_poke(0x37, 0x10, 0xd011, 0x0b);
 }
+
+//------------------------------------------------------------------------------
 
 Commands* commands_new(int argc, char **argv) {
 
@@ -121,12 +135,16 @@ Commands* commands_new(int argc, char **argv) {
   return commands;
 }
 
+//------------------------------------------------------------------------------
+
 Command* commands_add(Commands* self, Command* command) {
   self->items = (Command**) realloc(self->items, (self->count+1) * sizeof(Command*));
   self->items[self->count] = command;
   self->count++;
   return command;
 }
+
+//------------------------------------------------------------------------------
 
 int commands_each(Commands* commands, int (*func) (Command* command)) {
   int result = true;
@@ -139,9 +157,13 @@ int commands_each(Commands* commands, int (*func) (Command* command)) {
   return result;
 }
 
+//------------------------------------------------------------------------------
+
 int commands_execute(Commands* commands) {
   return commands_each(commands, &command_execute);
 }
+
+//------------------------------------------------------------------------------
 
 void commands_free(Commands* self) {
 
@@ -151,6 +173,8 @@ void commands_free(Commands* self) {
   free(self->items);
   free(self);
 }
+
+//------------------------------------------------------------------------------
 
 Command* command_new(int *argc, char ***argv) {
 
@@ -184,6 +208,8 @@ void command_free(Command* self) {
   free(self->argv);
   free(self);
 }
+
+//------------------------------------------------------------------------------
 
 void command_consume_arguments(Command *self, int *argc, char ***argv) {
   
@@ -219,12 +245,16 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
   }
 }
 
+//------------------------------------------------------------------------------
+
 void command_append_argument(Command* self, char* arg) {
   self->argv = (char**) realloc(self->argv, (self->argc+1) * sizeof(char*));
   self->argv[self->argc] = (char*) calloc(strlen(arg)+1, sizeof(char));
   strncpy(self->argv[self->argc], arg, strlen(arg));
   self->argc++;
 }
+
+//------------------------------------------------------------------------------
 
 int command_parse_options(Command *self) {
   
@@ -261,7 +291,7 @@ int command_parse_options(Command *self) {
       break;
 
     case 'p':
-      if (!pp64_setup(optarg))
+      if (!pp64_set_device(optarg))
         return false; 
       break;
 
@@ -316,9 +346,13 @@ int command_parse_options(Command *self) {
   return true;
 }
 
+//------------------------------------------------------------------------------
+
 char* command_get_name(Command* self) {
   return id2str(self->id);
 }
+
+//------------------------------------------------------------------------------
 
 void command_print(Command* self) {
   if(debug) {
@@ -336,6 +370,8 @@ void command_print(Command* self) {
     printf("\n");
   }
 }  
+
+//------------------------------------------------------------------------------
 
 int command_find_basic_program(Command* self) {
 
@@ -374,6 +410,8 @@ int command_find_basic_program(Command* self) {
   return false;
 }
 
+//------------------------------------------------------------------------------
+
 int command_auto(Command* self) {
 
   if (self->argc == 0) {
@@ -398,6 +436,8 @@ int command_auto(Command* self) {
   }
   return false;
 }
+
+//------------------------------------------------------------------------------
 
 int command_load(Command* self) {
   
@@ -471,6 +511,8 @@ int command_load(Command* self) {
   return true;
 }
 
+//------------------------------------------------------------------------------
+
 int command_save(Command* self) {
   
   FILE *file;
@@ -539,6 +581,8 @@ int command_save(Command* self) {
   return true;
 }
 
+//------------------------------------------------------------------------------
+
 int command_poke(Command* self) {
   char *argument;
   int address;
@@ -572,6 +616,8 @@ int command_poke(Command* self) {
   return pp64_poke(self->memory, self->bank, address, value);
 }
 
+//------------------------------------------------------------------------------
+
 int command_peek(Command* self) {
   
   if (self->argc == 0) {
@@ -595,6 +641,8 @@ int command_peek(Command* self) {
   
   return true;
 }
+
+//------------------------------------------------------------------------------
 
 int command_jump(Command* self) {
 
@@ -624,17 +672,25 @@ int command_jump(Command* self) {
   return pp64_jump(self->memory, self->bank, address);
 }
 
+//------------------------------------------------------------------------------
+
 int command_run(Command* self) {
   return pp64_run();
 }
+
+//------------------------------------------------------------------------------
 
 int command_reset(Command* self) {
   return pp64_reset();
 }
 
+//------------------------------------------------------------------------------
+
 int command_test(Command* self) {
   return pp64_test(self->argv[0], self->argv[1]);
 }
+
+//------------------------------------------------------------------------------
 
 int command_help(Command *self) {
 
@@ -647,6 +703,24 @@ int command_help(Command *self) {
   return true;
 }
 
+//------------------------------------------------------------------------------
+
+int command_status(Command* self) {
+
+  char *status = (char*) calloc(sizeof(unsigned char), 256);
+  int result = false;
+  
+  if(pp64_drive_status(status)) {
+    printf("%s\n", status);
+    result = true;
+  }
+
+  free(status);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+
 int command_dos(Command *self) {
 
   if (pp64_dos(self->command+1)) {
@@ -654,6 +728,8 @@ int command_dos(Command *self) {
   }
   return false;
 }
+
+//------------------------------------------------------------------------------
 
 int command_backup(Command *self) {
   
@@ -684,6 +760,8 @@ int command_backup(Command *self) {
   disk_free(disk);
   return result;
 }
+
+//------------------------------------------------------------------------------
 
 int command_restore(Command *self) {
 
@@ -747,6 +825,8 @@ int command_restore(Command *self) {
   return result;
 }
 
+//------------------------------------------------------------------------------
+
 int command_verify(Command *self) {
 
   bool verify_sector(Sector* expected) {
@@ -801,19 +881,7 @@ int command_verify(Command *self) {
   return result;
 }
 
-int command_status(Command* self) {
-
-  char *status = (char*) calloc(sizeof(unsigned char), 256);
-  int result = false;
-  
-  if(pp64_drive_status(status)) {
-    printf("%s\n", status);
-    result = true;
-  }
-
-  free(status);
-  return result;
-}
+//------------------------------------------------------------------------------
 
 int command_ready(Command* self) {
 
@@ -824,16 +892,20 @@ int command_ready(Command* self) {
     
     while(timeout) {
       if(pp64_ping()) return true;
-      timeout-=100;
+      timeout-=PP64_PING_TIMEOUT;
     }
     return false;
   }
   return true;
 }
 
+//------------------------------------------------------------------------------
+
 int command_ping(Command* self) {
   return pp64_ping();
 }
+
+//------------------------------------------------------------------------------
 
 int command_execute(Command* self) {
 
@@ -846,6 +918,12 @@ int command_execute(Command* self) {
 
   if(!command_parse_options(self)) {
     return false;
+  }
+
+  if(!pp64_has_device()) {
+    if(!pp64_set_device("/dev/c64")) {
+        return false;
+      }
   }
 
   switch(self->id) {
@@ -871,6 +949,8 @@ int command_execute(Command* self) {
   
   return false;
 }
+
+//------------------------------------------------------------------------------
 
 int main(int argc, char **argv) {
 
@@ -906,6 +986,8 @@ int main(int argc, char **argv) {
 
   return result;
 }
+
+//------------------------------------------------------------------------------
 
 #if linux
 void shell(void) {
@@ -1015,6 +1097,8 @@ void shell(void) {
 }
 #endif
 
+//------------------------------------------------------------------------------
+
 void usage(void) {
     printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
@@ -1053,6 +1137,8 @@ void usage(void) {
     printf("          verify <file>                : verify disk against d64 file\n");
     printf("\n");
 }
+
+//------------------------------------------------------------------------------
 
 void help(int id) {
 

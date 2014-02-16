@@ -6,6 +6,7 @@
 #include <usb.h>
 #include <sys/time.h>
 
+#include "pp64.h"
 #include "driver.h"
 #include "protocol.h"
 #include "util.h"
@@ -35,18 +36,20 @@ bool driver_usb_open() {
   return true;
 }
 
+//------------------------------------------------------------------------------
+
 void driver_usb_strobe() {
   usbMessage(USB_STROBE);
 }
+
+//------------------------------------------------------------------------------
 
 bool driver_usb_wait(int timeout) {
   
   response[0] = 0;
 
-  bool acked() { // TODO: proper error handling?
-    if(usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_IN, 
-                       USB_ACKED, 0, 0, response, sizeof(response), MESSAGE_TIMEOUT) > 0) {
-      
+  bool acked() {
+    if(usbMessageEndpointIn(USB_ACKED, response, sizeof(response))) {
       return response[0] == 1;
     }
     return false;
@@ -67,15 +70,21 @@ bool driver_usb_wait(int timeout) {
   return result;
 }
 
+//------------------------------------------------------------------------------
+
 void driver_usb_write(char value) {
   usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 
                   USB_WRITE, value, 0, NULL, 0, MESSAGE_TIMEOUT);
 } 
 
+//------------------------------------------------------------------------------
+
 char driver_usb_read() {
   usbMessageEndpointIn(USB_READ, response, sizeof(response));
   return response[0];
 } 
+
+//------------------------------------------------------------------------------
 
 void driver_usb_send(char* data, int size) {
 
@@ -89,6 +98,8 @@ void driver_usb_send(char* data, int size) {
   usbMessageEndpointOut(USB_SEND, data, size);
 }
 
+//------------------------------------------------------------------------------
+
 void driver_usb_receive(char* data, int size) {
 
   while(size > DRIVER_USB_MAX_PAYLOAD_SIZE) {
@@ -101,33 +112,47 @@ void driver_usb_receive(char* data, int size) {
   usbMessageEndpointIn(USB_RECEIVE, data, size);
 }
 
+//------------------------------------------------------------------------------
+
 void driver_usb_input() {
   usbMessage(USB_INPUT);
 }
+
+//------------------------------------------------------------------------------
 
 void driver_usb_output() {
   usbMessage(USB_OUTPUT);
 }
 
+//------------------------------------------------------------------------------
+
 bool driver_usb_ping() { 
   driver->output();
   driver->write(0xff);
   driver->strobe();
-  return driver->wait(100);
+  return driver->wait(PP64_PING_TIMEOUT);
 }
+
+//------------------------------------------------------------------------------
 
 void driver_usb_reset() { 
   usbMessage(USB_RESET);
 }
 
+//------------------------------------------------------------------------------
+
 void driver_usb_flash() { 
   usbMessage(USB_FLASH);
 }
+
+//------------------------------------------------------------------------------
 
 void driver_usb_close() {
   if(handle != NULL) 
     usb_close(handle);
 }
+
+//------------------------------------------------------------------------------
 
 void driver_usb_free() {
   handle = NULL;
@@ -153,6 +178,8 @@ int usbMessageEndpoint(int message, char *buffer, int size, int direction) {
   return usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | direction, 
                          message, 0, 0, (char *)buffer, size, MESSAGE_TIMEOUT);
 }
+
+//------------------------------------------------------------------------------
 
 int _driver_usb_get_descriptor_string(usb_dev_handle *dev, int index, int langid, char *buf, int buflen) {
 
@@ -184,6 +211,8 @@ int _driver_usb_get_descriptor_string(usb_dev_handle *dev, int index, int langid
     
     return i-1;
 }
+
+//------------------------------------------------------------------------------
 
 usb_dev_handle* _driver_usb_open_device(int vendor, char *vendorName, int product, char *productName) {
 

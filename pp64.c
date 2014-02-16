@@ -13,9 +13,16 @@ extern Driver* driver;
 
 //------------------------------------------------------------------------------
 
-bool pp64_setup(char* spec) {
-  return (driver = driver_setup(spec)) != NULL;
+bool pp64_set_device(char* path) {
+  driver_setup(path);
+  return pp64_has_device();
 }  
+
+//------------------------------------------------------------------------------
+
+bool pp64_has_device() {
+  return driver != NULL;
+}
 
 //------------------------------------------------------------------------------
 
@@ -124,7 +131,7 @@ bool pp64_peek(unsigned char memory, unsigned char bank, int address, unsigned c
     driver->input();
     driver->strobe();
 
-    driver->receive(value, 1);
+    driver->receive((char *)value, 1);
 
     driver->close();
     return true;
@@ -247,7 +254,7 @@ bool pp64_drive_status(char* status) {
       // TODO: fixme: infinite loop, add another ack from server before entering?
       while(true) {
 
-        driver->receive(&byte, 1);
+        driver->receive((char *) &byte, 1);
 
         if(byte == 0xff) break;
 
@@ -331,7 +338,7 @@ bool pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* 
       driver->input();
       driver->strobe();
 
-      driver->receive(data, 256);
+      driver->receive((char *) data, 256);
       driver->wait(0);
       
       driver->close();      
@@ -361,7 +368,7 @@ bool pp64_sector_write(unsigned char track, unsigned char sector, unsigned char 
       sprintf(U2, "U2 2 0 %02d %02d", track, sector);
 
       driver->output();
-      driver->send(data, 256);
+      driver->send((char *) data, 256);
       driver->send(U2, strlen(U2));
 
       driver->wait(0);
