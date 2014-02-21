@@ -43,7 +43,7 @@ void stringlist_free(StringList *self);
 typedef struct {
   int level;
   StringList *context;
-  void (*set) (char *level);
+  void (*set) (char *level);  
   void (*enter) (char *context);
   void (*leave) (void);
   void (*log) (int level, char *format, va_list ap);

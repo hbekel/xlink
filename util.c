@@ -61,6 +61,12 @@ void stringlist_free(StringList *self) {
 #define VA_START va_list ap; va_start(ap, fmt)
 #define VA_END va_end(ap)
 
+void _logger_print_context() {
+  if(logger->context != NULL && logger->context->size > 0) {
+    printf("%s: ", stringlist_last(logger->context)); 
+  }
+}
+
 void _logger_print_level(int level) {
   switch(level) {
 
@@ -90,8 +96,8 @@ void _logger_log(int level, char *fmt, va_list ap) {
 
   char format[256];
   int count = 0;
-  int i, j;                                  /* Need all these to store      */
-  char c;                                    /* values below in switch       */
+  int i, j;
+  char c;
   double d;
   unsigned u;
   char *s;
@@ -99,31 +105,31 @@ void _logger_log(int level, char *fmt, va_list ap) {
 
   if(level > logger->level) return;
 
-  printf("%s: ", stringlist_last(logger->context)); 
+  _logger_print_context();
   _logger_print_level(level);
 
   while (*fmt) {
     for (j = 0; fmt[j] && fmt[j] != '%'; j++)
-      format[j] = fmt[j];                    /* not a format string          */
+      format[j] = fmt[j];                   
     if (j) {
       format[j] = '\0';
-      count += printf(format);    /* log it verbatim              */
+      count += printf(format);
       fmt += j;
     } else {
-      for (j = 0; !isalpha(fmt[j]); j++) {   /* find end of format specifier */
+      for (j = 0; !isalpha(fmt[j]); j++) {
         format[j] = fmt[j];
-        if (j && fmt[j] == '%')              /* special case printing '%'    */
+        if (j && fmt[j] == '%')
           break;
       }
-      format[j] = fmt[j];                    /* finish writing specifier     */
-      format[j + 1] = '\0';                  /* don't forget NULL terminator */
+      format[j] = fmt[j];
+      format[j + 1] = '\0';
       fmt += j + 1;
       
-      switch (format[j]) {                   /* cases for all specifiers     */
+      switch (format[j]) {
       case 'd':
-      case 'i':                              /* many use identical actions   */
-        i = va_arg(ap, int);                 /* process the argument         */
-        count += printf(format, i); /* and log it                 */
+      case 'i':
+        i = va_arg(ap, int);
+        count += printf(format, i);
         break;
       case 'o':
       case 'x':
@@ -133,7 +139,7 @@ void _logger_log(int level, char *fmt, va_list ap) {
         count += printf(format, u);
         break;
       case 'c':
-        c = (char) va_arg(ap, int);          /* must cast!                   */
+        c = (char) va_arg(ap, int);
         count += printf(format, c);
         break;
       case 's':
@@ -164,6 +170,7 @@ void _logger_log(int level, char *fmt, va_list ap) {
     }
   }
   printf("\n");
+  fflush(stdout);
 }
 
 void _logger_set(char* level) {
