@@ -687,7 +687,7 @@ int command_reset(Command* self) {
 //------------------------------------------------------------------------------
 
 int command_test(Command* self) {
-  return pp64_test(self->argv[0], self->argv[1]);
+  return pp64_test(self->argv[0]);
 }
 
 //------------------------------------------------------------------------------

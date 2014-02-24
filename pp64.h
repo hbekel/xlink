@@ -32,7 +32,7 @@ extern "C" {
   bool pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* data);
   bool pp64_sector_write(unsigned char track, unsigned char sector, unsigned char* data);
 
-  bool pp64_test(char *path, char *test);
+  bool pp64_test(char *test);
 #ifdef __cplusplus
 }
 #endif

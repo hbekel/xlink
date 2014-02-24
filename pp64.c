@@ -251,7 +251,7 @@ bool pp64_drive_status(char* status) {
 
       int i = 0;
 
-      // TODO: fixme: infinite loop, add another ack from server before entering?
+      //FIXME: possibly infinite loop, add another ack from server before entering?
       while(true) {
 
         driver->receive((char *) &byte, 1);
@@ -385,15 +385,10 @@ bool pp64_sector_write(unsigned char track, unsigned char sector, unsigned char 
 
 //------------------------------------------------------------------------------
 
-bool pp64_test(char* path, char *test) {
+bool pp64_test(char *test) {
 
-  Driver *driver = driver_setup(path);
   Watch* watch = watch_new();
   bool result = false;
-
-  if(driver == NULL) {
-    goto done;
-  }
 
   logger->enter("testsuite");
 
@@ -486,7 +481,6 @@ bool pp64_test(char* path, char *test) {
  done:
   if(driver != NULL) {
     driver->close();
-    driver->free();
   }
   watch_free(watch);
 
