@@ -41,7 +41,6 @@
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
 
-int debug = false;
 int mode  = MODE_EXEC;
 
 //------------------------------------------------------------------------------
@@ -260,10 +259,9 @@ int command_parse_options(Command *self) {
   
   int option, index;
   static struct option options[] = {
-    {"debug",   required_argument, 0, 'd'},
     {"help",    no_argument,       0, 'h'},
+    {"device",  required_argument, 0, 'd'},
     {"level",   required_argument, 0, 'l'},
-    {"port",    required_argument, 0, 'p'},
     {"memory",  required_argument, 0, 'm'},
     {"bank",    required_argument, 0, 'b'},
     {"address", required_argument, 0, 'a'},
@@ -275,24 +273,21 @@ int command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "dhl:p:m:b:a:", options, &index);
+    option = getopt_long(self->argc, self->argv, "hd:l:m:b:a:", options, &index);
     
     if(option == -1)
       break;
 
     switch(option) {
     
-    case 'd':
-      debug = true;
-      break;
-
     case 'l':
       logger->set(optarg);
       break;
 
-    case 'p':
-      if (!pp64_set_device(optarg))
+    case 'd':
+      if (!pp64_set_device(optarg)) {
         return false; 
+      }
       break;
 
     case 'm':
@@ -351,25 +346,6 @@ int command_parse_options(Command *self) {
 char* command_get_name(Command* self) {
   return id2str(self->id);
 }
-
-//------------------------------------------------------------------------------
-
-void command_print(Command* self) {
-  if(debug) {
-    printf("%s -m 0x%02X -b 0x%02X -a 0x%04X-0x%04X ", 
-	   command_get_name(self), 
-	   (unsigned char) self->memory, 
-	   (unsigned char) self->bank, 
-	   (unsigned short) self->start, 
-	   (unsigned short) self->end);
-    
-    int i;
-    for (i=0; i<self->argc; i++) {
-      printf("%s ", self->argv[i]);
-    }
-    printf("\n");
-  }
-}  
 
 //------------------------------------------------------------------------------
 
@@ -767,13 +743,8 @@ int command_restore(Command *self) {
 
   bool write_sector(Sector *sector) {
 
-    if (debug) {
-      sector_print(sector);
-    } 
-    else {
-      printf("\rwriting track %02d, sector %02d", sector->track, sector->number);
-      fflush(stdout);
-    }
+    printf("\rwriting track %02d, sector %02d", sector->track, sector->number);
+    fflush(stdout);
 
     return pp64_sector_write(sector->track, sector->number, sector->bytes); 
   }
@@ -909,8 +880,6 @@ int command_ping(Command* self) {
 
 int command_execute(Command* self) {
 
-  command_print(self);
-
   if(mode == MODE_HELP) {
     help(self->id);
     return true;
@@ -921,9 +890,17 @@ int command_execute(Command* self) {
   }
 
   if(!pp64_has_device()) {
+
+    logger->info("no device specified, trying to find USB device at /dev/c64...");
     if(!pp64_set_device("/dev/c64")) {
+
+#if linux
+      logger->info("no USB device found, trying to connect via parallel port /dev/parport0...");
+      if(!pp64_set_device("/dev/parport0"))
+#endif
         return false;
-      }
+    }
+    logger->info("found device");
   }
 
   switch(self->id) {
@@ -1088,7 +1065,6 @@ void shell(void) {
         commands_free(commands);
         stringlist_free(arguments);
       }
-      debug = false;
       mode = MODE_EXEC;
     }    
     free(line);
@@ -1102,15 +1078,16 @@ void shell(void) {
 void usage(void) {
     printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
-    printf("Usage: c64 [<opts>] [<file>.prg]\n");
+    printf("Usage: c64 <file>\n");
     printf("       c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n\n");
     printf("Options:\n");
     printf("         -h, --help                    : show this help\n");
     printf("         -d, --debug                   : enable debug messages\n");
-    printf("         -p, --port <port>             : ");
 #if linux
-    printf("port device (default: /dev/parport0)\n");
+    printf("         -d, --device <path>           : ");
+    printf("transfer device (default: /dev/c64)\n");
 #elif windows
+    printf("         -d, --device <port or USB>    : ");
     printf("port address (default: 0x378)\n");
 #endif
     printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
