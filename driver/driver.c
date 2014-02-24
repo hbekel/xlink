@@ -8,6 +8,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "target.h"
 #include "util.h"
 #include "driver.h"
 #include "parport.h"
@@ -105,8 +106,11 @@ bool device_is_parport(char* path) {
   }
   
   return major(device.st_rdev) == 99;
+
+#elif windows
+  errno = 0;
+  return (strtol(path, NULL, 0) > 0) && (errno == 0);   
 #endif
-  return false;
 }
 
 bool device_is_usb(char* path) {
@@ -125,8 +129,10 @@ bool device_is_usb(char* path) {
     return false;
   }
   return major(device.st_rdev) == 189;
+
+#elif windows
+  return !device_is_parport(path);
 #endif
-  return false;
 }
 
 bool _driver_open()                        { return driver->_open(); }

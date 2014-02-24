@@ -25,6 +25,17 @@
 extern Driver* driver;
 static unsigned char _driver_parport_last_status;
 
+#if windows
+  typedef BOOL (__stdcall *lpDriverOpened)(void);
+  typedef void (__stdcall *lpOutb)(short, short);
+  typedef short (__stdcall *lpInb)(short);
+ 
+  static HINSTANCE inpout32 = NULL;
+  static lpOutb outb;
+  static lpInb inb;
+  static lpDriverOpened driverOpened;
+#endif
+
 //------------------------------------------------------------------------------
 
 static unsigned char _driver_parport_read_status() {
@@ -32,6 +43,8 @@ static unsigned char _driver_parport_read_status() {
 
 #if linux
   ioctl(driver->device, PPRSTATUS, &status);
+#elif windows
+  status = inb(driver->device+1);
 #endif
 
   return status;
@@ -42,6 +55,8 @@ static unsigned char _driver_parport_read_status() {
 static void _driver_parport_set_control(unsigned char control) {
 #if linux
   ioctl(driver->device, PPWCONTROL, &control);
+#elif windows
+  outb(driver->device+2, control);
 #endif
 }
 
@@ -54,12 +69,23 @@ static void _driver_parport_frob_control(unsigned char mask, unsigned char state
   frob.val = state == HIGH ? mask : LOW;
 
   ioctl(driver->device, PPFCONTROL, &frob);
+#elif windows
+  unsigned char previous = inb(driver->device+2);
+  unsigned char frobbed = (previous & ~mask) | (state == HIGH ? mask : 0);
+  outb(driver->device+2, frobbed);
 #endif
 }
 
 //------------------------------------------------------------------------------
 
 static void _driver_parport_init() {
+
+#if linux
+  ioctl(driver->device, PPSETFLAGS, PP_FASTWRITE | PP_FASTREAD);
+
+#elif windows
+  driver->device = strtol(driver->path, NULL, 0);
+#endif
 
   _driver_parport_set_control(
                                DRIVER_PARPORT_CONTROL_SELECT | 
@@ -69,15 +95,12 @@ static void _driver_parport_init() {
 
   
   _driver_parport_last_status = _driver_parport_read_status();
-
-#if linux
-  ioctl(driver->device, PPSETFLAGS, PP_FASTWRITE | PP_FASTREAD);
-#endif
 }
 
 //------------------------------------------------------------------------------
 
 bool driver_parport_open() {
+
 #if linux
   if((driver->device = open(driver->path, O_RDWR)) == -1) {
 
@@ -88,8 +111,36 @@ bool driver_parport_open() {
  
   _driver_parport_init();
   return true;
-#endif  
-  return false;
+
+#elif windows
+  if(inpout32 == NULL) {
+    
+    inpout32 = LoadLibrary( "inpout32.dll" ) ;	
+    
+    if (inpout32 != NULL) {
+      
+      driverOpened = (lpDriverOpened) GetProcAddress(inpout32, "IsInpOutDriverOpen");
+      outb = (lpOutb) GetProcAddress(inpout32, "Out32");
+      inb = (lpInb) GetProcAddress(inpout32, "Inp32");		
+      
+      if (driverOpened()) {
+        _driver_parport_init();
+        return true;
+      }
+      else {
+        logger->error("failed to open inpout32 parallel port driver\n");
+      }		
+    }
+    else {
+      logger->error("pp64: error: failed to load inpout32.dll\n\n"
+                    "Inpout32 is required for parallel port access:\n\n"    
+                    "    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");	
+    }
+    return false;
+  }  
+  _driver_parport_init();
+  return true;
+#endif
 }
 
 //------------------------------------------------------------------------------
@@ -148,6 +199,8 @@ char driver_parport_read(void) {
 
 #if linux
   ioctl(driver->device, PPRDATA, &value);
+#elif windows
+  value = inb(driver->device);
 #endif
 
   return value;
@@ -158,6 +211,8 @@ char driver_parport_read(void) {
 void driver_parport_write(char value) { 
 #if linux
   ioctl(driver->device, PPWDATA, &value);
+#elif windows
+  outb(driver->device, value);
 #endif
 }
 
