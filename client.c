@@ -398,7 +398,7 @@ int command_auto(Command* self) {
   char *suffix = (filename + strlen(filename)-4);
 
   if (strncasecmp(suffix, ".prg", 4) != 0) {
-    fprintf(stderr, "c64: error: autoload: not a .prg file: %s\n", filename);
+    logger->error("autoload: not a .prg file: %s", filename);
     return false;
   }
 
@@ -425,7 +425,7 @@ int command_load(Command* self) {
   char *data;
 
   if (self->argc == 0) {
-    fprintf(stderr, "c64: error: load: no file specified\n");
+    logger->error("load: no file specified");
     return false;
   }
 
@@ -434,7 +434,7 @@ int command_load(Command* self) {
   file = fopen(filename, "rb");
   
   if (file == NULL) {
-    fprintf(stderr, "c64: error: load: '%s': %s\n", filename, strerror(errno));
+    logger->error("load: '%s': %s", filename, strerror(errno));
     return false;
   }
   stat(filename, &st);
@@ -449,7 +449,7 @@ int command_load(Command* self) {
   }
   else {
     if (self->start == -1) {      
-      fprintf(stderr, "c64: error: load: not a .prg file and no start address specified\n");
+      logger->error("load: not a .prg file and no start address specified");
       fclose(file);
       return false;
     }
@@ -497,7 +497,7 @@ int command_save(Command* self) {
   char *data;
 
   if (self->argc == 0) {
-    fprintf(stderr, "c64: error: save: no file specified\n");
+    logger->error("save: no file specified");
     return false;
   }
 
@@ -505,18 +505,18 @@ int command_save(Command* self) {
 
   if(self->start == -1) {
     if(!command_find_basic_program(self)) {
-      fprintf(stderr, "c64: error: no start address specified and no basic program in memory\n");
+      logger->error("save: no start address specified and no basic program in memory");
       return false;
     }
   }
 
   if(self->start == -1) {                   
-    fprintf(stderr, "c64: error: no start address specified\n");
+    logger->error("save: no start address specified");
     return false;
   }
   else {
     if(self->end == -1) {                   
-      fprintf(stderr, "c64: error: no end address specified\n");
+      logger->error("save: no end address specified");
       return false;
     }
   }
@@ -536,7 +536,7 @@ int command_save(Command* self) {
   file = fopen(filename, "wb");
 
   if(file == NULL) {
-    fprintf(stderr, "c64: error: '%s': %s\n", filename, strerror(errno));
+    logger->error("save: '%s': %s", filename, strerror(errno));
     free(data);
     return false;
   }
@@ -565,14 +565,14 @@ int command_poke(Command* self) {
   unsigned char value;
   
   if (self->argc == 0) {
-    fprintf(stderr, "c64: error: poke: argument required\n");
+    logger->error("poke: argument required");
     return false;
   }
   argument = self->argv[0];
   unsigned int comma = strcspn(argument, ",");
 
   if (comma == strlen(argument) || comma == strlen(argument)-1) {
-    fprintf(stderr, "c64: syntax error: poke: expects <address>,<value>\n");
+    logger->error("poke: expects <address>,<value>");
     return false;
   }
   
@@ -597,7 +597,7 @@ int command_poke(Command* self) {
 int command_peek(Command* self) {
   
   if (self->argc == 0) {
-    fprintf(stderr, "c64: error: peek: no address specified\n");
+    logger->error("peek: no address specified");
     return false;
   }
 
@@ -623,7 +623,7 @@ int command_peek(Command* self) {
 int command_jump(Command* self) {
 
   if (self->argc == 0) {
-    fprintf(stderr, "c64: error: jump: no address specified\n");
+    logger->error("jump: no address specified");
     return false;
   }
 
@@ -634,7 +634,7 @@ int command_jump(Command* self) {
       address = self->start;
     }
     else {
-      fprintf(stderr, "c64: error: jump: no address specified\n");
+      logger->error("jump: no address specified");
       return false;    
     }
   }
@@ -671,7 +671,7 @@ int command_test(Command* self) {
 int command_help(Command *self) {
 
   if (self->argc > 0) {
-    fprintf(stderr, "c64: unknown command: %s\n", self->argv[0]);
+    logger->error("help: unknown command: %s", self->argv[0]);
     return false;
   }
 
@@ -768,7 +768,7 @@ int command_restore(Command *self) {
   snprintf(format_disk, size, "N:%s,%s", disk->name, disk->id);
 
   if(disk->size > 35) {
-    fprintf(stderr, "c64: error: no support for disks > 35 tracks\n");
+    logger->error("restore: no support for disks > 35 tracks\n");
     result = false;
     goto done;
   }
@@ -1076,10 +1076,10 @@ void shell(void) {
 //------------------------------------------------------------------------------
 
 void usage(void) {
-    printf("pp64 client 0.3 Copyright (C) 2013 Henning Bekel <h.bekel@googlemail.com>\n\n");
+    printf("pp64 client 0.4 Copyright (C) 2014 Henning Bekel <h.bekel@googlemail.com>\n\n");
 
-    printf("Usage: c64 <file>\n");
-    printf("       c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n\n");
+    printf("Usage: c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n");
+    printf("       c64 <file>\n\n");
     printf("Options:\n");
     printf("         -h, --help                    : show this help\n");
     printf("         -d, --debug                   : enable debug messages\n");
