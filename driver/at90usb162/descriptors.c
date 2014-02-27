@@ -1,5 +1,13 @@
 #include "descriptors.h"
 
+#if !(USB_VID + 0)
+#error "Define an environment variable named USB_VID that contains the usb vendor id"
+#endif
+
+#if !(USB_PID + 0)
+#error "Define an environment variable named USB_PID that contains the usb product id"
+#endif
+
 /** Device descriptor structure. This descriptor, located in FLASH memory, describes the overall
  *  device characteristics, including the supported USB version, control endpoint size and the
  *  number of device configurations. The descriptor is read out by the USB host when the enumeration
@@ -16,8 +24,8 @@ const USB_Descriptor_Device_t PROGMEM UUAdapter_DeviceDescriptor =
 
 	.Endpoint0Size          = FIXED_CONTROL_ENDPOINT_SIZE,
 
-	.VendorID               = 0x03eb,
-	.ProductID              = 0x2064,
+	.VendorID               = USB_VID,
+	.ProductID              = USB_PID,
 	.ReleaseNumber          = VERSION_BCD(01.00),
 
 	.ManufacturerStrIndex   = STRING_ID_Manufacturer,

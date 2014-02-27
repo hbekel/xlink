@@ -103,7 +103,7 @@ void _logger_log(int level, char *fmt, va_list ap) {
   char *s;
   void *v;
 
-  if(level > logger->level) return;
+  if(level > logger->level || !logger->enabled) return;
 
   _logger_print_context();
   _logger_print_level(level);
@@ -198,10 +198,18 @@ void _logger_enter(char *context) {
   logger->trace("enter");
 };
 
-void _logger_leave(void) { 
+void _logger_leave() { 
   stringlist_remove_last(logger->context);
   logger->trace("return");
 };
+
+void _logger_suspend() {
+  logger->enabled = false;
+}
+
+void _logger_resume() {
+  logger->enabled = true;
+}
 
 void _logger_error(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_ERROR, fmt, ap); VA_END; }
 void _logger_warn(char *fmt, ...)  { VA_START; logger->log(LOGLEVEL_WARN,  fmt, ap); VA_END; }
@@ -210,17 +218,20 @@ void _logger_debug(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_DEBUG, fmt, 
 void _logger_trace(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_TRACE, fmt, ap); VA_END; }
 
 Logger _logger = { 
-  .level = LOGLEVEL_INFO, 
+  .level   = LOGLEVEL_INFO, 
   .context = NULL,
-  .set   = &_logger_set,
-  .enter = &_logger_enter,
-  .leave = &_logger_leave,
-  .log   = &_logger_log,
-  .error = &_logger_error,
-  .warn  = &_logger_warn,
-  .info  = &_logger_info,
-  .debug = &_logger_debug,
-  .trace = &_logger_trace
+  .enabled = true,
+  .set     = &_logger_set,
+  .enter   = &_logger_enter,
+  .leave   = &_logger_leave,
+  .suspend = &_logger_suspend,
+  .resume  = &_logger_resume,
+  .log     = &_logger_log,
+  .error   = &_logger_error,
+  .warn    = &_logger_warn,
+  .info    = &_logger_info,
+  .debug   = &_logger_debug,
+  .trace   = &_logger_trace
 };
 
 Logger *logger = &_logger;

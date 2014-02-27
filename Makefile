@@ -1,6 +1,6 @@
 GCC=gcc
 GCC-MINGW32=i486-mingw32-gcc
-FLAGS=-std=gnu99 -Wall -O3 -I.
+FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 KASM=java -jar /usr/share/kickassembler/KickAss.jar
 
 all: linux win32 servers kernal

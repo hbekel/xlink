@@ -6,6 +6,7 @@ typedef struct {
   int device;
   bool opened;
 
+  bool (*_ready) (void);
   bool (*_open) (void);
   void (*_close) (void);
   void (*_strobe) (void);
@@ -21,6 +22,7 @@ typedef struct {
   void (*_flash) (void);
   void (*_free) (void);
 
+  bool (*ready) (void);
   bool (*open) (void);
   void (*close) (void);
   void (*strobe) (void);
@@ -41,6 +43,7 @@ Driver *driver_setup(char* path);
 bool device_is_parport(char*);
 bool device_is_usb(char*);
 
+bool _driver_ready(void);
 bool _driver_open(void);
 void _driver_close(void);
 void _driver_strobe(void);

@@ -20,7 +20,7 @@ OPTIMIZATION = 3
 TARGET       = uuadapter
 SRC          = $(TARGET).c descriptors.c $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
 LUFA_PATH    = LUFA
-CC_FLAGS     = -DUSE_LUFA_CONFIG_HEADER -Iconfig/
+CC_FLAGS     = -DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -DUSE_LUFA_CONFIG_HEADER -Iconfig/
 LD_FLAGS     =
 
 # Default target

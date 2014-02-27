@@ -107,10 +107,13 @@ bool driver_parport_open() {
     logger->error("Couldn't open %s", driver->path);
     return false;
   }  
-  ioctl(driver->device, PPCLAIM);
- 
-  _driver_parport_init();
-  return true;
+  
+  if(ioctl(driver->device, PPCLAIM) == 0) {
+    _driver_parport_init();
+    return true;
+  }
+  logger->error("Couldn't claim %s", driver->path);
+  return false;
 
 #elif windows
   if(inpout32 == NULL) {

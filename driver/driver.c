@@ -28,6 +28,7 @@ Driver *driver_setup(char* path) {
     driver = (Driver*) calloc(1, sizeof(Driver));
     driver->path = (char*) calloc(1, sizeof(char));
 
+    driver->ready   = &_driver_ready;
     driver->open    = &_driver_open;
     driver->close   = &_driver_close;
     driver->strobe  = &_driver_strobe;
@@ -49,7 +50,7 @@ Driver *driver_setup(char* path) {
 
   if(device_is_parport(driver->path)) {
 
-      logger->trace("installing parallel port driver for %s", driver->path);
+      logger->trace("using parallel port driver");
   
       driver->_open    = &driver_parport_open;
       driver->_close   = &driver_parport_close;    
@@ -68,7 +69,7 @@ Driver *driver_setup(char* path) {
   
   } else if(device_is_usb(driver->path)) {
 
-      logger->trace("installing usb driver for %s", driver->path);
+      logger->trace("using usb driver");
 
       driver->_open    = &driver_usb_open;
       driver->_close   = &driver_usb_close;    
@@ -133,6 +134,15 @@ bool device_is_usb(char* path) {
 #elif windows
   return !device_is_parport(path);
 #endif
+}
+
+bool _driver_ready() {
+  bool result = false;
+  
+  if((result = driver->open())) {
+    driver->close();
+  }
+  return result;
 }
 
 bool _driver_open()                        { return driver->_open(); }

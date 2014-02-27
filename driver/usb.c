@@ -12,6 +12,14 @@
 #include "util.h"
 #include "usb.h"
 
+#if !(USB_VID + 0)
+#error "Define an environment variable named USB_VID that contains the usb vendor id"
+#endif
+
+#if !(USB_PID + 0)
+#error "Define an environment variable named USB_PID that contains the usb product id"
+#endif
+
 #define DRIVER_USB_MAX_PAYLOAD_SIZE 4096
 #define MESSAGE_TIMEOUT 60000
 
@@ -25,8 +33,8 @@ static char response[1];
 //------------------------------------------------------------------------------
 
 bool driver_usb_open() {
-  
-  handle = _driver_usb_open_device(0x03eb, "BREADBIN", 0x2064, "USB2C64");
+ 
+  handle = _driver_usb_open_device(USB_VID, "BREADBIN", USB_PID, "USB2C64");
 
   if(handle == NULL) {
     logger->error("could not find USB device");

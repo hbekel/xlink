@@ -109,6 +109,44 @@ int valid(int address) {
 
 //------------------------------------------------------------------------------
 
+int prepareDevice() {
+
+  bool result = true;
+
+#if linux
+  char default_usb_device[] = "/dev/c64";
+  char default_parport_device[] = "/dev/parport0";
+
+#elif windows
+  char default_usb_device[] = "";
+  char default_parport_device[] = "0x378";
+#endif
+
+  if(!pp64_has_device()) {
+
+    logger->debug("no device specified, trying to use default USB device %s", 
+		  default_usb_device);
+
+    logger->suspend();
+
+    if(!pp64_set_device(default_usb_device)) {
+
+      logger->resume();
+      logger->debug("default USB device not found, trying to use default parallel port device %s", 
+		    default_parport_device);
+
+      logger->suspend();
+
+      if(!pp64_set_device(default_parport_device)) {
+	result = false;
+      }
+    }    
+  }
+
+  logger->resume();
+  return result;
+}
+
 void screenOn(void) {
   pp64_poke(0x37, 0x10, 0xd011, 0x1b);
 }
@@ -346,6 +384,38 @@ int command_parse_options(Command *self) {
 char* command_get_name(Command* self) {
   return id2str(self->id);
 }
+
+//------------------------------------------------------------------------------
+
+void command_print(Command* self) {
+
+  char result[1024];
+
+  sprintf(result, "%s ", command_get_name(self));
+
+  if((unsigned char) self->memory != 0xff) {
+    sprintf(result + strlen(result), "-m 0x%02X ", (unsigned char) self->memory);
+  }
+
+  if((unsigned char) self->bank != 0xff) {
+    sprintf(result + strlen(result), "-b 0x%02X ", (unsigned char) self->bank);
+  }
+
+  if((unsigned short) self->start != 0xffff) {
+    sprintf(result + strlen(result), "-a 0x%04X", (unsigned short) self->start);
+
+    if((unsigned short) self->end != 0xffff) {
+      sprintf(result + strlen(result), "-0x%04X", (unsigned short) self->end);
+    }
+    sprintf(result + strlen(result), " ");
+  }  
+
+  int i;
+  for (i=0; i<self->argc; i++) {
+    sprintf(result + strlen(result), "%s ", self->argv[i]);
+  }
+  logger->debug(result);
+} 
 
 //------------------------------------------------------------------------------
 
@@ -889,18 +959,10 @@ int command_execute(Command* self) {
     return false;
   }
 
-  if(!pp64_has_device()) {
+  command_print(self);
 
-    logger->info("no device specified, trying to find USB device at /dev/c64...");
-    if(!pp64_set_device("/dev/c64")) {
-
-#if linux
-      logger->info("no USB device found, trying to connect via parallel port /dev/parport0...");
-      if(!pp64_set_device("/dev/parport0"))
-#endif
-        return false;
-    }
-    logger->info("found device");
+  if(!prepareDevice()) {
+    return false;
   }
 
   switch(self->id) {
@@ -960,6 +1022,8 @@ int main(int argc, char **argv) {
   int result = commands_execute(commands) ? EXIT_SUCCESS : EXIT_FAILURE;
 
   commands_free(commands);
+
+  logger->leave();
 
   return result;
 }

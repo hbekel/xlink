@@ -2,6 +2,7 @@
 #define UTIL_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <sys/time.h>
 
@@ -43,9 +44,12 @@ void stringlist_free(StringList *self);
 typedef struct {
   int level;
   StringList *context;
+  bool enabled;
   void (*set) (char *level);  
   void (*enter) (char *context);
   void (*leave) (void);
+  void (*suspend) (void);
+  void (*resume) (void);
   void (*log) (int level, char *format, va_list ap);
   void (*warn) (char *format, ...);
   void (*error) (char *format, ...);
@@ -57,6 +61,8 @@ typedef struct {
 void _logger_set(char *level);
 void _logger_enter(char *context);
 void _logger_leave(void);
+void _logger_suspend(void);
+void _logger_resume(void);
 void _logger_log(int level, char *fmt, va_list ap);
 void _logger_error(char *fmt, ...);
 void _logger_warn(char *fmt, ...);
