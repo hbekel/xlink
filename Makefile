@@ -15,7 +15,7 @@ libpp64.so: pp64.c pp64.h \
 	driver/parport.c driver/parport.h \
 	extension.c extension.h extensions.c \
 	util.c util.h 
-	$(GCC) $(FLAGS) -shared -fPIC -o libpp64.so pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
+	$(GCC) $(FLAGS) -shared -fPIC -Wl,-init,libpp64_initialize,-fini,libpp64_finalize -o libpp64.so pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
 
 c64: libpp64.so client.c client.h disk.c disk.h
 	$(GCC) $(FLAGS) -o c64 client.c disk.c -L. -lpp64 -lreadline
@@ -26,7 +26,7 @@ pp64.dll: pp64.c pp64.h \
 	driver/parport.c driver/parport.h \
 	extension.c extension.h extensions.c \
 	util.c util.h
-	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
+	$(GCC-MINGW32) $(FLAGS) -shared -Wl,-init,libpp64_initialize,-fini,libpp64_finalize -o pp64.dll pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
 
 c64.exe: pp64.dll client.c client.h disk.c disk.h 
 	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64

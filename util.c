@@ -217,6 +217,10 @@ void _logger_info(char *fmt, ...)  { VA_START; logger->log(LOGLEVEL_INFO,  fmt, 
 void _logger_debug(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_DEBUG, fmt, ap); VA_END; }
 void _logger_trace(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_TRACE, fmt, ap); VA_END; }
 
+void _logger_free() {
+  stringlist_free(logger->context);
+}
+
 Logger _logger = { 
   .level   = LOGLEVEL_INFO, 
   .context = NULL,
@@ -231,7 +235,8 @@ Logger _logger = {
   .warn    = &_logger_warn,
   .info    = &_logger_info,
   .debug   = &_logger_debug,
-  .trace   = &_logger_trace
+  .trace   = &_logger_trace,
+  .free    = &_logger_free
 };
 
 Logger *logger = &_logger;

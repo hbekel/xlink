@@ -107,46 +107,6 @@ int valid(int address) {
   return address >= 0x0000 && address <= 0x10000; 
 }
 
-//------------------------------------------------------------------------------
-
-int prepareDevice() {
-
-  bool result = true;
-
-#if linux
-  char default_usb_device[] = "/dev/c64";
-  char default_parport_device[] = "/dev/parport0";
-
-#elif windows
-  char default_usb_device[] = "";
-  char default_parport_device[] = "0x378";
-#endif
-
-  if(!pp64_has_device()) {
-
-    logger->debug("no device specified, trying to use default USB device %s", 
-		  default_usb_device);
-
-    logger->suspend();
-
-    if(!pp64_set_device(default_usb_device)) {
-
-      logger->resume();
-      logger->debug("default USB device not found, trying to use default parallel port device %s", 
-		    default_parport_device);
-
-      logger->suspend();
-
-      if(!pp64_set_device(default_parport_device)) {
-	result = false;
-      }
-    }    
-  }
-
-  logger->resume();
-  return result;
-}
-
 void screenOn(void) {
   pp64_poke(0x37, 0x10, 0xd011, 0x1b);
 }
@@ -960,10 +920,6 @@ int command_execute(Command* self) {
   }
 
   command_print(self);
-
-  if(!prepareDevice()) {
-    return false;
-  }
 
   switch(self->id) {
 

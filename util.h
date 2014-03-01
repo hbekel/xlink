@@ -56,6 +56,7 @@ typedef struct {
   void (*info) (char *format, ...);
   void (*debug) (char *format, ...);
   void (*trace) (char *format, ...);
+  void (*free) (void);
 } Logger;
 
 void _logger_set(char *level);
@@ -69,6 +70,7 @@ void _logger_warn(char *fmt, ...);
 void _logger_info(char *fmt, ...);
 void _logger_debug(char *fmt, ...);
 void _logger_trace(char *fmt, ...);
+void _logger_free(void);
 
 extern Logger* logger;
 

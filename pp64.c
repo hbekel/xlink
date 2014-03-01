@@ -4,12 +4,48 @@
 #include <ctype.h>
 
 #include "pp64.h"
+#include "target.h"
 #include "driver/driver.h"
 #include "extension.h"
 #include "extensions.c"
 #include "util.h"
 
 extern Driver* driver;
+
+//------------------------------------------------------------------------------
+
+void libpp64_initialize() {
+
+#if linux
+  char default_usb_device[] = "/dev/c64";
+  char default_parport_device[] = "/dev/parport0";
+
+#elif windows
+  char default_usb_device[] = "";
+  char default_parport_device[] = "0x378";
+#endif
+
+  logger->suspend();
+
+  if(driver_setup(default_usb_device) == NULL) {
+    driver_setup(default_parport_device);
+  }
+
+  logger->resume();
+  
+  if(driver->ready()) {
+    logger->debug("Using default device %s", driver->path);
+  }
+}
+
+//------------------------------------------------------------------------------
+
+void libpp64_finalize(void) {
+  if(driver != NULL) {
+    driver->free();
+  }
+  logger->free();
+}
 
 //------------------------------------------------------------------------------
 
