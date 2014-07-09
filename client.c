@@ -1065,7 +1065,7 @@ void shell(void) {
   StringList *arguments;
 
   rl_variable_bind("expand-tilde", "on");  
-  rl_attempted_completion_function = (CPPFunction *) shell_completion;
+  rl_attempted_completion_function = (rl_completion_func_t *) shell_completion;
   
   while((line = readline(prompt))) {      
 
