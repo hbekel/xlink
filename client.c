@@ -20,7 +20,6 @@
 #include "pp64.h"
 
 #define COMMAND_NONE    0x00
-#define COMMAND_AUTO    0x00
 #define COMMAND_LOAD    0x01
 #define COMMAND_SAVE    0x02
 #define COMMAND_POKE    0x03
@@ -69,13 +68,13 @@ char str2id(const char* arg) {
       return COMMAND_DOS;
     }
   }
-  return COMMAND_AUTO;
+  return COMMAND_NONE;
 }
 
 //------------------------------------------------------------------------------
 
 char* id2str(const char id) {
-  if (id == COMMAND_AUTO)    return (char*) "auto";
+  if (id == COMMAND_NONE)    return (char*) "none";
   if (id == COMMAND_LOAD)    return (char*) "load";
   if (id == COMMAND_SAVE)    return (char*) "save";
   if (id == COMMAND_POKE)    return (char*) "poke";
@@ -177,7 +176,7 @@ Command* command_new(int *argc, char ***argv) {
 
   Command* command = (Command*) calloc(1, sizeof(Command));
 
-  command->id        = COMMAND_AUTO;
+  command->id        = COMMAND_NONE;
   command->command   = NULL;
   command->memory    = 0xff;
   command->bank      = 0xff;
@@ -418,29 +417,9 @@ int command_find_basic_program(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_auto(Command* self) {
-
-  if (self->argc == 0) {
-    return true;
-  }
-
-  char *filename = self->argv[0];
-  char *suffix = (filename + strlen(filename)-4);
-
-  if (strncasecmp(suffix, ".prg", 4) != 0) {
-    logger->error("autoload: not a .prg file: %s", filename);
-    return false;
-  }
-
-  if(command_load(self)) {
-
-    if(self->start == 0x0801)
-      return command_run(self);
-    else {
-      return command_jump(self);      
-    }
-  }
-  return false;
+int command_none(Command* self) {
+  usage();
+  return EXIT_FAILURE;
 }
 
 //------------------------------------------------------------------------------
@@ -681,6 +660,13 @@ int command_jump(Command* self) {
 //------------------------------------------------------------------------------
 
 int command_run(Command* self) {
+  int result;
+
+  if(self->argc == 1) {
+    if(!(result = command_load(self))) {
+      return result;
+    }
+  }
   return pp64_run();
 }
 
@@ -923,7 +909,7 @@ int command_execute(Command* self) {
 
   switch(self->id) {
 
-  case COMMAND_AUTO    : return command_auto(self);
+  case COMMAND_NONE    : return command_none(self);
   case COMMAND_LOAD    : return command_load(self);
   case COMMAND_SAVE    : return command_save(self);
   case COMMAND_POKE    : return command_poke(self);
@@ -962,12 +948,12 @@ int main(int argc, char **argv) {
     if (strncmp(argv[0], "help", 4) == 0) {
       usage();
       return EXIT_SUCCESS;
-    }
+    } 
 
 #if linux
     if (strncmp(argv[0], "shell", 5) == 0) {
       shell();
-      return EXIT_SUCCESS;
+      return EXIT_SUCCESS;   
     }
 #endif
 
@@ -1096,13 +1082,13 @@ void shell(void) {
 //------------------------------------------------------------------------------
 
 void usage(void) {
-    printf("pp64 client 0.4 Copyright (C) 2014 Henning Bekel <h.bekel@googlemail.com>\n\n");
-
+    printf("pp64 client 0.4 Copyright (C) 2014 Henning Bekel <h.bekel@googlemail.com>\n");
+    printf("\n");
     printf("Usage: c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n");
-    printf("       c64 <file>\n\n");
+    printf("\n");
     printf("Options:\n");
     printf("         -h, --help                    : show this help\n");
-    printf("         -d, --debug                   : enable debug messages\n");
+    printf("         -l, --level <level>           : log level (ERROR|WARN|INFO|DEBUG|TRACE)\n");
 #if linux
     printf("         -d, --device <path>           : ");
     printf("transfer device (default: /dev/c64)\n");
@@ -1126,7 +1112,7 @@ void usage(void) {
     printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
     printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
     printf("          jump  [<opts>] <addr>        : jump to specified address\n");
-    printf("          run   [<opts>]               : run basic program\n");
+    printf("          run   [<opts>] [<file>]      : run basic program\n");
     printf("\n");
     printf("          @[<dos-command>]             : read drive status or send dos command\n");    
     printf("          backup <file>                : backup disk to d64 file\n");
@@ -1140,7 +1126,7 @@ void usage(void) {
 void help(int id) {
 
   switch(id) {
-  case COMMAND_AUTO:
+  case COMMAND_NONE:
     usage();
     break;
 
@@ -1214,9 +1200,10 @@ void help(int id) {
    break;
 
   case COMMAND_RUN:
-    printf("Usage: c64 run\n");
+    printf("Usage: c64 [<file>] run\n");
     printf("\n");
-    printf("RUN the currently loaded basic program.\n");
+    printf("RUN the currently loaded basic program. Optionally load the\n");
+    printf("specified file first.\n");
     printf("\n");
     break;
 

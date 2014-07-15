@@ -42,7 +42,7 @@ int command_parse_options(Command *self);
 char *command_get_name(Command* self);
 int command_find_basic_program(Command* self);
 int command_execute(Command* self);
-int command_auto(Command* self);
+int command_none(Command* self);
 int command_load(Command* self);
 int command_save(Command* self);
 int command_poke(Command* self);
