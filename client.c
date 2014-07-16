@@ -735,6 +735,7 @@ int command_backup(Command *self) {
   Disk* disk;
 
   if (self->argc == 0) {
+    logger->error("backup: no file specified");
     return false;
   }
   char *filename = self->argv[0];
@@ -768,6 +769,7 @@ int command_restore(Command *self) {
   int result = true;
   
   if (self->argc == 0) {
+    logger->error("restore: no file specified");
     return false;
   }
 
@@ -846,6 +848,7 @@ int command_verify(Command *self) {
   int result = true;
 
   if (self->argc == 0) {
+    logger->error("verify: no file specified");
     return false;
   }
   
