@@ -14,9 +14,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void libpp64_initialize(void);
-  void libpp64_finalize(void);
-
   bool pp64_set_device(char* path);
   bool pp64_has_device();
 
