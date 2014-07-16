@@ -107,8 +107,8 @@ bool disk_each_sector(Disk *self, bool (*func) (Sector* sector)) {
     for(int s=0; s<track->size; s++) {
       sector = track->sectors[s];
       if(!func(sector)) {
-	result = false;
-	goto abort;
+        result = false;
+        goto abort;
       }
     }
   }
@@ -130,7 +130,7 @@ bool disk_save(Disk* self, char *filename) {
     fprintf(stderr, "error opening %s\n", filename);
     return false;
   }
-
+  
   if(!disk_each_sector(self, &save_sector)) {
     fprintf(stderr, "error saving sector\n");
     return false;
@@ -193,7 +193,7 @@ bool track_each_sector(Track* self, bool (*func) (Sector* sector)) {
 
   Sector* sector;
   int result = true;
-
+  
   for(int s=0; s<self->size; s++) {
     sector = self->sectors[s];
     if(!func(sector)) {
@@ -206,7 +206,7 @@ bool track_each_sector(Track* self, bool (*func) (Sector* sector)) {
 }
 
 void track_free(Track* self) {
-
+  
   for(int s=0; s<self->size; s++) {
     sector_free(self->sectors[s]);
   }
