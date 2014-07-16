@@ -348,6 +348,9 @@ char* command_get_name(Command* self) {
 
 void command_print(Command* self) {
 
+  if(self->id == COMMAND_NONE) 
+    return;
+
   char result[1024];
 
   sprintf(result, "%s ", command_get_name(self));
@@ -418,8 +421,7 @@ int command_find_basic_program(Command* self) {
 //------------------------------------------------------------------------------
 
 int command_none(Command* self) {
-  usage();
-  return EXIT_FAILURE;
+  return true;
 }
 
 //------------------------------------------------------------------------------
@@ -667,6 +669,13 @@ int command_run(Command* self) {
       return result;
     }
     if (self->start != 0x0801) {
+      
+      if (self->memory == 0xff)
+        self->memory = 0x37;
+      
+      if (self->bank == 0xff)
+        self->bank = 0x10;
+      
       return pp64_jump(self->memory, self->bank, self->start);
     }
   }
