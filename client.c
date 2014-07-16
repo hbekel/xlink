@@ -666,6 +666,9 @@ int command_run(Command* self) {
     if(!(result = command_load(self))) {
       return result;
     }
+    if (self->start != 0x0801) {
+      return pp64_jump(self->memory, self->bank, self->start);
+    }
   }
   return pp64_run();
 }
@@ -1115,7 +1118,7 @@ void usage(void) {
     printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
     printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
     printf("          jump  [<opts>] <addr>        : jump to specified address\n");
-    printf("          run   [<opts>] [<file>]      : run basic program\n");
+    printf("          run   [<opts>] [<file>]      : run program, optionally load it before\n");
     printf("\n");
     printf("          @[<dos-command>]             : read drive status or send dos command\n");    
     printf("          backup <file>                : backup disk to d64 file\n");
@@ -1205,8 +1208,10 @@ void help(int id) {
   case COMMAND_RUN:
     printf("Usage: c64 [<file>] run\n");
     printf("\n");
-    printf("RUN the currently loaded basic program. Optionally load the\n");
-    printf("specified file first.\n");
+    printf("Without argument, RUN the currently loaded basic program. With a file argument\n");
+    printf("specified, load the file beforehand. If the file loads to 0x0801, assume its a\n");
+    printf("basic program and RUN it, else assume it's an ml program and jump to the\n");
+    printf("address the file loaded to.\n");
     printf("\n");
     break;
 
