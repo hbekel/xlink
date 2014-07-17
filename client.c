@@ -421,6 +421,14 @@ int command_find_basic_program(Command* self) {
 //------------------------------------------------------------------------------
 
 int command_none(Command* self) {
+  
+  if (self->argc > 0) {
+    
+    for (int i=0; i<self->argc; i++) {
+      logger->error("unknown command: %s", self->argv[i]);
+    }
+    return false;
+  }
   return true;
 }
 
@@ -896,6 +904,7 @@ int command_ready(Command* self) {
       if(pp64_ping()) return true;
       timeout-=PP64_PING_TIMEOUT;
     }
+    logger->error("error: no response from C64");
     return false;
   }
   return true;
