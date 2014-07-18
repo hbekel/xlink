@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdbool.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -475,7 +474,7 @@ bool pp64_test(char *test) {
       watch_start(watch);
 
       driver->output();
-      driver->send((char []) {PP64_COMMAND_LOAD, 0x37, 0x10, lo(start), hi(start), lo(end), hi(end)}, 7);
+      driver->send((char []) {PP64_COMMAND_LOAD, 0x37, 0x04, lo(start), hi(start), lo(end), hi(end)}, 7);
       driver->send(payload, sizeof(payload));
       
       float seconds = (watch_elapsed(watch) / 1000.0);
@@ -487,7 +486,7 @@ bool pp64_test(char *test) {
 
       watch_start(watch);
       
-      driver->send((char []) {PP64_COMMAND_SAVE, 0x37, 0x10, lo(start), hi(start), lo(end), hi(end)}, 7);
+      driver->send((char []) {PP64_COMMAND_SAVE, 0x37, 0x04, lo(start), hi(start), lo(end), hi(end)}, 7);
       
       driver->input();
       driver->strobe();

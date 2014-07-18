@@ -23,7 +23,7 @@ int extension_load(Extension *self) {
 
   bool result = false;
 
-  if (pp64_load(0x37|0x80, 0x10, self->address, self->address+self->size, self->code, self->size)) {
+  if (pp64_load(0x37|0x80, 0x04, self->address, self->address+self->size, self->code, self->size)) {
     result = true;
   }
 

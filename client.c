@@ -107,13 +107,13 @@ int valid(int address) {
 }
 
 void screenOn(void) {
-  pp64_poke(0x37, 0x10, 0xd011, 0x1b);
+  pp64_poke(0x37, 0x04, 0xd011, 0x1b);
 }
 
 //------------------------------------------------------------------------------
 
 void screenOff(void) {
-  pp64_poke(0x37, 0x10, 0xd011, 0x0b);
+  pp64_poke(0x37, 0x04, 0xd011, 0x0b);
 }
 
 //------------------------------------------------------------------------------
@@ -303,28 +303,24 @@ int command_parse_options(Command *self) {
       }
 
       if (!valid(self->start)) {
-        logger->error("%s: start address out of range: 0x%04X",
-                command_get_name(self), self->start);
+        logger->error("start address out of range: 0x%04X", self->start);
         return false;
       }
 
       if(self->end != -1) {
         
         if (!valid(self->end)) {
-          logger->error("%s: end address out of range: 0x%04X",
-                  command_get_name(self), self->end);
+          logger->error("end address out of range: 0x%04X", self->end);
           return false;
         }
 	
         if (self->end < self->start) {
-          logger->error("%s: end address before start address: 0x%04X > 0x%04X",
-                  command_get_name(self), self->end, self->start);
+          logger->error("end address before start address: 0x%04X > 0x%04X", self->end, self->start);
           return false;
         }
 	
         if (self->start == self->end) {
-          logger->error("%s: start address equals end address: 0x%04X == 0x%04X",
-                  command_get_name(self), self->end, self->start);
+          logger->error("start address equals end address: 0x%04X == 0x%04X", self->end, self->start);
           return false;	
         }
       }
@@ -387,24 +383,24 @@ int command_find_basic_program(Command* self) {
   int bend   = 0x0000;
   unsigned char value;
 
-  if(pp64_peek(0x37, 0x10, 0x002c, &value)) {
+  if(pp64_peek(0x37, 0x04, 0x002c, &value)) {
     bstart |= value;
     bstart <<= 8;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x10, 0x002b, &value)) {
+  if(pp64_peek(0x37, 0x04, 0x002b, &value)) {
     bstart |= value;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x10, 0x002e, &value)) {
+  if(pp64_peek(0x37, 0x04, 0x002e, &value)) {
     bend |= value;
     bend <<= 8;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x10, 0x002d, &value)) {
+  if(pp64_peek(0x37, 0x04, 0x002d, &value)) {
     bend |= value;
   } 
   else return false;
@@ -444,7 +440,7 @@ int command_load(Command* self) {
   char *data;
 
   if (self->argc == 0) {
-    logger->error("load: no file specified");
+    logger->error("no file specified");
     return false;
   }
 
@@ -453,7 +449,7 @@ int command_load(Command* self) {
   file = fopen(filename, "rb");
   
   if (file == NULL) {
-    logger->error("load: '%s': %s", filename, strerror(errno));
+    logger->error("'%s': %s", filename, strerror(errno));
     return false;
   }
   stat(filename, &st);
@@ -468,7 +464,7 @@ int command_load(Command* self) {
   }
   else {
     if (self->start == -1) {      
-      logger->error("load: not a .prg file and no start address specified");
+      logger->error("not a .prg file and no start address specified");
       fclose(file);
       return false;
     }
@@ -490,7 +486,7 @@ int command_load(Command* self) {
   }
 
   if (self->bank == 0xff) {
-    self->bank = 0x10;
+    self->bank = 0x04;
   }
 
   data = (char*) calloc(size, sizeof(char));
@@ -516,7 +512,7 @@ int command_save(Command* self) {
   char *data;
 
   if (self->argc == 0) {
-    logger->error("save: no file specified");
+    logger->error("no file specified");
     return false;
   }
 
@@ -524,18 +520,18 @@ int command_save(Command* self) {
 
   if(self->start == -1) {
     if(!command_find_basic_program(self)) {
-      logger->error("save: no start address specified and no basic program in memory");
+      logger->error("no start address specified and no basic program in memory");
       return false;
     }
   }
 
   if(self->start == -1) {                   
-    logger->error("save: no start address specified");
+    logger->error("no start address specified");
     return false;
   }
   else {
     if(self->end == -1) {                   
-      logger->error("save: no end address specified");
+      logger->error("no end address specified");
       return false;
     }
   }
@@ -548,14 +544,14 @@ int command_save(Command* self) {
     self->memory = 0x37;    
 
   if (self->bank == 0xff)
-    self->bank = 0x10;
+    self->bank = 0x04;
 
   data = (char*) calloc(size, sizeof(char));
 
   file = fopen(filename, "wb");
 
   if(file == NULL) {
-    logger->error("save: '%s': %s", filename, strerror(errno));
+    logger->error("'%s': %s", filename, strerror(errno));
     free(data);
     return false;
   }
@@ -584,14 +580,14 @@ int command_poke(Command* self) {
   unsigned char value;
   
   if (self->argc == 0) {
-    logger->error("poke: argument required");
+    logger->error("argument required");
     return false;
   }
   argument = self->argv[0];
   unsigned int comma = strcspn(argument, ",");
 
   if (comma == strlen(argument) || comma == strlen(argument)-1) {
-    logger->error("poke: expects <address>,<value>");
+    logger->error("expects <address>,<value>");
     return false;
   }
   
@@ -606,7 +602,7 @@ int command_poke(Command* self) {
     self->memory = 0x37;
 
   if (self->bank == 0xff)
-    self->bank = 0x10;
+    self->bank = 0x04;
 
   return pp64_poke(self->memory, self->bank, address, value);
 }
@@ -616,7 +612,7 @@ int command_poke(Command* self) {
 int command_peek(Command* self) {
   
   if (self->argc == 0) {
-    logger->error("peek: no address specified");
+    logger->error("no address specified");
     return false;
   }
 
@@ -627,7 +623,7 @@ int command_peek(Command* self) {
     self->memory = 0x37;
 
   if (self->bank == 0xff)
-    self->bank = 0x10;
+    self->bank = 0x04;
 
   if(!pp64_peek(self->memory, self->bank, address, &value)) {
     return false;
@@ -642,7 +638,7 @@ int command_peek(Command* self) {
 int command_jump(Command* self) {
 
   if (self->argc == 0) {
-    logger->error("jump: no address specified");
+    logger->error("no address specified");
     return false;
   }
 
@@ -653,7 +649,7 @@ int command_jump(Command* self) {
       address = self->start;
     }
     else {
-      logger->error("jump: no address specified");
+      logger->error("no address specified");
       return false;    
     }
   }
@@ -662,7 +658,7 @@ int command_jump(Command* self) {
     self->memory = 0x37;
 
   if (self->bank == 0xff)
-    self->bank = 0x10;
+    self->bank = 0x04;
 
   return pp64_jump(self->memory, self->bank, address);
 }
@@ -682,7 +678,7 @@ int command_run(Command* self) {
         self->memory = 0x37;
       
       if (self->bank == 0xff)
-        self->bank = 0x10;
+        self->bank = 0x04;
       
       return pp64_jump(self->memory, self->bank, self->start);
     }
@@ -707,7 +703,7 @@ int command_test(Command* self) {
 int command_help(Command *self) {
 
   if (self->argc > 0) {
-    logger->error("help: unknown command: %s", self->argv[0]);
+    logger->error("unknown command: %s", self->argv[0]);
     return false;
   }
 
@@ -755,7 +751,7 @@ int command_backup(Command *self) {
   Disk* disk;
 
   if (self->argc == 0) {
-    logger->error("backup: no file specified");
+    logger->error("no file specified");
     return false;
   }
   char *filename = self->argv[0];
@@ -789,7 +785,7 @@ int command_restore(Command *self) {
   int result = true;
   
   if (self->argc == 0) {
-    logger->error("restore: no file specified");
+    logger->error("no file specified");
     return false;
   }
 
@@ -806,7 +802,7 @@ int command_restore(Command *self) {
   snprintf(format_disk, size, "N:%s,%s", disk->name, disk->id);
 
   if(disk->size > 35) {
-    logger->error("restore: no support for disks > 35 tracks\n");
+    logger->error("no support for disks > 35 tracks\n");
     result = false;
     goto done;
   }
@@ -868,7 +864,7 @@ int command_verify(Command *self) {
   int result = true;
 
   if (self->argc == 0) {
-    logger->error("verify: no file specified");
+    logger->error("no file specified");
     return false;
   }
   
@@ -904,7 +900,7 @@ int command_ready(Command* self) {
       if(pp64_ping()) return true;
       timeout-=PP64_PING_TIMEOUT;
     }
-    logger->error("error: no response from C64");
+    logger->error("no response from C64");
     return false;
   }
   return true;
@@ -920,39 +916,46 @@ int command_ping(Command* self) {
 
 int command_execute(Command* self) {
 
+  int result = false;
+
   if(mode == MODE_HELP) {
-    help(self->id);
-    return true;
+    return help(self->id);
   }
 
-  if(!command_parse_options(self)) {
-    return false;
+  logger->enter(command_get_name(self));
+
+  if(!(result = command_parse_options(self))) {
+    logger->leave();
+    return result;
   }
+
 
   command_print(self);
 
   switch(self->id) {
 
-  case COMMAND_NONE    : return command_none(self);
-  case COMMAND_LOAD    : return command_load(self);
-  case COMMAND_SAVE    : return command_save(self);
-  case COMMAND_POKE    : return command_poke(self);
-  case COMMAND_PEEK    : return command_peek(self);
-  case COMMAND_JUMP    : return command_jump(self);
-  case COMMAND_RUN     : return command_run(self);
-  case COMMAND_RESET   : return command_reset(self);
-  case COMMAND_HELP    : return command_help(self);
-  case COMMAND_DOS     : return command_dos(self);
-  case COMMAND_BACKUP  : return command_backup(self);
-  case COMMAND_RESTORE : return command_restore(self);
-  case COMMAND_VERIFY  : return command_verify(self);
-  case COMMAND_STATUS  : return command_status(self);
-  case COMMAND_READY   : return command_ready(self);
-  case COMMAND_PING    : return command_ping(self);
-  case COMMAND_TEST    : return command_test(self);
+  case COMMAND_NONE    : result = command_none(self);    break;
+  case COMMAND_LOAD    : result = command_load(self);    break;
+  case COMMAND_SAVE    : result = command_save(self);    break;
+  case COMMAND_POKE    : result = command_poke(self);    break;
+  case COMMAND_PEEK    : result = command_peek(self);    break;
+  case COMMAND_JUMP    : result = command_jump(self);    break;
+  case COMMAND_RUN     : result = command_run(self);     break;
+  case COMMAND_RESET   : result = command_reset(self);   break;
+  case COMMAND_HELP    : result = command_help(self);    break;
+  case COMMAND_DOS     : result = command_dos(self);     break;
+  case COMMAND_BACKUP  : result = command_backup(self);  break;
+  case COMMAND_RESTORE : result = command_restore(self); break;
+  case COMMAND_VERIFY  : result = command_verify(self);  break;
+  case COMMAND_STATUS  : result = command_status(self);  break;
+  case COMMAND_READY   : result = command_ready(self);   break;
+  case COMMAND_PING    : result = command_ping(self);    break;
+  case COMMAND_TEST    : result = command_test(self);    break;
   }
   
-  return false;
+  logger->leave();
+
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1147,7 +1150,7 @@ void usage(void) {
 
 //------------------------------------------------------------------------------
 
-void help(int id) {
+int help(int id) {
 
   switch(id) {
   case COMMAND_NONE:
@@ -1295,6 +1298,7 @@ void help(int id) {
     printf("\n");
     break;
   }
+  return true;
 }
 
 

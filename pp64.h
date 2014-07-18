@@ -1,6 +1,8 @@
 #ifndef PP64_H
 #define PP64_H
 
+#include <stdbool.h>
+
 #define PP64_PING_TIMEOUT 250
 
 #define PP64_COMMAND_LOAD         0x01

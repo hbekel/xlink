@@ -26,8 +26,8 @@ void screenOn(void);
 void screenOff(void);
 void version(void);
 void usage(void);
-void help(int id);
 void shell(void);
+int help(int id);
 
 Commands* commands_new(int argc, char **argv);
 Command* commands_add(Commands* self, Command* command);
