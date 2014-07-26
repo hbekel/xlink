@@ -177,7 +177,7 @@ Command* command_new(int *argc, char ***argv) {
   Command* command = (Command*) calloc(1, sizeof(Command));
 
   command->id        = COMMAND_NONE;
-  command->command   = NULL;
+  command->name      = NULL;
   command->memory    = 0xff;
   command->bank      = 0xff;
   command->start     = -1;
@@ -193,7 +193,7 @@ Command* command_new(int *argc, char ***argv) {
 
 void command_free(Command* self) {
 
-  free(self->command);
+  free(self->name);
 
   self->argc += self->offset;
   self->argv -= self->offset;
@@ -222,10 +222,10 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
     return (*argv)[0];
   }
 
-  self->command = (char *) calloc(strlen(current())+1, sizeof(char));
-  strncpy(self->command, current(), strlen(current()));
+  self->name = (char *) calloc(strlen(current())+1, sizeof(char));
+  strncpy(self->name, current(), strlen(current()));
 
-  if(isCommand(self->command)) {
+  if(isCommand(self->name)) {
     self->id = str2id(current());
     next();
   }
@@ -731,7 +731,7 @@ int command_status(Command* self) {
 
 int command_dos(Command *self) {
 
-  if (pp64_dos(self->command+1)) {
+  if (pp64_dos(self->name+1)) {
     return command_status(self);
   }
   return false;

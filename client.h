@@ -3,7 +3,7 @@
 
 typedef struct {
   char id;
-  char *command;
+  char *name;
   unsigned char memory;
   unsigned char bank;
   int start;
