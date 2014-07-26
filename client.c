@@ -45,20 +45,20 @@ int mode  = MODE_EXEC;
 //------------------------------------------------------------------------------
 
 char str2id(const char* arg) {
-  if (strncmp(arg, "load" ,   4) == 0) return COMMAND_LOAD;
-  if (strncmp(arg, "save" ,   4) == 0) return COMMAND_SAVE;
-  if (strncmp(arg, "poke" ,   4) == 0) return COMMAND_POKE;
-  if (strncmp(arg, "peek" ,   4) == 0) return COMMAND_PEEK;
-  if (strncmp(arg, "jump" ,   4) == 0) return COMMAND_JUMP;
-  if (strncmp(arg, "run"  ,   3) == 0) return COMMAND_RUN;  
-  if (strncmp(arg, "reset",   5) == 0) return COMMAND_RESET;  
-  if (strncmp(arg, "help",    4) == 0) return COMMAND_HELP;  
-  if (strncmp(arg, "backup",  6) == 0) return COMMAND_BACKUP;  
-  if (strncmp(arg, "restore", 7) == 0) return COMMAND_RESTORE;  
-  if (strncmp(arg, "verify",  6) == 0) return COMMAND_VERIFY;  
-  if (strncmp(arg, "ready",   5) == 0) return COMMAND_READY;  
-  if (strncmp(arg, "ping",    4) == 0) return COMMAND_PING;  
-  if (strncmp(arg, "test",    3) == 0) return COMMAND_TEST;  
+  if (strcmp(arg, "load"   ) == 0) return COMMAND_LOAD;
+  if (strcmp(arg, "save"   ) == 0) return COMMAND_SAVE;
+  if (strcmp(arg, "poke"   ) == 0) return COMMAND_POKE;
+  if (strcmp(arg, "peek"   ) == 0) return COMMAND_PEEK;
+  if (strcmp(arg, "jump"   ) == 0) return COMMAND_JUMP;
+  if (strcmp(arg, "run"    ) == 0) return COMMAND_RUN;  
+  if (strcmp(arg, "reset"  ) == 0) return COMMAND_RESET;  
+  if (strcmp(arg, "help"   ) == 0) return COMMAND_HELP;  
+  if (strcmp(arg, "backup" ) == 0) return COMMAND_BACKUP;  
+  if (strcmp(arg, "restore") == 0) return COMMAND_RESTORE;  
+  if (strcmp(arg, "verify" ) == 0) return COMMAND_VERIFY;  
+  if (strcmp(arg, "ready"  ) == 0) return COMMAND_READY;  
+  if (strcmp(arg, "ping"   ) == 0) return COMMAND_PING;  
+  if (strcmp(arg, "test"   ) == 0) return COMMAND_TEST;  
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -972,13 +972,13 @@ int main(int argc, char **argv) {
   }
   
   if(argc == 1) {
-    if (strncmp(argv[0], "help", 4) == 0) {
+    if (strcmp(argv[0], "help") == 0) {
       usage();
       return EXIT_SUCCESS;
     } 
 
 #if linux
-    if (strncmp(argv[0], "shell", 5) == 0) {
+    if (strcmp(argv[0], "shell") == 0) {
       shell();
       return EXIT_SUCCESS;   
     }
@@ -1064,8 +1064,8 @@ void shell(void) {
       return true;
     }
     
-    if((strncmp(line, "quit", 4) == 0) ||
-       (strncmp(line, "exit", 4) == 0)) {
+    if((strcmp(line, "quit") == 0) ||
+       (strcmp(line, "exit") == 0)) {
       exit(EXIT_SUCCESS);
     }
     return false;
