@@ -8,6 +8,7 @@ typedef struct {
   unsigned char bank;
   int start;
   int end;
+  int skip;
   int debug;
   int argc;
   char **argv; 

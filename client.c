@@ -182,6 +182,7 @@ Command* command_new(int *argc, char ***argv) {
   command->bank      = 0xff;
   command->start     = -1;
   command->end       = -1;
+  command->skip      = -1;
   command->argc      = 0;
   command->argv      = (char**) calloc(1, sizeof(char*));
   
@@ -262,6 +263,7 @@ int command_parse_options(Command *self) {
     {"memory",  required_argument, 0, 'm'},
     {"bank",    required_argument, 0, 'b'},
     {"address", required_argument, 0, 'a'},
+    {"skip",    required_argument, 0, 's'},
     {0, 0, 0, 0}
   };
   char *end;
@@ -270,7 +272,7 @@ int command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "hd:l:m:b:a:", options, &index);
+    option = getopt_long(self->argc, self->argv, "hd:l:m:b:a:s:", options, &index);
     
     if(option == -1)
       break;
@@ -324,8 +326,11 @@ int command_parse_options(Command *self) {
           return false;	
         }
       }
-      break;      
-    }
+      break;
+
+    case 's':
+      self->skip = strtol(optarg, NULL, 0);
+    }    
   }
 
   self->argc -= optind;
@@ -367,6 +372,10 @@ void command_print(Command* self) {
     }
     sprintf(result + strlen(result), " ");
   }  
+
+  if((unsigned short) self->skip != 0xffff) {
+      sprintf(result + strlen(result), "-s 0x%04X ", (unsigned short) self->skip);
+  }
 
   int i;
   for (i=0; i<self->argc; i++) {
@@ -436,7 +445,6 @@ int command_load(Command* self) {
   struct stat st;
   long size;
   int loadAddress;
-  char *suffix;
   char *data;
 
   if (self->argc == 0) {
@@ -455,23 +463,19 @@ int command_load(Command* self) {
   stat(filename, &st);
   size = st.st_size;
   
-  suffix = (filename + strlen(filename)-4);
-
-  // get load address from .prg file
-  if (strncasecmp(suffix, ".prg", 4) == 0) {
+  if (self->start == -1) {
+    // no load address specified, assume PRG file
     fread(&loadAddress, sizeof(char), 2, file);
-    size -= 2;
-  }
-  else {
-    if (self->start == -1) {      
-      logger->error("not a .prg file and no start address specified");
-      fclose(file);
-      return false;
-    }
-  }
-      
-  if (self->start == -1)
     self->start = loadAddress & 0xffff;      
+
+    if (self->skip == -1)
+      self->skip = 2;
+  }
+  
+  if (self->skip == -1)
+    self->skip = 0;
+
+  size -= self->skip;
 
   if(self->end == -1) {
     self->end = self->start + size;
@@ -490,8 +494,12 @@ int command_load(Command* self) {
   }
 
   data = (char*) calloc(size, sizeof(char));
+  
+  fseek(file, self->skip, SEEK_SET);
   fread(data, sizeof(char), size, file);
   fclose(file);  
+
+  command_print(self);
 
   if (!pp64_load(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
@@ -1124,6 +1132,7 @@ void usage(void) {
     printf("port address (default: 0x378)\n");
 #endif
     printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
+    printf("         -s, --skip <n>                : Skip n bytes of file\n");
     printf("         -m, --memory                  : C64 memory config (default: 0x37)\n\n");
     
     printf("Commands:\n");
@@ -1158,16 +1167,25 @@ int help(int id) {
     break;
 
   case COMMAND_LOAD:
-    printf("Usage: c64 load [--address <start>[-<end>] [--memory <mem>] <file>\n");
+    printf("Usage: c64 load [--address <start>[-<end>] [--memory <mem>] [--skip <n>]<file>\n");
     printf("\n");
     printf("Load the specified file into C64 memory\n");
     printf("\n");
-    printf("If the filename ends with .prg, it is assumed that the file is a C64\n");
-    printf("PRG file and the first two bytes contain the C64 load address. If no\n");
-    printf("load address is specified by the user, the load address from the .prg\n");
-    printf("file is used. Otherwise the user supplied load address is used. If an\n");
-    printf("additional end address is specified, transfer will end as soon as the\n");
-    printf("end address or the end of the file is reached, whichever comes first.\n");
+    printf("If no start address is given it is assumed that the file is a PRG\n");
+    printf("file and that its first two bytes contain the start address in\n");
+    printf("little-endian order. In this case the first two bytes are used as\n");
+    printf("the start address and the remaining bytes are loaded to this\n");
+    printf("address.\n");
+    printf("\n");    
+    printf("Otherwise, if no start address is given it is assumed that the\n");
+    printf("file is a plain binary file that does not contain a start\n");
+    printf("address. In this case the entire file is loaded to the specified\n");
+    printf("address. The --skip option may be used to skip an arbitrary\n");
+    printf("amount of bytes at the beginning of the file.\n");
+    printf("\n");    
+    printf("If an additional end address is specified, transfer will end as\n");
+    printf("soon as the end address or the end of the file is reached,\n");
+    printf("whichever comes first.\n");    
     printf("\n");
     printf("If a memory config is specified, it is poked to $01 prior to writing\n");
     printf("the transfered value to C64 memory. The memory setting defaults to\n");
@@ -1227,7 +1245,7 @@ int help(int id) {
    break;
 
   case COMMAND_RUN:
-    printf("Usage: c64 [<file>] run\n");
+    printf("Usage: c64 run [<file>]\n");
     printf("\n");
     printf("Without argument, RUN the currently loaded basic program. With a file argument\n");
     printf("specified, load the file beforehand. If the file loads to 0x0801, assume its a\n");
