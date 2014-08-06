@@ -564,6 +564,8 @@ int command_save(Command* self) {
     return false;
   }
 
+  command_print(self);
+
   if(!pp64_save(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
     fclose(file);
@@ -612,6 +614,8 @@ int command_poke(Command* self) {
   if (self->bank == 0xff)
     self->bank = 0x04;
 
+  command_print(self);
+
   return pp64_poke(self->memory, self->bank, address, value);
 }
 
@@ -632,6 +636,8 @@ int command_peek(Command* self) {
 
   if (self->bank == 0xff)
     self->bank = 0x04;
+
+  command_print(self);
 
   if(!pp64_peek(self->memory, self->bank, address, &value)) {
     return false;
@@ -668,6 +674,8 @@ int command_jump(Command* self) {
   if (self->bank == 0xff)
     self->bank = 0x04;
 
+  command_print(self);
+
   return pp64_jump(self->memory, self->bank, address);
 }
 
@@ -677,6 +685,7 @@ int command_run(Command* self) {
   int result;
 
   if(self->argc == 1) {
+
     if(!(result = command_load(self))) {
       return result;
     }
@@ -688,21 +697,26 @@ int command_run(Command* self) {
       if (self->bank == 0xff)
         self->bank = 0x04;
       
+      command_print(self);
+      
       return pp64_jump(self->memory, self->bank, self->start);
     }
   }
+  command_print(self);
   return pp64_run();
 }
 
 //------------------------------------------------------------------------------
 
 int command_reset(Command* self) {
+  command_print(self);
   return pp64_reset();
 }
 
 //------------------------------------------------------------------------------
 
 int command_test(Command* self) {
+  command_print(self);
   return pp64_test(self->argv[0]);
 }
 
@@ -726,6 +740,8 @@ int command_status(Command* self) {
   char *status = (char*) calloc(sizeof(unsigned char), 256);
   int result = false;
   
+  command_print(self);
+
   if(pp64_drive_status(status)) {
     printf("%s\n", status);
     result = true;
@@ -738,6 +754,8 @@ int command_status(Command* self) {
 //------------------------------------------------------------------------------
 
 int command_dos(Command *self) {
+
+  command_print(self);
 
   if (pp64_dos(self->name+1)) {
     return command_status(self);
@@ -762,6 +780,9 @@ int command_backup(Command *self) {
     logger->error("no file specified");
     return false;
   }
+
+  command_print(self);
+
   char *filename = self->argv[0];
 
   screenOff();
@@ -814,6 +835,8 @@ int command_restore(Command *self) {
     result = false;
     goto done;
   }
+
+  command_print(self);
 
   printf("formatting disk: \"%s,%s\"...", disk->name, disk->id); fflush(stdout);
 
@@ -876,6 +899,8 @@ int command_verify(Command *self) {
     return false;
   }
   
+  command_print(self);
+
   if ((disk = disk_load(self->argv[0])) == NULL) {
     return false;
   }
@@ -901,6 +926,8 @@ int command_ready(Command* self) {
 
   int timeout = 3000;
 
+  command_print(self);
+
   if(!pp64_ping()) {
     pp64_reset();
     
@@ -917,6 +944,7 @@ int command_ready(Command* self) {
 //------------------------------------------------------------------------------
 
 int command_ping(Command* self) {
+  command_print(self);
   return pp64_ping();
 }
 
@@ -937,8 +965,6 @@ int command_execute(Command* self) {
     return result;
   }
 
-
-  command_print(self);
 
   switch(self->id) {
 
