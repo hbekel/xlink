@@ -932,7 +932,10 @@ int command_ready(Command* self) {
     pp64_reset();
     
     while(timeout) {
-      if(pp64_ping()) return true;
+      if(pp64_ping()) {
+        usleep(250*1000); // wait until basic is ready
+        return true;
+      }
       timeout-=PP64_PING_TIMEOUT;
     }
     logger->error("no response from C64");
