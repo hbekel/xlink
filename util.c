@@ -218,7 +218,8 @@ void _logger_debug(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_DEBUG, fmt, 
 void _logger_trace(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_TRACE, fmt, ap); VA_END; }
 
 void _logger_free() {
-  stringlist_free(logger->context);
+  if(logger->context != NULL) 
+    stringlist_free(logger->context);
 }
 
 Logger _logger = { 
