@@ -107,13 +107,13 @@ int valid(int address) {
 }
 
 void screenOn(void) {
-  pp64_poke(0x37, 0x04, 0xd011, 0x1b);
+  pp64_poke(0x37, 0x00, 0xd011, 0x1b);
 }
 
 //------------------------------------------------------------------------------
 
 void screenOff(void) {
-  pp64_poke(0x37, 0x04, 0xd011, 0x0b);
+  pp64_poke(0x37, 0x00, 0xd011, 0x0b);
 }
 
 //------------------------------------------------------------------------------
@@ -392,24 +392,24 @@ int command_find_basic_program(Command* self) {
   int bend   = 0x0000;
   unsigned char value;
 
-  if(pp64_peek(0x37, 0x04, 0x002c, &value)) {
+  if(pp64_peek(0x37, 0x00, 0x002c, &value)) {
     bstart |= value;
     bstart <<= 8;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x04, 0x002b, &value)) {
+  if(pp64_peek(0x37, 0x00, 0x002b, &value)) {
     bstart |= value;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x04, 0x002e, &value)) {
+  if(pp64_peek(0x37, 0x00, 0x002e, &value)) {
     bend |= value;
     bend <<= 8;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x04, 0x002d, &value)) {
+  if(pp64_peek(0x37, 0x00, 0x002d, &value)) {
     bend |= value;
   } 
   else return false;
@@ -490,7 +490,7 @@ int command_load(Command* self) {
   }
 
   if (self->bank == 0xff) {
-    self->bank = 0x04;
+    self->bank = 0x00;
   }
 
   data = (char*) calloc(size, sizeof(char));
@@ -552,7 +552,7 @@ int command_save(Command* self) {
     self->memory = 0x37;    
 
   if (self->bank == 0xff)
-    self->bank = 0x04;
+    self->bank = 0x00;
 
   data = (char*) calloc(size, sizeof(char));
 
@@ -612,7 +612,7 @@ int command_poke(Command* self) {
     self->memory = 0x37;
 
   if (self->bank == 0xff)
-    self->bank = 0x04;
+    self->bank = 0x00;
 
   command_print(self);
 
@@ -635,7 +635,7 @@ int command_peek(Command* self) {
     self->memory = 0x37;
 
   if (self->bank == 0xff)
-    self->bank = 0x04;
+    self->bank = 0x00;
 
   command_print(self);
 
@@ -672,7 +672,7 @@ int command_jump(Command* self) {
     self->memory = 0x37;
 
   if (self->bank == 0xff)
-    self->bank = 0x04;
+    self->bank = 0x00;
 
   command_print(self);
 
@@ -695,7 +695,7 @@ int command_run(Command* self) {
         self->memory = 0x37;
       
       if (self->bank == 0xff)
-        self->bank = 0x04;
+        self->bank = 0x00;
       
       command_print(self);
       
