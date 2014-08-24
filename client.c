@@ -102,6 +102,12 @@ int isCommand(const char *str) {
 
 //------------------------------------------------------------------------------
 
+int isOption(const char *str) {
+  return str[0] == '-';
+}
+
+//------------------------------------------------------------------------------
+
 int valid(int address) {
   return address >= 0x0000 && address <= 0x10000; 
 }
@@ -142,11 +148,11 @@ Command* commands_add(Commands* self, Command* command) {
 
 //------------------------------------------------------------------------------
 
-int commands_each(Commands* commands, int (*func) (Command* command)) {
+int commands_each(Commands* self, int (*func) (Command* command)) {
   int result = true;
 
-  for(int i=0; i<commands->count; i++) {
-    if(!(result = func(commands->items[i]))) {
+  for(int i=0; i<self->count; i++) {
+    if(!(result = func(self->items[i]))) {
       break;
     }
   }
@@ -155,8 +161,14 @@ int commands_each(Commands* commands, int (*func) (Command* command)) {
 
 //------------------------------------------------------------------------------
 
-int commands_execute(Commands* commands) {
-  return commands_each(commands, &command_execute);
+int commands_execute(Commands* self) {
+  return commands_each(self, &command_execute);
+}
+
+//------------------------------------------------------------------------------
+
+void commands_print(Commands* self) {
+  commands_each(self, &command_print);
 }
 
 //------------------------------------------------------------------------------
@@ -207,7 +219,29 @@ void command_free(Command* self) {
 }
 
 //------------------------------------------------------------------------------
+int command_arity(Command* self) {
 
+  if (self->id == COMMAND_NONE)    return -1;
+  if (self->id == COMMAND_LOAD)    return 1;
+  if (self->id == COMMAND_SAVE)    return 1;
+  if (self->id == COMMAND_POKE)    return 1;
+  if (self->id == COMMAND_PEEK)    return 1;
+  if (self->id == COMMAND_JUMP)    return 1;
+  if (self->id == COMMAND_RUN)     return 1;
+  if (self->id == COMMAND_RESET)   return 0;
+  if (self->id == COMMAND_HELP)    return 1;
+  if (self->id == COMMAND_DOS)     return 0;
+  if (self->id == COMMAND_BACKUP)  return 1;
+  if (self->id == COMMAND_RESTORE) return 1;
+  if (self->id == COMMAND_VERIFY)  return 1;
+  if (self->id == COMMAND_STATUS)  return 0;
+  if (self->id == COMMAND_READY)   return 0;
+  if (self->id == COMMAND_PING)    return 0;
+  if (self->id == COMMAND_TEST)    return 1;
+  return 0;
+
+}
+//------------------------------------------------------------------------------
 void command_consume_arguments(Command *self, int *argc, char ***argv) {
   
   int has_next(void) {
@@ -226,19 +260,30 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
   self->name = (char *) calloc(strlen(current())+1, sizeof(char));
   strncpy(self->name, current(), strlen(current()));
 
+  self->id = str2id(current());
+
   if(isCommand(self->name)) {
-    self->id = str2id(current());
     next();
   }
+
+  int arity = command_arity(self);
+  int consumed = 0;
 
   for(;has_next();next()) {
 
     if(isCommand(current())) {
       break;
     }
-    else {
-      command_append_argument(self, current());
+
+    if (consumed == arity && !isOption(current())) {
+      break;
     }
+
+    command_append_argument(self, current());
+
+    if (consumed < arity && !isOption(current())) {
+      consumed+=1;      
+    }    
   }
 }
 
@@ -347,10 +392,7 @@ char* command_get_name(Command* self) {
 
 //------------------------------------------------------------------------------
 
-void command_print(Command* self) {
-
-  if(self->id == COMMAND_NONE) 
-    return;
+int command_print(Command* self) {
 
   char result[1024];
 
@@ -382,6 +424,8 @@ void command_print(Command* self) {
     sprintf(result + strlen(result), "%s ", self->argv[i]);
   }
   logger->debug(result);
+
+  return true;
 } 
 
 //------------------------------------------------------------------------------
@@ -426,15 +470,40 @@ int command_find_basic_program(Command* self) {
 //------------------------------------------------------------------------------
 
 int command_none(Command* self) {
-  
+
+  StringList *arguments = stringlist_new();
+  Commands *commands;
+  int result = true;
+
+  command_print(self);
+
   if (self->argc > 0) {
-    
+
+    stringlist_append(arguments, "ready");
+
     for (int i=0; i<self->argc; i++) {
-      logger->error("unknown command: %s", self->argv[i]);
+
+      if (access(self->argv[i], R_OK) == 0) {               
+        stringlist_append(arguments, (i < self->argc-1) ? "load" : "run");      
+        stringlist_append(arguments, self->argv[i]);      
+      }
+      else {
+        logger->error("Unknown command: %s", self->argv[i]);
+        result = false;
+        goto done;
+      }
     }
-    return false;
+    
+    commands = commands_new(arguments->size, arguments->strings);
+    
+    result = commands_execute(commands);
+    
+    commands_free(commands);
   }
-  return true;
+
+ done:
+  stringlist_free(arguments);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -686,9 +755,12 @@ int command_run(Command* self) {
 
   if(self->argc == 1) {
 
+    logger->suspend();
     if(!(result = command_load(self))) {
       return result;
     }
+    logger->resume();
+
     if (self->start != 0x0801) {
       
       if (self->memory == 0xff)
@@ -999,6 +1071,9 @@ int command_execute(Command* self) {
 
 int main(int argc, char **argv) {
 
+  Commands *commands;
+  int result;
+
   logger->enter(argv[0]);
 
   argc--; argv++;
@@ -1020,12 +1095,11 @@ int main(int argc, char **argv) {
       return EXIT_SUCCESS;   
     }
 #endif
-
   }
 
-  Commands *commands = commands_new(argc, argv);
+  commands = commands_new(argc, argv);
 
-  int result = commands_execute(commands) ? EXIT_SUCCESS : EXIT_FAILURE;
+  result = commands_execute(commands) ? EXIT_SUCCESS : EXIT_FAILURE;
 
   commands_free(commands);
 

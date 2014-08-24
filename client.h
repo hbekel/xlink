@@ -32,15 +32,18 @@ int help(int id);
 
 Commands* commands_new(int argc, char **argv);
 Command* commands_add(Commands* self, Command* command);
-int commands_each(Commands* commands, int (*func) (Command* command));
-int commands_execute(Commands* commands);
+int commands_each(Commands* self, int (*func) (Command* command));
+int commands_execute(Commands* self);
+void commands_print(Commands* self);
 void commands_free(Commands* self);
 
 Command* command_new(int *argc, char ***argv);
+int command_arity(Command* self);
 void command_consume_arguments(Command *self, int *argc, char ***argv);
 void command_append_argument(Command* self, char* arg);
 int command_parse_options(Command *self);
 char *command_get_name(Command* self);
+int command_print(Command* self);
 int command_find_basic_program(Command* self);
 int command_execute(Command* self);
 int command_none(Command* self);

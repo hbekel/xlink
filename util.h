@@ -29,6 +29,10 @@ char* stringlist_last(StringList *self);
 void stringlist_remove_last(StringList *self);
 void stringlist_free(StringList *self);
 
+//------------------------------------------------------------------------------
+// Logger
+//------------------------------------------------------------------------------
+
 #define LOGLEVEL_NONE  0
 #define LOGLEVEL_ERROR 1
 #define LOGLEVEL_WARN  2
@@ -36,10 +40,6 @@ void stringlist_free(StringList *self);
 #define LOGLEVEL_DEBUG 4
 #define LOGLEVEL_TRACE 5
 #define LOGLEVEL_ALL   6
-
-//------------------------------------------------------------------------------
-// Logger
-//------------------------------------------------------------------------------
 
 typedef struct {
   int level;
