@@ -996,20 +996,9 @@ int command_verify(Command *self) {
 
 int command_ready(Command* self) {
 
-  int timeout = 3000;
-
   command_print(self);
 
-  if(!pp64_ping()) {
-    pp64_reset();
-    
-    while(timeout) {
-      if(pp64_ping()) {
-        usleep(250*1000); // wait until basic is ready
-        return true;
-      }
-      timeout-=PP64_PING_TIMEOUT;
-    }
+  if (!pp64_ready()) {
     logger->error("no response from C64");
     return false;
   }

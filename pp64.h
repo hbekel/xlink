@@ -18,9 +18,10 @@ extern "C" {
 #endif
   bool pp64_set_device(char* path);
   bool pp64_has_device();
-
+  
   bool pp64_ping(void);
   bool pp64_reset(void);
+  bool pp64_ready(void);
   bool pp64_load(unsigned char memory, unsigned char bank, int start, int end, char* data, int size);
   bool pp64_save(unsigned char memory, unsigned char bank, int start, int end, char* data, int size);
   bool pp64_peek(unsigned char memory, unsigned char bank, int address, unsigned char* value);

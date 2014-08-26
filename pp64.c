@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "pp64.h"
 #include "target.h"
@@ -84,6 +85,27 @@ bool pp64_reset(void) {
   }
   return false;
 };
+
+//------------------------------------------------------------------------------
+
+bool pp64_ready(void) {
+
+  int timeout = 3000;
+
+  if(!pp64_ping()) {
+    pp64_reset();
+    
+    while(timeout) {
+      if(pp64_ping()) {
+        usleep(250*1000); // wait until basic is ready
+        return true;
+      }
+      timeout-=PP64_PING_TIMEOUT;
+    }
+    return false;
+  }
+  return true;
+}
 
 //------------------------------------------------------------------------------
 
