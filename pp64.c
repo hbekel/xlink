@@ -10,6 +10,10 @@
 #include "extensions.c"
 #include "util.h"
 
+#if windows
+  #include <windows.h>
+#endif
+
 extern Driver* driver;
 
 //------------------------------------------------------------------------------
@@ -27,12 +31,12 @@ void libpp64_initialize() {
 
   logger->suspend();
 
-  if(driver_setup(default_usb_device) == NULL) {
+  driver_setup(default_usb_device);
+
+  if (!driver->ready()) {
     driver_setup(default_parport_device);
   }
 
-  logger->resume();
-  
   if(driver->ready()) {
     logger->debug("Using default device %s", driver->path);
   }
@@ -46,6 +50,25 @@ void libpp64_finalize(void) {
   }
   logger->free();
 }
+
+//------------------------------------------------------------------------------
+
+#if windows
+BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
+  switch(nReason) {
+
+   case DLL_PROCESS_ATTACH:
+     libpp64_initialize(); 
+     break;
+ 
+   case DLL_PROCESS_DETACH:
+     libpp64_finalize();
+     break;
+  }
+  return true;
+}
+#endif
+
 
 //------------------------------------------------------------------------------
 
