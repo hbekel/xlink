@@ -37,6 +37,8 @@ void libpp64_initialize() {
     driver_setup(default_parport_device);
   }
 
+  logger->resume();
+
   if(driver->ready()) {
     logger->debug("Using default device %s", driver->path);
   }

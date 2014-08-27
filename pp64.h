@@ -5,13 +5,13 @@
 
 #define PP64_PING_TIMEOUT 250
 
-#define PP64_COMMAND_LOAD         0x01
-#define PP64_COMMAND_SAVE         0x02
-#define PP64_COMMAND_POKE         0x03
-#define PP64_COMMAND_PEEK         0x04
-#define PP64_COMMAND_JUMP         0x05
-#define PP64_COMMAND_RUN          0x06
-#define PP64_COMMAND_EXTEND       0x07
+#define PP64_COMMAND_LOAD   0x01
+#define PP64_COMMAND_SAVE   0x02
+#define PP64_COMMAND_POKE   0x03
+#define PP64_COMMAND_PEEK   0x04
+#define PP64_COMMAND_JUMP   0x05
+#define PP64_COMMAND_RUN    0x06
+#define PP64_COMMAND_EXTEND 0x07
 
 #ifdef __cplusplus
 extern "C" {
