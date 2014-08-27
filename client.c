@@ -1253,8 +1253,9 @@ void usage(void) {
 #endif
   printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
   printf("         -s, --skip <n>                : Skip n bytes of file\n");
-  printf("         -m, --memory                  : C64 memory config (default: 0x37)\n\n");
-  
+  printf("         -m, --memory                  : C64 memory config (default: 0x37)\n");
+  printf("         -b, --bank                    : C64 memory bank (unused)\n");
+  printf("\n");
   printf("Commands:\n");
   printf("          help  [<command>]            : show detailed help for command\n");
 #if linux
