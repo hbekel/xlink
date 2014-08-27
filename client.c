@@ -303,6 +303,7 @@ int command_parse_options(Command *self) {
   int option, index;
   static struct option options[] = {
     {"help",    no_argument,       0, 'h'},
+    {"version", no_argument,       0, 'v'},
     {"device",  required_argument, 0, 'd'},
     {"level",   required_argument, 0, 'l'},
     {"memory",  required_argument, 0, 'm'},
@@ -317,21 +318,29 @@ int command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "hd:l:m:b:a:s:", options, &index);
+    option = getopt_long(self->argc, self->argv, "hvd:l:m:b:a:s:", options, &index);
     
     if(option == -1)
       break;
 
     switch(option) {
-    
-    case 'l':
-      logger->set(optarg);
+
+    case 'h':
+      usage();
+      break;
+
+    case 'v':
+      version();
       break;
 
     case 'd':
       if (!pp64_set_device(optarg)) {
         return false; 
       }
+      break;
+    
+    case 'l':
+      logger->set(optarg);
       break;
 
     case 'm':
@@ -1208,45 +1217,53 @@ void shell(void) {
 
 //------------------------------------------------------------------------------
 
+void version(void) {
+  printf("pp64 client 0.4 Copyright (C) 2014 Henning Bekel <h.bekel@googlemail.com>\n");
+}
+
+//------------------------------------------------------------------------------
+
 void usage(void) {
-    printf("pp64 client 0.4 Copyright (C) 2014 Henning Bekel <h.bekel@googlemail.com>\n");
-    printf("\n");
-    printf("Usage: c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n");
-    printf("\n");
-    printf("Options:\n");
-    printf("         -h, --help                    : show this help\n");
-    printf("         -l, --level <level>           : log level (ERROR|WARN|INFO|DEBUG|TRACE)\n");
+  version();
+  printf("\n");
+  printf("Usage: c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n");
+  printf("\n");
+  printf("Options:\n");
+  printf("         -h, --help                    : show this help\n");
+  printf("         -v, --version                 : show version information\n");
+  printf("         -l, --level <level>           : log level (ERROR|WARN|INFO|DEBUG|TRACE)\n");
 #if linux
-    printf("         -d, --device <path>           : ");
-    printf("transfer device (default: /dev/c64)\n");
+  printf("         -d, --device <path>           : ");
+  printf("transfer device (default: /dev/c64)\n");
 #elif windows
-    printf("         -d, --device <port or USB>    : ");
-    printf("port address (default: 0x378)\n");
+  printf("         -d, --device <port or \"USB\">  : ");
+  printf("transfer device (default: \"USB\")\n");
 #endif
-    printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
-    printf("         -s, --skip <n>                : Skip n bytes of file\n");
-    printf("         -m, --memory                  : C64 memory config (default: 0x37)\n\n");
-    
-    printf("Commands:\n");
-    printf("          help  [<command>]            : show detailed help for command\n");
+  printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
+  printf("         -s, --skip <n>                : Skip n bytes of file\n");
+  printf("         -m, --memory                  : C64 memory config (default: 0x37)\n\n");
+  
+  printf("Commands:\n");
+  printf("          help  [<command>]            : show detailed help for command\n");
 #if linux
-    printf("          shell                        : enter interactive command shell\n");
+  printf("          shell                        : enter interactive command shell\n");
 #endif
-    printf("          ready                        : try to make sure the server is ready\n");
-    printf("          reset                        : reset C64 (only if using reset circuit)\n");
-    printf("\n");
-    printf("          load  [<opts>] <file>        : load file into C64 memory\n");
-    printf("          save  [<opts>] <file>        : save C64 memory to file\n");
-    printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
-    printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
-    printf("          jump  [<opts>] <addr>        : jump to specified address\n");
-    printf("          run   [<opts>] [<file>]      : run program, optionally load it before\n");
-    printf("\n");
-    printf("          @[<dos-command>]             : read drive status or send dos command\n");    
-    printf("          backup <file>                : backup disk to d64 file\n");
-    printf("          restore <file>               : restore d64 file to disk\n");
-    printf("          verify <file>                : verify disk against d64 file\n");
-    printf("\n");
+  printf("          ready                        : try to make sure the server is ready\n");
+  printf("          reset                        : reset C64 (only if using reset circuit)\n");
+  printf("\n");
+  printf("          load  [<opts>] <file>        : load file into C64 memory\n");
+  printf("          save  [<opts>] <file>        : save C64 memory to file\n");
+  printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
+  printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
+  printf("          jump  [<opts>] <addr>        : jump to specified address\n");
+  printf("          run   [<opts>] [<file>]      : run program, optionally load it before\n");
+  printf("          <file>...                    : load file(s) and run last file\n");
+  printf("\n");
+  printf("          @[<dos-command>]             : read drive status or send dos command\n");    
+  printf("          backup <file>                : backup disk to d64 file\n");
+  printf("          restore <file>               : restore d64 file to disk\n");
+  printf("          verify <file>                : verify disk against d64 file\n");
+  printf("\n");
 }
 
 //------------------------------------------------------------------------------
