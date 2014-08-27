@@ -134,6 +134,16 @@ bool pp64_ready(void) {
 
 //------------------------------------------------------------------------------
 
+bool pp64_boot(void) {
+  if(driver->open()) {
+    driver->boot();
+    return true;
+  }
+  return false;
+}
+
+//------------------------------------------------------------------------------
+
 bool pp64_load(unsigned char memory, 
 	       unsigned char bank, 
 	       int start, 
@@ -478,8 +488,8 @@ bool pp64_test(char *test) {
 
     logger->info("running test \"%s\"", test);
 
-    if(strcmp(test, "FLASH") == 0) {
-      driver->flash();
+    if(strcmp(test, "BOOT") == 0) {
+      driver->boot();
       goto done;
     }
 

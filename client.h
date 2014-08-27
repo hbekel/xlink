@@ -63,6 +63,7 @@ int command_ping(Command* self);
 int command_reset(Command* self);
 int command_wait(Command* self);
 int command_help(Command* self);
+int command_boot(Command *self);
 int command_test(Command *self);
 void command_free(Command* self);
 

@@ -19,7 +19,7 @@ void driver_parport_input(void);
 void driver_parport_output(void);
 bool driver_parport_ping(void);
 void driver_parport_reset(void);
-void driver_parport_flash(void);
+void driver_parport_boot(void);
 void driver_parport_free(void);
 
 #endif // PARPORT_H

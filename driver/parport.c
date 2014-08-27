@@ -272,7 +272,7 @@ void driver_parport_reset() {
 
 //------------------------------------------------------------------------------
 
- void driver_parport_flash() { /* nothing to flash */ }
+ void driver_parport_boot() { /* nothing to boot */ }
 
 //------------------------------------------------------------------------------
 

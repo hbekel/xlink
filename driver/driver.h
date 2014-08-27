@@ -19,7 +19,7 @@ typedef struct {
   void (*_output) (void);
   bool (*_ping) (void);
   void (*_reset) (void);
-  void (*_flash) (void);
+  void (*_boot) (void);
   void (*_free) (void);
 
   bool (*ready) (void);
@@ -35,7 +35,7 @@ typedef struct {
   void (*output) (void);
   bool (*ping) (void);
   void (*reset) (void);
-  void (*flash) (void);
+  void (*boot) (void);
   void (*free) (void);
 } Driver;
 
@@ -56,7 +56,7 @@ void _driver_input(void);
 void _driver_output(void);
 bool _driver_ping(void);
 void _driver_reset(void);
-void _driver_flash(void);
+void _driver_boot(void);
 void _driver_free();
 
 #endif // DRIVER_H

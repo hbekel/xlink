@@ -155,8 +155,8 @@ void driver_usb_reset() {
 
 //------------------------------------------------------------------------------
 
-void driver_usb_flash() { 
-  usbMessage(USB_FLASH);
+void driver_usb_boot() { 
+  usbMessage(USB_BOOT);
 }
 
 //------------------------------------------------------------------------------

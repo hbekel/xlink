@@ -1,7 +1,7 @@
 GCC=gcc
-GCC-MINGW32=i486-mingw32-gcc
+GCC-MINGW32=i686-pc-mingw32-gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
-KASM=java -jar /usr/share/kickassembler/KickAss.jar
+KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 all: linux win32 servers kernal
 
@@ -26,7 +26,7 @@ pp64.dll: pp64.c pp64.h \
 	driver/parport.c driver/parport.h \
 	extension.c extension.h extensions.c \
 	util.c util.h
-	$(GCC-MINGW32) $(FLAGS) -shared -Wl,-init,libpp64_initialize,-fini,libpp64_finalize -o pp64.dll pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
+	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
 
 c64.exe: pp64.dll client.c client.h disk.c disk.h 
 	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64

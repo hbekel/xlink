@@ -52,7 +52,7 @@ void EVENT_USB_Device_ControlRequest(void) {
     case USB_WRITE:   Write(byte);   break;
     case USB_SEND:    Send(size);    break;
     case USB_RECEIVE: Receive(size); break;
-    case USB_FLASH:   Flash();       break;
+    case USB_BOOT:    Boot();       break;
     }
   }
 }
@@ -239,7 +239,7 @@ void Receive(uint16_t bytesToReceive) {
  Endpoint_ClearOUT(); // clear host STATUS ACK
 }
 
-void FlashCheck(void) {
+void BootCheck(void) {
   // If the reset source was the bootloader and the key is correct, clear it and jump to the bootloader
   if ((MCUSR & (1 << WDRF)) && (Boot_Key == MAGIC_BOOT_KEY)) {
     Boot_Key = 0;
@@ -247,7 +247,7 @@ void FlashCheck(void) {
   }
 }
   
-void Flash(void) {
+void Boot(void) {
 
   Endpoint_ClearSETUP();
   Endpoint_ClearOUT();

@@ -11,6 +11,6 @@
 #define USB_WRITE    0x07
 #define USB_SEND     0x08
 #define USB_RECEIVE  0x09
-#define USB_FLASH    0x0a
+#define USB_BOOT     0x0a
 
 #endif // PROTOCOL_H

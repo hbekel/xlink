@@ -15,7 +15,7 @@ void driver_usb_input(void);
 void driver_usb_output(void);
 bool driver_usb_ping(void);
 void driver_usb_reset(void);
-void driver_usb_flash(void);
+void driver_usb_boot(void);
 void driver_usb_free(void);
 
 int usbMessage(int message);

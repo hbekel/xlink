@@ -23,7 +23,7 @@
 #define USB_WRITE    0x07
 #define USB_SEND     0x08
 #define USB_RECEIVE  0x09
-#define USB_FLASH    0x0a
+#define USB_BOOT    0x0a
 
 #define PIN_RESET  (1 << PINC5)
 #define PIN_STROBE (1 << PINC2)
@@ -50,9 +50,9 @@ void Write(uint8_t byte);
 void Send(uint16_t size);
 void Receive(uint16_t size);
 
-void FlashCheck(void) ATTR_INIT_SECTION(3);
-void FlashCheck(void);
-void Flash(void);
+void BootCheck(void) ATTR_INIT_SECTION(3);
+void BootCheck(void);
+void Boot(void);
 
 void EVENT_USB_Device_ControlRequest(void);
 

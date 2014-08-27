@@ -35,7 +35,8 @@
 #define COMMAND_STATUS  0x0d
 #define COMMAND_READY   0x0e
 #define COMMAND_PING    0x0f
-#define COMMAND_TEST    0x10
+#define COMMAND_BOOT    0x10
+#define COMMAND_TEST    0x11
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -58,6 +59,7 @@ char str2id(const char* arg) {
   if (strcmp(arg, "verify" ) == 0) return COMMAND_VERIFY;  
   if (strcmp(arg, "ready"  ) == 0) return COMMAND_READY;  
   if (strcmp(arg, "ping"   ) == 0) return COMMAND_PING;  
+  if (strcmp(arg, "boot"   ) == 0) return COMMAND_BOOT;  
   if (strcmp(arg, "test"   ) == 0) return COMMAND_TEST;  
 
   if (strncmp(arg, "@", 1) == 0) {
@@ -74,7 +76,7 @@ char str2id(const char* arg) {
 //------------------------------------------------------------------------------
 
 char* id2str(const char id) {
-  if (id == COMMAND_NONE)    return (char*) "none";
+  if (id == COMMAND_NONE)    return (char*) "main";
   if (id == COMMAND_LOAD)    return (char*) "load";
   if (id == COMMAND_SAVE)    return (char*) "save";
   if (id == COMMAND_POKE)    return (char*) "poke";
@@ -90,6 +92,7 @@ char* id2str(const char id) {
   if (id == COMMAND_STATUS)  return (char*) "status";  
   if (id == COMMAND_READY)   return (char*) "ready";  
   if (id == COMMAND_PING)    return (char*) "ping";  
+  if (id == COMMAND_BOOT)    return (char*) "boot";  
   if (id == COMMAND_TEST)    return (char*) "test";  
   return (char*) "unknown";
 }
@@ -237,6 +240,7 @@ int command_arity(Command* self) {
   if (self->id == COMMAND_STATUS)  return 0;
   if (self->id == COMMAND_READY)   return 0;
   if (self->id == COMMAND_PING)    return 0;
+  if (self->id == COMMAND_BOOT)    return 0;
   if (self->id == COMMAND_TEST)    return 1;
   return 0;
 
@@ -802,7 +806,12 @@ int command_test(Command* self) {
 }
 
 //------------------------------------------------------------------------------
+int command_boot(Command *self) {
+  command_print(self);
+  return pp64_boot();
+}
 
+//------------------------------------------------------------------------------
 int command_help(Command *self) {
 
   if (self->argc > 0) {
@@ -1057,6 +1066,7 @@ int command_execute(Command* self) {
   case COMMAND_STATUS  : result = command_status(self);  break;
   case COMMAND_READY   : result = command_ready(self);   break;
   case COMMAND_PING    : result = command_ping(self);    break;
+  case COMMAND_BOOT    : result = command_boot(self);    break;
   case COMMAND_TEST    : result = command_test(self);    break;
   }
   
@@ -1114,7 +1124,8 @@ void shell(void) {
   extern char **completion_matches();
 
   static char* known_commands[16] = { 
-    "help", 
+    "help",
+    "version", 
     "load", 
     "save",
     "peek",
@@ -1129,6 +1140,7 @@ void shell(void) {
     "exit",
     "quit",
     "ping",
+    "boot",
     NULL };
 
   char *dupstr(char *s) {
@@ -1250,6 +1262,7 @@ void usage(void) {
 #endif
   printf("          ready                        : try to make sure the server is ready\n");
   printf("          reset                        : reset C64 (only if using reset circuit)\n");
+  printf("          boot                         : enter dfu-bootloader (USB devices only)\n");
   printf("\n");
   printf("          load  [<opts>] <file>        : load file into C64 memory\n");
   printf("          save  [<opts>] <file>        : save C64 memory to file\n");

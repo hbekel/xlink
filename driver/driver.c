@@ -45,7 +45,7 @@ Driver *driver_setup(char* path) {
     driver->output  = &_driver_output;
     driver->ping    = &_driver_ping;
     driver->reset   = &_driver_reset;
-    driver->flash   = &_driver_flash;
+    driver->boot   = &_driver_boot;
     driver->free    = &_driver_free;
  }
 
@@ -68,7 +68,7 @@ Driver *driver_setup(char* path) {
       driver->_output  = &driver_parport_output;    
       driver->_ping    = &driver_parport_ping;    
       driver->_reset   = &driver_parport_reset;    
-      driver->_flash   = &driver_parport_flash;    
+      driver->_boot   = &driver_parport_boot;    
       driver->_free    = &driver_parport_free;
   
   } else if(device_is_usb(driver->path)) {
@@ -87,7 +87,7 @@ Driver *driver_setup(char* path) {
       driver->_output  = &driver_usb_output;    
       driver->_ping    = &driver_usb_ping;    
       driver->_reset   = &driver_usb_reset;    
-      driver->_flash   = &driver_usb_flash;    
+      driver->_boot   = &driver_usb_boot;    
       driver->_free    = &driver_usb_free;
   }    
 
@@ -160,7 +160,7 @@ bool _driver_wait(int timeout)             { return driver->_wait(timeout); }
 void _driver_input()                       { driver->_input(); }
 void _driver_output()                      { driver->_output(); }
 bool _driver_ping(void)                    { return driver->_ping(); }
-void _driver_flash()                       { driver->_flash(); }
+void _driver_boot()                       { driver->_boot(); }
 void _driver_reset()                       { driver->_reset(); }
 
 void _driver_free() {
