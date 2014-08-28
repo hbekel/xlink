@@ -1,4 +1,4 @@
-#include "uuadapter.h"
+#include "xlink.h"
 
 static volatile uint8_t last;
 static uint32_t Boot_Key ATTR_NO_INIT;

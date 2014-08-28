@@ -40,7 +40,7 @@ static char response[1];
 
 bool driver_usb_open() {
   
-  handle = _driver_usb_open_device(USB_VID, "BREADBIN", USB_PID, "USB2C64");
+  handle = _driver_usb_open_device(USB_VID, "XLINK", USB_PID, "USB2C64");
 
   if(handle == NULL) {
     logger->error("could not find USB device");

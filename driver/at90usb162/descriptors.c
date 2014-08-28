@@ -13,7 +13,7 @@
  *  number of device configurations. The descriptor is read out by the USB host when the enumeration
  *  process begins.
  */
-const USB_Descriptor_Device_t PROGMEM UUAdapter_DeviceDescriptor =
+const USB_Descriptor_Device_t PROGMEM XLink_DeviceDescriptor =
 {
 	.Header                 = {.Size = sizeof(USB_Descriptor_Device_t), .Type = DTYPE_Device},
 
@@ -40,7 +40,7 @@ const USB_Descriptor_Device_t PROGMEM UUAdapter_DeviceDescriptor =
  *  and endpoints. The descriptor is read out by the USB host during the enumeration process when selecting
  *  a configuration so that the host may correctly communicate with the USB device.
  */
-const USB_Descriptor_Configuration_t PROGMEM UUAdapter_ConfigurationDescriptor =
+const USB_Descriptor_Configuration_t PROGMEM XLink_ConfigurationDescriptor =
 {
 	.Config =
 		{
@@ -57,7 +57,7 @@ const USB_Descriptor_Configuration_t PROGMEM UUAdapter_ConfigurationDescriptor =
 			.MaxPowerConsumption    = USB_CONFIG_POWER_MA(100)
 		},
 
-	.UUAdapterInterface =
+	.XLinkInterface =
 		{
 			.Header                 = {.Size = sizeof(USB_Descriptor_Interface_t), .Type = DTYPE_Interface},
 
@@ -78,7 +78,7 @@ const USB_Descriptor_Configuration_t PROGMEM UUAdapter_ConfigurationDescriptor =
  *  the string descriptor with index 0 (the first index). It is actually an array of 16-bit integers, which indicate
  *  via the language ID table available at USB.org what languages the device supports for its string descriptors.
  */
-const USB_Descriptor_String_t PROGMEM UUAdapter_LanguageString =
+const USB_Descriptor_String_t PROGMEM XLink_LanguageString =
 {
 	.Header                 = {.Size = USB_STRING_LEN(1), .Type = DTYPE_String},
 
@@ -89,18 +89,18 @@ const USB_Descriptor_String_t PROGMEM UUAdapter_LanguageString =
  *  form, and is read out upon request by the host when the appropriate string ID is requested, listed in the Device
  *  Descriptor.
  */
-const USB_Descriptor_String_t PROGMEM UUAdapter_ManufacturerString =
+const USB_Descriptor_String_t PROGMEM XLink_ManufacturerString =
 {
 	.Header                 = {.Size = USB_STRING_LEN(8), .Type = DTYPE_String},
 
-	.UnicodeString          = L"BREADBIN"
+	.UnicodeString          = L"XLINK"
 };
 
 /** Product descriptor string. This is a Unicode string containing the product's details in human readable form,
  *  and is read out upon request by the host when the appropriate string ID is requested, listed in the Device
  *  Descriptor.
  */
-const USB_Descriptor_String_t PROGMEM UUAdapter_ProductString =
+const USB_Descriptor_String_t PROGMEM XLink_ProductString =
 {
 	.Header                 = {.Size = USB_STRING_LEN(7), .Type = DTYPE_String},
 
@@ -110,7 +110,7 @@ const USB_Descriptor_String_t PROGMEM UUAdapter_ProductString =
 /** Serial number string. This is a Unicode string containing the device's unique serial number, expressed as a
  *  series of uppercase hexadecimal digits.
  */
-const USB_Descriptor_String_t PROGMEM UUAdapter_SerialString =
+const USB_Descriptor_String_t PROGMEM XLink_SerialString =
 {
 	.Header                 = {.Size = USB_STRING_LEN(5), .Type = DTYPE_String},
 
@@ -136,31 +136,31 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
 	switch (DescriptorType)
 	{
 		case DTYPE_Device:
-			Address = &UUAdapter_DeviceDescriptor;
+			Address = &XLink_DeviceDescriptor;
 			Size    = sizeof(USB_Descriptor_Device_t);
 			break;
 		case DTYPE_Configuration:
-			Address = &UUAdapter_ConfigurationDescriptor;
+			Address = &XLink_ConfigurationDescriptor;
 			Size    = sizeof(USB_Descriptor_Configuration_t);
 			break;
 		case DTYPE_String:
 			switch (DescriptorNumber)
 			{
 				case STRING_ID_Language:
-					Address = &UUAdapter_LanguageString;
-					Size    = pgm_read_byte(&UUAdapter_LanguageString.Header.Size);
+					Address = &XLink_LanguageString;
+					Size    = pgm_read_byte(&XLink_LanguageString.Header.Size);
 					break;
 				case STRING_ID_Manufacturer:
-					Address = &UUAdapter_ManufacturerString;
-					Size    = pgm_read_byte(&UUAdapter_ManufacturerString.Header.Size);
+					Address = &XLink_ManufacturerString;
+					Size    = pgm_read_byte(&XLink_ManufacturerString.Header.Size);
 					break;
 				case STRING_ID_Product:
-					Address = &UUAdapter_ProductString;
-					Size    = pgm_read_byte(&UUAdapter_ProductString.Header.Size);
+					Address = &XLink_ProductString;
+					Size    = pgm_read_byte(&XLink_ProductString.Header.Size);
 					break;
 				case STRING_ID_Serial:
-					Address = &UUAdapter_SerialString;
-					Size    = pgm_read_byte(&UUAdapter_SerialString.Header.Size);
+					Address = &XLink_SerialString;
+					Size    = pgm_read_byte(&XLink_SerialString.Header.Size);
 					break;
 			}
 

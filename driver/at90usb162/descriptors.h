@@ -14,8 +14,8 @@
 		{
 			USB_Descriptor_Configuration_Header_t Config;
 
-			// UUAdapter Interface
-			USB_Descriptor_Interface_t            UUAdapterInterface;
+			// XLink Interface
+			USB_Descriptor_Interface_t            XLinkInterface;
 		} USB_Descriptor_Configuration_t;
 
 		/** Enum for the device string descriptor IDs within the device. Each string descriptor should

@@ -1,5 +1,5 @@
-#ifndef UUADAPTER_H
-#define UUADAPTER_H
+#ifndef XLINK_H
+#define XLINK_H
 
 #include <stdbool.h> 
 #include <avr/io.h>
@@ -56,4 +56,4 @@ void Boot(void);
 
 void EVENT_USB_Device_ControlRequest(void);
 
-#endif // UUADAPTER_H
+#endif // XLINK_H

@@ -17,7 +17,7 @@ BOARD        = USER
 F_CPU        = 8000000
 F_USB        = $(F_CPU)
 OPTIMIZATION = 3
-TARGET       = uuadapter
+TARGET       = xlink
 SRC          = $(TARGET).c descriptors.c $(LUFA_SRC_USB) $(LUFA_SRC_USBCLASS)
 LUFA_PATH    = LUFA
 CC_FLAGS     = -DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -DUSE_LUFA_CONFIG_HEADER -Iconfig/
