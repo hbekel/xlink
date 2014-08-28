@@ -74,16 +74,10 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
 
 //------------------------------------------------------------------------------
 
-bool xlink_set_device(char* path) {
+bool xlink_device(char* path) {
   driver_setup(path);
-  return xlink_has_device();
-}  
-
-//------------------------------------------------------------------------------
-
-bool xlink_has_device() {
   return driver != NULL && driver->ready();
-}
+}  
 
 //------------------------------------------------------------------------------
 
@@ -134,7 +128,7 @@ bool xlink_ready(void) {
 
 //------------------------------------------------------------------------------
 
-bool xlink_boot(void) {
+bool xlink_bootstrap(void) {
   if(driver->open()) {
     driver->boot();
     return true;
@@ -477,97 +471,68 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
 
 //------------------------------------------------------------------------------
 
-bool xlink_test(char *test) {
+bool xlink_benchmark() {
 
   Watch* watch = watch_new();
   bool result = false;
 
-  logger->enter("testsuite");
+  logger->enter("benchmark");
 
   if(driver->open()) {
 
-    logger->info("running test \"%s\"", test);
-
-    if(strcmp(test, "BOOT") == 0) {
-      driver->boot();
+    if(!driver->ping()) {
+      logger->error("no response from C64");
+      result = false;
       goto done;
     }
-
-    if(strcmp(test, "PING") == 0) {
-      
-      watch_start(watch);
-
-      if(driver->ping()) {
-        logger->info("received ping reply after %.2fms", watch_elapsed(watch));
-      } 
-      else {
-        logger->error("no response from C64");
-        result = false;
+    
+    char payload[0x8000];
+    char roundtrip[sizeof(payload)];
+    
+    int start = 0x1000;
+    int end = start + sizeof(payload);
+    
+    logger->info("sending %d bytes...", sizeof(payload));
+    
+    watch_start(watch);
+    
+    driver->output();
+    driver->send((char []) {XLINK_COMMAND_LOAD, 0x37, 0x00, lo(start), hi(start), lo(end), hi(end)}, 7);
+    driver->send(payload, sizeof(payload));
+    
+    float seconds = (watch_elapsed(watch) / 1000.0);
+    float kbs = sizeof(payload)/seconds/1024;
+    
+    logger->info("%.2f seconds at %.2f kb/s", seconds, kbs);       
+    
+    logger->info("receiving %d bytes...", sizeof(payload));
+    
+    watch_start(watch);
+    
+    driver->send((char []) {XLINK_COMMAND_SAVE, 0x37, 0x00, lo(start), hi(start), lo(end), hi(end)}, 7);
+    
+    driver->input();
+    driver->strobe();
+    
+    driver->receive(roundtrip, sizeof(payload));
+    
+    seconds = (watch_elapsed(watch) / 1000.0);
+    kbs = sizeof(payload)/seconds/1024;
+    
+    logger->info("%.2f seconds at %.2f kb/s", seconds, kbs);
+    
+    logger->info("verifying...");
+    
+    for(int i=0; i<sizeof(payload); i++) {
+      if(payload[i] != roundtrip[i]) {
+	logger->error("roundtrip error at byte %d: %d != %d", i, payload[i], roundtrip[i]);
+	result = false;
+	goto done;
       }
-      goto done;
     }
-
-    if(strcmp(test, "RESET") == 0) {
-      driver->reset();
-      goto done;
-    }
-
-    if(strcmp(test, "TRANSFER") == 0) {
-
-      if(!driver->ping()) {
-        logger->error("no response from C64");
-        result = false;
-        goto done;
-      }
-
-      char payload[0x8000];
-      char roundtrip[sizeof(payload)];
-      
-      int start = 0x1000;
-      int end = start + sizeof(payload);
-      
-      logger->info("sending %d bytes...", sizeof(payload));
-      
-      watch_start(watch);
-
-      driver->output();
-      driver->send((char []) {XLINK_COMMAND_LOAD, 0x37, 0x00, lo(start), hi(start), lo(end), hi(end)}, 7);
-      driver->send(payload, sizeof(payload));
-      
-      float seconds = (watch_elapsed(watch) / 1000.0);
-      float kbs = sizeof(payload)/seconds/1024;
-      
-      logger->info("%.2f seconds at %.2f kb/s", seconds, kbs);       
-      
-      logger->info("receiving %d bytes...", sizeof(payload));
-
-      watch_start(watch);
-      
-      driver->send((char []) {XLINK_COMMAND_SAVE, 0x37, 0x00, lo(start), hi(start), lo(end), hi(end)}, 7);
-      
-      driver->input();
-      driver->strobe();
-      
-      driver->receive(roundtrip, sizeof(payload));
-      
-      seconds = (watch_elapsed(watch) / 1000.0);
-      kbs = sizeof(payload)/seconds/1024;
-
-      logger->info("%.2f seconds at %.2f kb/s", seconds, kbs);
-      
-      logger->info("verifying...");
-      
-      for(int i=0; i<sizeof(payload); i++) {
-        if(payload[i] != roundtrip[i]) {
-          logger->error("roundtrip error at byte %d: %d != %d", i, payload[i], roundtrip[i]);
-          result = false;
-          goto done;
-        }
-      }
-      logger->info("test completed successfully");
-
-      result = true;
-    }
+    logger->info("test completed successfully");
+    
+    result = true;
   }
   
  done:

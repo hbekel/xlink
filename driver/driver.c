@@ -160,7 +160,7 @@ bool _driver_wait(int timeout)             { return driver->_wait(timeout); }
 void _driver_input()                       { driver->_input(); }
 void _driver_output()                      { driver->_output(); }
 bool _driver_ping(void)                    { return driver->_ping(); }
-void _driver_boot()                       { driver->_boot(); }
+void _driver_boot()                        { driver->_boot(); }
 void _driver_reset()                       { driver->_reset(); }
 
 void _driver_free() {
