@@ -1,0 +1,30 @@
+# -*- shell-script -*-
+
+function _c64 {
+
+    COMPREPLY=()
+    local cur="${COMP_WORDS[COMP_CWORD]}"
+    local prev="${COMP_WORDS[COMP_CWORD-1]}"
+    local sec="${COMP_WORDS[1]}"
+
+    local long_options="--help --version --level --device --address --skip --memory --bank"
+    local short_options="-h -v -l -d -a -s -m -b"
+    local commands="help ready reset boot load save poke peek jump run backup restore verify"    
+    local loglevels="ERROR WARN INFO DEBUG TRACE" 
+
+
+    if [[ "$prev" =~ ^(\-l|\-\-level)$ ]]; then
+	COMPREPLY=( $(compgen -W "$loglevels" -- "${cur}") )
+
+    elif [[ "$cur" =~ ^\-\- ]]; then
+	COMPREPLY=( $(compgen -W "$long_options" -- "${cur}") )
+
+    elif [[ "$cur" =~ ^\-[^\-]? ]]; then
+	COMPREPLY=( $(compgen -W "$short_options" -- "${cur}") )
+
+    else
+	COMPREPLY=( $(compgen -W "$commands" -- "${cur}") )
+    fi
+    return 0
+}
+complete -f -F _c64 c64

@@ -60,6 +60,14 @@ install: c64
 	install -m755 c64 /usr/bin
 	install -m644 libpp64.so /usr/lib
 	install -m644 pp64.h /usr/include
+	[ -d /etc/bash_completion.d ] && install -m644 etc/bash_completion.d/c64 /etc/bash_completion.d/
+
+uninstall:
+	rm -v /usr/bin/c64
+	rm -v /usr/lib/libpp64.so
+	rm -v /usr/include/pp64.h
+	[ -f /etc/bash_completion.d/c64 ] && rm -v /etc/bash_completion.d/c64
+
 clean:
 	[ -f libpp64.so ] && rm -v libpp64.so || true
 	[ -f pp64.dll ] && rm -v pp64.dll || true
