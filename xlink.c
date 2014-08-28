@@ -37,11 +37,11 @@ void libxlink_initialize() {
     driver_setup(default_parport_device);
   }
 
-  logger->resume();
-
-  if(driver->ready()) {
-    logger->debug("Using default device %s", driver->path);
+  if (getenv("XLINK_DEVICE") != NULL) {
+    driver_setup(getenv("XLINK_DEVICE"));
   }
+
+  logger->resume();
 }
 
 //------------------------------------------------------------------------------
