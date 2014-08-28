@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #include "target.h"
-#include "pp64.h"
+#include "xlink.h"
 #include "driver.h"
 #include "parport.h"
 #include "util.h"
@@ -135,7 +135,7 @@ bool driver_parport_open() {
       }		
     }
     else {
-      logger->error("pp64: error: failed to load inpout32.dll\n\n"
+      logger->error("xlink: error: failed to load inpout32.dll\n\n"
                     "Inpout32 is required for parallel port access:\n\n"    
                     "    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");	
     }
@@ -259,7 +259,7 @@ bool driver_parport_ping() {
   driver->output();
   driver->write(0xff);
   driver->strobe();
-  return driver->wait(PP64_PING_TIMEOUT);
+  return driver->wait(XLINK_PING_TIMEOUT);
 }
  
 //------------------------------------------------------------------------------

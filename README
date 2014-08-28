@@ -1,4 +1,4 @@
-PP64 -- Bidirectional 8-bit parallel data transfers between PS/2
+XLINK -- Bidirectional 8-bit parallel data transfers between PS/2
 Parallel Port and C64 User Port with optional reset circuit
 
 ---------------------------------------------------------------------
@@ -7,7 +7,7 @@ Introduction
 
 Introduction
 
-PP64 is a system for fast 8-bit parallel data transfers between a C64
+XLINK is a system for fast 8-bit parallel data transfers between a C64
 and an IBM-PC using a parallel port cable connected to the C64 user
 port.
 
@@ -23,14 +23,14 @@ a permanent solution that integrates a server in a modified kernal or
 a simple eprom cartridge.
 
 The underlying communication protocol is implemented in a shared
-library, allowing you to use and extend pp64's functionality for your
+library, allowing you to use and extend xlink's functionality for your
 own programs.
 
 ----------------------------------------------------------------------
 Cable
 ----------------------------------------------------------------------
 
-The PP64 cable is a simple 8-bit parallel transfer cable connecting
+The XLINK cable is a simple 8-bit parallel transfer cable connecting
 the PC Parallel Port to the C64 User port.
 
        ---------------------------------------------

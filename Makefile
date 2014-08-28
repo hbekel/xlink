@@ -7,31 +7,31 @@ KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 all: linux win32 servers kernal
 
-linux: c64
-win32: c64.exe
+linux: xlink
+win32: xlink.exe
 
-libpp64.so: pp64.c pp64.h \
+libxlink.so: xlink.c xlink.h \
 	driver/driver.c driver/driver.h \
 	driver/usb.c driver/usb.h \
 	driver/protocol.h \
 	driver/parport.c driver/parport.h \
 	extension.c extension.h extensions.c \
 	util.c util.h 
-	$(GCC) $(FLAGS) -shared -fPIC -Wl,-init,libpp64_initialize,-fini,libpp64_finalize -o libpp64.so pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
+	$(GCC) $(FLAGS) -shared -fPIC -Wl,-init,libxlink_initialize,-fini,libxlink_finalize -o libxlink.so xlink.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
 
-c64: libpp64.so client.c client.h disk.c disk.h
-	$(GCC) $(FLAGS) -o c64 client.c disk.c -L. -lpp64 -lreadline
+xlink: libxlink.so client.c client.h disk.c disk.h
+	$(GCC) $(FLAGS) -o xlink client.c disk.c -L. -lxlink -lreadline
 
-pp64.dll: pp64.c pp64.h \
+xlink.dll: xlink.c xlink.h \
 	driver/driver.c driver/driver.h \
 	driver/usb.c driver/usb.h \
 	driver/parport.c driver/parport.h \
 	extension.c extension.h extensions.c \
 	util.c util.h
-	$(GCC-MINGW32) $(FLAGS) -shared -o pp64.dll pp64.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
+	$(GCC-MINGW32) $(FLAGS) -shared -o xlink.dll xlink.c driver/driver.c driver/parport.c driver/usb.c extension.c util.c -lusb
 
-c64.exe: pp64.dll client.c client.h disk.c disk.h 
-	$(GCC-MINGW32) $(FLAGS) -o c64.exe client.c disk.c -L. -lpp64
+xlink.exe: xlink.dll client.c client.h disk.c disk.h 
+	$(GCC-MINGW32) $(FLAGS) -o xlink.exe client.c disk.c -L. -lxlink
 
 extensions.c: tools/compile-extension extensions.asm
 	$(KASM) -binfile -o extensions.bin extensions.asm | grep compile-extension | bash > extensions.c && rm extensions.bin
@@ -47,47 +47,47 @@ server.prg: server.asm
 rrserver.bin: rrserver.asm
 	$(KASM) -binfile -o rrserver.bin rrserver.asm
 
-kernal: cbm/kernal-901227-03.rom kernal-pp64.rom
+kernal: cbm/kernal-901227-03.rom kernal-xlink.rom
 
-kernal-pp64.rom: kernal.asm
-	(cp cbm/kernal-901227-03.rom kernal-pp64.rom && \
+kernal-xlink.rom: kernal.asm
+	(cp cbm/kernal-901227-03.rom kernal-xlink.rom && \
 	$(KASM) -binfile -o kernal.bin kernal.asm | \
 	grep PATCH | \
-	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=kernal-pp64.rom bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
+	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=kernal-xlink.rom bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
 	> patch.sh) && sh -x patch.sh && rm -v patch.sh kernal.bin
 
-install: c64
-	install -m755 c64 /usr/bin
-	install -m644 libpp64.so /usr/lib
-	install -m644 pp64.h /usr/include
-	[ -d /etc/bash_completion.d ] && install -m644 etc/bash_completion.d/c64 /etc/bash_completion.d/
+install: xlink
+	install -m755 xlink /usr/bin
+	install -m644 libxlink.so /usr/lib
+	install -m644 xlink.h /usr/include
+	[ -d /etc/bash_completion.d ] && install -m644 etc/bash_completion.d/xlink /etc/bash_completion.d/
 
 uninstall:
-	rm -v /usr/bin/c64
-	rm -v /usr/lib/libpp64.so
-	rm -v /usr/include/pp64.h
-	[ -f /etc/bash_completion.d/c64 ] && rm -v /etc/bash_completion.d/c64
+	rm -v /usr/bin/xlink
+	rm -v /usr/lib/libxlink.so
+	rm -v /usr/include/xlink.h
+	[ -f /etc/bash_completion.d/xlink ] && rm -v /etc/bash_completion.d/xlink
 
 clean:
-	[ -f libpp64.so ] && rm -v libpp64.so || true
-	[ -f pp64.dll ] && rm -v pp64.dll || true
-	[ -f c64 ] && rm -v c64 || true
-	[ -f c64.exe ] && rm -v c64.exe || true
+	[ -f libxlink.so ] && rm -v libxlink.so || true
+	[ -f xlink.dll ] && rm -v xlink.dll || true
+	[ -f xlink ] && rm -v xlink || true
+	[ -f xlink.exe ] && rm -v xlink.exe || true
 	[ -f extensions.c ] && rm -v extensions.c || true
 	[ -f server.prg ] && rm -v server.prg || true
 	[ -f rrserver.bin ] && rm -v rrserver.bin || true
-	[ -f kernal-pp64.rom ] && rm -v kernal-pp64.rom || true
+	[ -f kernal-xlink.rom ] && rm -v kernal-xlink.rom || true
 	[ -f tools/compile-extension ] && rm -v tools/compile-extension || true
 	[ -f log ] && rm -v log || true
 
 dist: zip clean
-	(cd .. && tar vczf pp64.tar.gz pp64/)  
+	(cd .. && tar vczf xlink.tar.gz xlink/)  
 
 zip: all win32
-	mkdir pp64-win32
-	cp c64.exe pp64-win32
-	cp pp64.dll pp64-win32
-	cp pp64.h pp64-win32
-	cp inpout32/inpout32.dll pp64-win32
-	zip -r ../pp64-win32.zip pp64-win32
-	rm -r pp64-win32
+	mkdir xlink-win32
+	cp xlink.exe xlink-win32
+	cp xlink.dll xlink-win32
+	cp xlink.h xlink-win32
+	cp inpout32/inpout32.dll xlink-win32
+	zip -r ../xlink-win32.zip xlink-win32
+	rm -r xlink-win32

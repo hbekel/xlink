@@ -4,9 +4,9 @@
 
 #include "util.h"
 #include "extension.h"
-#include "pp64.h"
+#include "xlink.h"
 
-extern int pp64_extend(int address);
+extern int xlink_extend(int address);
 
 Extension *extension_new(short address, short size, char* code) {
   
@@ -23,7 +23,7 @@ int extension_load(Extension *self) {
 
   bool result = false;
 
-  if (pp64_load(0x37|0x80, 0x00, self->address, self->address+self->size, self->code, self->size)) {
+  if (xlink_load(0x37|0x80, 0x00, self->address, self->address+self->size, self->code, self->size)) {
     result = true;
   }
 
@@ -35,7 +35,7 @@ int extension_init(Extension *self) {
 
   logger->enter("extension_init");
 
-  bool result = pp64_extend(self->address);
+  bool result = xlink_extend(self->address);
   
   logger->leave();
   return result;

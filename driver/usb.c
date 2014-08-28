@@ -12,7 +12,7 @@
 
 #include <sys/time.h>
 
-#include "pp64.h"
+#include "xlink.h"
 #include "driver.h"
 #include "protocol.h"
 #include "util.h"
@@ -144,7 +144,7 @@ bool driver_usb_ping() {
   driver->output();
   driver->write(0xff);
   driver->strobe();
-  return driver->wait(PP64_PING_TIMEOUT);
+  return driver->wait(XLINK_PING_TIMEOUT);
 }
 
 //------------------------------------------------------------------------------

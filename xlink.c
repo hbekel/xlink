@@ -3,7 +3,7 @@
 #include <ctype.h>
 #include <unistd.h>
 
-#include "pp64.h"
+#include "xlink.h"
 #include "target.h"
 #include "driver/driver.h"
 #include "extension.h"
@@ -18,10 +18,10 @@ extern Driver* driver;
 
 //------------------------------------------------------------------------------
 
-void libpp64_initialize() {
+void libxlink_initialize() {
 
 #if linux
-  char default_usb_device[] = "/dev/c64";
+  char default_usb_device[] = "/dev/xlink";
   char default_parport_device[] = "/dev/parport0";
 
 #elif windows
@@ -46,7 +46,7 @@ void libpp64_initialize() {
 
 //------------------------------------------------------------------------------
 
-void libpp64_finalize(void) {
+void libxlink_finalize(void) {
   if(driver != NULL) {
     driver->free();
   }
@@ -60,11 +60,11 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
   switch(nReason) {
 
    case DLL_PROCESS_ATTACH:
-     libpp64_initialize(); 
+     libxlink_initialize(); 
      break;
  
    case DLL_PROCESS_DETACH:
-     libpp64_finalize();
+     libxlink_finalize();
      break;
   }
   return true;
@@ -74,20 +74,20 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_set_device(char* path) {
+bool xlink_set_device(char* path) {
   driver_setup(path);
-  return pp64_has_device();
+  return xlink_has_device();
 }  
 
 //------------------------------------------------------------------------------
 
-bool pp64_has_device() {
+bool xlink_has_device() {
   return driver != NULL && driver->ready();
 }
 
 //------------------------------------------------------------------------------
 
-bool pp64_ping() {
+bool xlink_ping() {
   
   bool result = false;
 
@@ -101,7 +101,7 @@ bool pp64_ping() {
 
 //------------------------------------------------------------------------------
 
-bool pp64_reset(void) {
+bool xlink_reset(void) {
 
   if(driver->open()) {
     driver->reset();
@@ -113,19 +113,19 @@ bool pp64_reset(void) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_ready(void) {
+bool xlink_ready(void) {
 
   int timeout = 3000;
 
-  if(!pp64_ping()) {
-    pp64_reset();
+  if(!xlink_ping()) {
+    xlink_reset();
     
     while(timeout) {
-      if(pp64_ping()) {
+      if(xlink_ping()) {
         usleep(250*1000); // wait until basic is ready
         return true;
       }
-      timeout-=PP64_PING_TIMEOUT;
+      timeout-=XLINK_PING_TIMEOUT;
     }
     return false;
   }
@@ -134,7 +134,7 @@ bool pp64_ready(void) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_boot(void) {
+bool xlink_boot(void) {
   if(driver->open()) {
     driver->boot();
     return true;
@@ -144,13 +144,13 @@ bool pp64_boot(void) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_load(unsigned char memory, 
+bool xlink_load(unsigned char memory, 
 	       unsigned char bank, 
 	       int start, 
 	       int end, 
 	       char* data, int size) {
   
-  logger->enter("pp64_load");
+  logger->enter("xlink_load");
 
   bool result = true;
 
@@ -163,7 +163,7 @@ bool pp64_load(unsigned char memory,
     }
 
     driver->output();    
-    driver->send((char []) {PP64_COMMAND_LOAD, memory, bank, lo(start), hi(start), lo(end), hi(end)}, 7);
+    driver->send((char []) {XLINK_COMMAND_LOAD, memory, bank, lo(start), hi(start), lo(end), hi(end)}, 7);
     driver->send(data, size);
     
     result = true;
@@ -177,7 +177,7 @@ bool pp64_load(unsigned char memory,
 
 //------------------------------------------------------------------------------
 
-bool pp64_save(unsigned char memory, 
+bool xlink_save(unsigned char memory, 
 	       unsigned char bank, 
 	       int start, 
 	       int end, 
@@ -192,7 +192,7 @@ bool pp64_save(unsigned char memory,
     }
 
     driver->output();
-    driver->send((char []) {PP64_COMMAND_SAVE, memory, bank, lo(start), hi(start), lo(end), hi(end)}, 7);
+    driver->send((char []) {XLINK_COMMAND_SAVE, memory, bank, lo(start), hi(start), lo(end), hi(end)}, 7);
 
     driver->input();
     driver->strobe();
@@ -207,7 +207,7 @@ bool pp64_save(unsigned char memory,
 
 //------------------------------------------------------------------------------
 
-bool pp64_peek(unsigned char memory, unsigned char bank, int address, unsigned char* value) {
+bool xlink_peek(unsigned char memory, unsigned char bank, int address, unsigned char* value) {
   
   if(driver->open()) {
   
@@ -218,7 +218,7 @@ bool pp64_peek(unsigned char memory, unsigned char bank, int address, unsigned c
     }
 
     driver->output();
-    driver->send((char []) {PP64_COMMAND_PEEK, memory, bank, lo(address), hi(address)}, 5);
+    driver->send((char []) {XLINK_COMMAND_PEEK, memory, bank, lo(address), hi(address)}, 5);
     
     driver->input();
     driver->strobe();
@@ -233,7 +233,7 @@ bool pp64_peek(unsigned char memory, unsigned char bank, int address, unsigned c
 
 //------------------------------------------------------------------------------
 
-bool pp64_poke(unsigned char memory, unsigned char bank, int address, unsigned char value) {
+bool xlink_poke(unsigned char memory, unsigned char bank, int address, unsigned char value) {
 
   if(driver->open()) {
   
@@ -244,7 +244,7 @@ bool pp64_poke(unsigned char memory, unsigned char bank, int address, unsigned c
     }
     
     driver->output();
-    driver->send((char []) {PP64_COMMAND_POKE, memory, bank, lo(address), hi(address), value}, 6);    
+    driver->send((char []) {XLINK_COMMAND_POKE, memory, bank, lo(address), hi(address), value}, 6);    
 
     driver->close();
     return true;
@@ -254,7 +254,7 @@ bool pp64_poke(unsigned char memory, unsigned char bank, int address, unsigned c
 
 //------------------------------------------------------------------------------
 
-bool pp64_jump(unsigned char memory, unsigned char bank, int address) {
+bool xlink_jump(unsigned char memory, unsigned char bank, int address) {
 
     // jump address is send MSB first (big-endian)    
 
@@ -267,7 +267,7 @@ bool pp64_jump(unsigned char memory, unsigned char bank, int address) {
     }
 
     driver->output();
-    driver->send((char []) {PP64_COMMAND_JUMP, memory, bank, hi(address), lo(address)}, 5);    
+    driver->send((char []) {XLINK_COMMAND_JUMP, memory, bank, hi(address), lo(address)}, 5);    
 
     driver->close();
     return true;
@@ -277,7 +277,7 @@ bool pp64_jump(unsigned char memory, unsigned char bank, int address) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_run(void) {
+bool xlink_run(void) {
 
    if(driver->open()) {
   
@@ -288,7 +288,7 @@ bool pp64_run(void) {
     }
 
     driver->output();
-    driver->send((char []) {PP64_COMMAND_RUN}, 1);
+    driver->send((char []) {XLINK_COMMAND_RUN}, 1);
 
     driver->close();
     return true;
@@ -298,7 +298,7 @@ bool pp64_run(void) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_extend(int address) {
+bool xlink_extend(int address) {
 
   if(driver->open()) {
   
@@ -314,7 +314,7 @@ bool pp64_extend(int address) {
     address--;
 
     driver->output();
-    driver->send((char []) {PP64_COMMAND_EXTEND, hi(address), lo(address)}, 3);
+    driver->send((char []) {XLINK_COMMAND_EXTEND, hi(address), lo(address)}, 3);
 
     driver->close();
     return true;
@@ -324,9 +324,9 @@ bool pp64_extend(int address) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_drive_status(char* status) {
+bool xlink_drive_status(char* status) {
 
-  logger->enter("pp64_drive_status");
+  logger->enter("xlink_drive_status");
 
   unsigned char byte;
   bool result = false;
@@ -368,9 +368,9 @@ bool pp64_drive_status(char* status) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_dos(char* cmd) {
+bool xlink_dos(char* cmd) {
 
-  logger->enter("pp64_dos");
+  logger->enter("xlink_dos");
 
   bool result = false;
 
@@ -410,7 +410,7 @@ bool pp64_dos(char* cmd) {
 
 //------------------------------------------------------------------------------
 
-bool pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* data) {
+bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char* data) {
   
   bool result = false;
   char U1[13];
@@ -446,7 +446,7 @@ bool pp64_sector_read(unsigned char track, unsigned char sector, unsigned char* 
 
 //------------------------------------------------------------------------------
 
-bool pp64_sector_write(unsigned char track, unsigned char sector, unsigned char *data) {
+bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char *data) {
 
   int result = false;
   char U2[13];
@@ -477,7 +477,7 @@ bool pp64_sector_write(unsigned char track, unsigned char sector, unsigned char 
 
 //------------------------------------------------------------------------------
 
-bool pp64_test(char *test) {
+bool xlink_test(char *test) {
 
   Watch* watch = watch_new();
   bool result = false;
@@ -531,7 +531,7 @@ bool pp64_test(char *test) {
       watch_start(watch);
 
       driver->output();
-      driver->send((char []) {PP64_COMMAND_LOAD, 0x37, 0x00, lo(start), hi(start), lo(end), hi(end)}, 7);
+      driver->send((char []) {XLINK_COMMAND_LOAD, 0x37, 0x00, lo(start), hi(start), lo(end), hi(end)}, 7);
       driver->send(payload, sizeof(payload));
       
       float seconds = (watch_elapsed(watch) / 1000.0);
@@ -543,7 +543,7 @@ bool pp64_test(char *test) {
 
       watch_start(watch);
       
-      driver->send((char []) {PP64_COMMAND_SAVE, 0x37, 0x00, lo(start), hi(start), lo(end), hi(end)}, 7);
+      driver->send((char []) {XLINK_COMMAND_SAVE, 0x37, 0x00, lo(start), hi(start), lo(end), hi(end)}, 7);
       
       driver->input();
       driver->strobe();

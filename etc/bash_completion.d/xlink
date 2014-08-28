@@ -1,6 +1,6 @@
 # -*- shell-script -*-
 
-function _c64 {
+function _xlink {
 
     COMPREPLY=()
     local cur="${COMP_WORDS[COMP_CWORD]}"
@@ -27,4 +27,4 @@ function _c64 {
     fi
     return 0
 }
-complete -f -F _c64 c64
+complete -f -F _xlink xlink

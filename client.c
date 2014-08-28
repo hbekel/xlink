@@ -17,7 +17,7 @@
 #include "client.h"
 #include "disk.h"
 #include "util.h"
-#include "pp64.h"
+#include "xlink.h"
 
 #define COMMAND_NONE    0x00
 #define COMMAND_LOAD    0x01
@@ -116,13 +116,13 @@ int valid(int address) {
 }
 
 void screenOn(void) {
-  pp64_poke(0x37, 0x00, 0xd011, 0x1b);
+  xlink_poke(0x37, 0x00, 0xd011, 0x1b);
 }
 
 //------------------------------------------------------------------------------
 
 void screenOff(void) {
-  pp64_poke(0x37, 0x00, 0xd011, 0x0b);
+  xlink_poke(0x37, 0x00, 0xd011, 0x0b);
 }
 
 //------------------------------------------------------------------------------
@@ -338,7 +338,7 @@ int command_parse_options(Command *self) {
       break;
 
     case 'd':
-      if (!pp64_set_device(optarg)) {
+      if (!xlink_set_device(optarg)) {
         return false; 
       }
       break;
@@ -449,24 +449,24 @@ int command_find_basic_program(Command* self) {
   int bend   = 0x0000;
   unsigned char value;
 
-  if(pp64_peek(0x37, 0x00, 0x002c, &value)) {
+  if(xlink_peek(0x37, 0x00, 0x002c, &value)) {
     bstart |= value;
     bstart <<= 8;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x00, 0x002b, &value)) {
+  if(xlink_peek(0x37, 0x00, 0x002b, &value)) {
     bstart |= value;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x00, 0x002e, &value)) {
+  if(xlink_peek(0x37, 0x00, 0x002e, &value)) {
     bend |= value;
     bend <<= 8;
   } 
   else return false;
 
-  if(pp64_peek(0x37, 0x00, 0x002d, &value)) {
+  if(xlink_peek(0x37, 0x00, 0x002d, &value)) {
     bend |= value;
   } 
   else return false;
@@ -583,7 +583,7 @@ int command_load(Command* self) {
 
   command_print(self);
 
-  if (!pp64_load(self->memory, self->bank, self->start, self->end, data, size)) {
+  if (!xlink_load(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
     return false;
   }
@@ -648,7 +648,7 @@ int command_save(Command* self) {
 
   command_print(self);
 
-  if(!pp64_save(self->memory, self->bank, self->start, self->end, data, size)) {
+  if(!xlink_save(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
     fclose(file);
     return false;
@@ -698,7 +698,7 @@ int command_poke(Command* self) {
 
   command_print(self);
 
-  return pp64_poke(self->memory, self->bank, address, value);
+  return xlink_poke(self->memory, self->bank, address, value);
 }
 
 //------------------------------------------------------------------------------
@@ -721,7 +721,7 @@ int command_peek(Command* self) {
 
   command_print(self);
 
-  if(!pp64_peek(self->memory, self->bank, address, &value)) {
+  if(!xlink_peek(self->memory, self->bank, address, &value)) {
     return false;
   }
   printf("%d\n", value);
@@ -758,7 +758,7 @@ int command_jump(Command* self) {
 
   command_print(self);
 
-  return pp64_jump(self->memory, self->bank, address);
+  return xlink_jump(self->memory, self->bank, address);
 }
 
 //------------------------------------------------------------------------------
@@ -784,31 +784,31 @@ int command_run(Command* self) {
       
       command_print(self);
       
-      return pp64_jump(self->memory, self->bank, self->start);
+      return xlink_jump(self->memory, self->bank, self->start);
     }
   }
   command_print(self);
-  return pp64_run();
+  return xlink_run();
 }
 
 //------------------------------------------------------------------------------
 
 int command_reset(Command* self) {
   command_print(self);
-  return pp64_reset();
+  return xlink_reset();
 }
 
 //------------------------------------------------------------------------------
 
 int command_test(Command* self) {
   command_print(self);
-  return pp64_test(self->argv[0]);
+  return xlink_test(self->argv[0]);
 }
 
 //------------------------------------------------------------------------------
 int command_boot(Command *self) {
   command_print(self);
-  return pp64_boot();
+  return xlink_boot();
 }
 
 //------------------------------------------------------------------------------
@@ -832,7 +832,7 @@ int command_status(Command* self) {
   
   command_print(self);
 
-  if(pp64_drive_status(status)) {
+  if(xlink_drive_status(status)) {
     printf("%s\n", status);
     result = true;
   }
@@ -847,7 +847,7 @@ int command_dos(Command *self) {
 
   command_print(self);
 
-  if (pp64_dos(self->name+1)) {
+  if (xlink_dos(self->name+1)) {
     return command_status(self);
   }
   return false;
@@ -860,7 +860,7 @@ int command_backup(Command *self) {
   bool read_sector(Sector *sector) {
     printf("\rreading track %02d, sector %02d", sector->track, sector->number); fflush(stdout);    
     
-    return pp64_sector_read(sector->track, sector->number, sector->bytes); 
+    return xlink_sector_read(sector->track, sector->number, sector->bytes); 
   }
   
   int result = true;
@@ -898,7 +898,7 @@ int command_restore(Command *self) {
     printf("\rwriting track %02d, sector %02d", sector->track, sector->number);
     fflush(stdout);
 
-    return pp64_sector_write(sector->track, sector->number, sector->bytes); 
+    return xlink_sector_write(sector->track, sector->number, sector->bytes); 
   }
 
   int result = true;
@@ -930,7 +930,7 @@ int command_restore(Command *self) {
 
   printf("formatting disk: \"%s,%s\"...", disk->name, disk->id); fflush(stdout);
 
-  if(!(pp64_dos(format_disk) && pp64_dos("I"))) {
+  if(!(xlink_dos(format_disk) && xlink_dos("I"))) {
     printf("FAILED\n");
     result = false;
     goto done;
@@ -940,7 +940,7 @@ int command_restore(Command *self) {
   screenOff();
 
   disk_each_sector(disk, &write_sector);
-  pp64_dos("I");
+  xlink_dos("I");
 
   screenOn();
   printf("\n");
@@ -963,7 +963,7 @@ int command_verify(Command *self) {
     printf("\rverifying track %02d, sector %02d...", 
 	   actual->track, actual->number); fflush(stdout);
 
-    if(!pp64_sector_read(actual->track, actual->number, actual->bytes)) {
+    if(!xlink_sector_read(actual->track, actual->number, actual->bytes)) {
       goto done;
     }
     result = sector_equals(expected, actual);
@@ -1016,7 +1016,7 @@ int command_ready(Command* self) {
 
   command_print(self);
 
-  if (!pp64_ready()) {
+  if (!xlink_ready()) {
     logger->error("no response from C64");
     return false;
   }
@@ -1027,7 +1027,7 @@ int command_ready(Command* self) {
 
 int command_ping(Command* self) {
   command_print(self);
-  return pp64_ping();
+  return xlink_ping();
 }
 
 //------------------------------------------------------------------------------
@@ -1193,7 +1193,7 @@ void shell(void) {
   }
   
   char *line;
-  char *prompt = "c64> ";
+  char *prompt = "xlink> ";
 
   Commands* commands;
   StringList *arguments;
@@ -1230,7 +1230,7 @@ void shell(void) {
 //------------------------------------------------------------------------------
 
 void version(void) {
-  printf("pp64 client 0.4 Copyright (C) 2014 Henning Bekel <h.bekel@googlemail.com>\n");
+  printf("xlink 1.0 Copyright (C) 2014 Henning Bekel <h.bekel@googlemail.com>\n");
 }
 
 //------------------------------------------------------------------------------
@@ -1238,7 +1238,7 @@ void version(void) {
 void usage(void) {
   version();
   printf("\n");
-  printf("Usage: c64 [<opts>] [<command> [<opts>] [<arguments>]]...\n");
+  printf("Usage: xlink [<opts>] [<command> [<opts>] [<arguments>]]...\n");
   printf("\n");
   printf("Options:\n");
   printf("         -h, --help                    : show this help\n");
@@ -1246,7 +1246,7 @@ void usage(void) {
   printf("         -l, --level <level>           : log level (ERROR|WARN|INFO|DEBUG|TRACE)\n");
 #if linux
   printf("         -d, --device <path>           : ");
-  printf("transfer device (default: /dev/c64)\n");
+  printf("transfer device (default: /dev/xlink)\n");
 #elif windows
   printf("         -d, --device <port or \"USB\">  : ");
   printf("transfer device (default: \"USB\")\n");
@@ -1290,7 +1290,7 @@ int help(int id) {
     break;
 
   case COMMAND_LOAD:
-    printf("Usage: c64 load [--address <start>[-<end>] [--memory <mem>] [--skip <n>]<file>\n");
+    printf("Usage: load [--address <start>[-<end>] [--memory <mem>] [--skip <n>] <file>\n");
     printf("\n");
     printf("Load the specified file into C64 memory\n");
     printf("\n");
@@ -1323,7 +1323,7 @@ int help(int id) {
     break;
 
   case COMMAND_SAVE:
-    printf("Usage: c64 save [--address <start>-<end>] [--memory <mem>] file\n");
+    printf("Usage: save [--address <start>-<end>] [--memory <mem>] file\n");
     printf("\n");
     printf("Save the specified C64 memory area to a file.\n");
     printf("\n");
@@ -1339,7 +1339,7 @@ int help(int id) {
     break;
 
   case COMMAND_POKE:
-    printf("Usage: c64 poke [--memory <mem>] <address>,<byte>\n");
+    printf("Usage: poke [--memory <mem>] <address>,<byte>\n");
     printf("\n");
     printf("Poke the specified byte to the specified address. \n");
     printf("\n");
@@ -1350,7 +1350,7 @@ int help(int id) {
     break;
 
   case COMMAND_PEEK:
-    printf("Usage: c64 peek [--memory <mem>] <address>\n");
+    printf("Usage: peek [--memory <mem>] <address>\n");
     printf("\n");
     printf("Read the byte at the specified C64 memory address and print it on\n");
     printf("standard output.\n");
@@ -1360,7 +1360,7 @@ int help(int id) {
     break;
 
   case COMMAND_JUMP:
-   printf("Usage: c64 jump <address>\n");
+   printf("Usage: jump <address>\n");
    printf("\n");
    printf("Jump to the specified address in C64 memory. The stack pointer,\n");
    printf("processor flags and registers will be reset prior to jumping.\n");
@@ -1368,7 +1368,7 @@ int help(int id) {
    break;
 
   case COMMAND_RUN:
-    printf("Usage: c64 run [<file>]\n");
+    printf("Usage: run [<file>]\n");
     printf("\n");
     printf("Without argument, RUN the currently loaded basic program. With a file argument\n");
     printf("specified, load the file beforehand. If the file loads to 0x0801, assume its a\n");
@@ -1378,7 +1378,7 @@ int help(int id) {
     break;
 
   case COMMAND_RESET:
-    printf("Usage: c64 reset\n");
+    printf("Usage: reset\n");
     printf("\n");
     printf("If a reset circuit is installed, this command will hold the PC's INIT\n");
     printf("line low for a short period of time, which will ground the C64's RESET\n");
@@ -1387,7 +1387,7 @@ int help(int id) {
     break;
 
   case COMMAND_DOS:
-    printf("Usage: c64 @[command]\n");
+    printf("Usage: @[command]\n");
     printf("\n");
     printf("Send the specified DOS command to the drive and report the resulting\n");
     printf("drive status. If no command is specified, report drive status only.\n");
@@ -1395,7 +1395,7 @@ int help(int id) {
     break;
 
   case COMMAND_BACKUP:
-    printf("Usage: c64 backup <file>.d64\n");
+    printf("Usage: backup <file>.d64\n");
     printf("\n");
     printf("Backup a disk to a d64 file. Reads 35 tracks from disks and saves them to\n");
     printf("the specified file. Note that no error checking is performed and no error\n");
@@ -1404,7 +1404,7 @@ int help(int id) {
     break;
 
   case COMMAND_RESTORE:
-    printf("Usage: c64 restore <file>.d64\n");
+    printf("Usage: restore <file>.d64\n");
     printf("\n");
     printf("Write a 35 track d64 file to disk. The data is written as is, i.e. without\n");
     printf("interpreting any error information that may be included in the d64 file.\n");
@@ -1412,7 +1412,7 @@ int help(int id) {
     break;
 
   case COMMAND_VERIFY:
-    printf("Usage: c64 verify <file>.d64\n");
+    printf("Usage: verify <file>.d64\n");
     printf("\n");
     printf("Verify disk against d64 file. Reads 35 tracks from disk and compares the data\n");
     printf("against the specified d64 file. Track 18 is verified first, then the remaining\n");
@@ -1421,10 +1421,10 @@ int help(int id) {
     break;
 
   case COMMAND_READY:
-    printf("Usage: c64 ready [<commands>...]\n");
+    printf("Usage: ready [<commands>...]\n");
     printf("\n");
     printf("Makes sure that the server is ready. First the server is pinged. If it doesn't\n");
-    printf("respond immediately, the c64 is reset. If the server responds to another ping\n");
+    printf("respond immediately, the C64 is reset. If the server responds to another ping\n");
     printf("within three seconds, then the remaining commands (if any) are executed.\n");
     printf("\n");
     printf("This command requires the server to be installed permanently so that it is\n");
@@ -1433,7 +1433,7 @@ int help(int id) {
     break;
 
   case COMMAND_PING:
-    printf("Usage: c64 ping\n");
+    printf("Usage: ping\n");
     printf("\n");
     printf("Ping the server, exit successfully if the server responds.\n");
     printf("\n");
