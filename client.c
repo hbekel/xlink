@@ -43,6 +43,18 @@
 
 int mode  = MODE_EXEC;
 
+static struct option options[] = {
+  {"help",    no_argument,       0, 'h'},
+  {"version", no_argument,       0, 'v'},
+  {"device",  required_argument, 0, 'd'},
+  {"level",   required_argument, 0, 'l'},
+  {"memory",  required_argument, 0, 'm'},
+  {"bank",    required_argument, 0, 'b'},
+  {"address", required_argument, 0, 'a'},
+  {"skip",    required_argument, 0, 's'},
+  {0, 0, 0, 0}
+};
+
 //------------------------------------------------------------------------------
 
 char str2id(const char* arg) {
@@ -107,6 +119,34 @@ int isCommand(const char *str) {
 
 int isOption(const char *str) {
   return str[0] == '-';
+}
+
+int isOptarg(const char* option, const char* argument) {
+
+  if (!isOption(option)) {
+      return false;
+  }
+
+  for(int i=0; options[i].name != 0; i++) {
+    
+    if (!options[i].has_arg) {
+      continue;
+    }
+      
+    if(strlen(option) == 2) {
+      if(option[1] == options[i].val) {
+	return true;
+      }
+    }
+    
+    if(strlen(option) > 2) {
+      if (option[2] == options[i].val) {
+	return true;
+      }
+    }
+  } 
+  
+  return false;
 }
 
 //------------------------------------------------------------------------------
@@ -248,17 +288,28 @@ int command_arity(Command* self) {
 //------------------------------------------------------------------------------
 void command_consume_arguments(Command *self, int *argc, char ***argv) {
   
-  int has_next(void) {
+  bool isFirst = true;
+
+  int hasNext(void) {
     return (*argc) > 0;
   }
 
   void next(void) {
     (*argc)--; 
     (*argv)++;
+    isFirst = false;
   }    
 
   char *current(void) {
     return (*argv)[0];
+  }
+
+  int hasPrevious(void) {
+    return !isFirst;
+  }
+
+  char *previous(void) {
+    return (*(*(argv)-1));
   }
 
   self->name = (char *) calloc(strlen(current())+1, sizeof(char));
@@ -273,19 +324,30 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
   int arity = command_arity(self);
   int consumed = 0;
 
-  for(;has_next();next()) {
+  for(;hasNext();next()) {
 
     if(isCommand(current())) {
       break;
     }
 
-    if (consumed == arity && !isOption(current())) {
-      break;
+    if (consumed == arity) {
+      if (hasPrevious() && !isOptarg(previous(), current())) {
+	break;
+      }
+      else if (!isOption(current())) {
+	break;
+      }
     }
 
     command_append_argument(self, current());
 
-    if (consumed < arity && !isOption(current())) {
+    if (consumed < arity) {
+      if (hasPrevious() && isOptarg(previous(), current())) {
+	continue;
+      }
+      else if (isOption(current())) {
+	continue;
+      }
       consumed+=1;      
     }    
   }
@@ -305,17 +367,6 @@ void command_append_argument(Command* self, char* arg) {
 int command_parse_options(Command *self) {
   
   int option, index;
-  static struct option options[] = {
-    {"help",    no_argument,       0, 'h'},
-    {"version", no_argument,       0, 'v'},
-    {"device",  required_argument, 0, 'd'},
-    {"level",   required_argument, 0, 'l'},
-    {"memory",  required_argument, 0, 'm'},
-    {"bank",    required_argument, 0, 'b'},
-    {"address", required_argument, 0, 'a'},
-    {"skip",    required_argument, 0, 's'},
-    {0, 0, 0, 0}
-  };
   char *end;
   
   optind = 0;
