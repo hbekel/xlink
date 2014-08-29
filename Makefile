@@ -47,13 +47,13 @@ server.prg: server.asm
 rrserver.bin: rrserver.asm
 	$(KASM) -binfile -o rrserver.bin rrserver.asm
 
-kernal: cbm/kernal-901227-03.rom kernal-xlink.rom
+kernal: cbm/kernal-901227-03.rom xlink-kernal.rom
 
-kernal-xlink.rom: kernal.asm
-	(cp cbm/kernal-901227-03.rom kernal-xlink.rom && \
+xlink-kernal.rom: kernal.asm
+	(cp cbm/kernal-901227-03.rom xlink-kernal.rom && \
 	$(KASM) -binfile -o kernal.bin kernal.asm | \
 	grep PATCH | \
-	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=kernal-xlink.rom bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
+	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=xlink-kernal.rom bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
 	> patch.sh) && sh -x patch.sh && rm -v patch.sh kernal.bin
 
 install: xlink
@@ -76,18 +76,10 @@ clean:
 	[ -f extensions.c ] && rm -v extensions.c || true
 	[ -f server.prg ] && rm -v server.prg || true
 	[ -f rrserver.bin ] && rm -v rrserver.bin || true
-	[ -f kernal-xlink.rom ] && rm -v kernal-xlink.rom || true
+	[ -f xlink-kernal.rom ] && rm -v xlink-kernal.rom || true
 	[ -f tools/compile-extension ] && rm -v tools/compile-extension || true
 	[ -f log ] && rm -v log || true
 
-dist: zip clean
-	(cd .. && tar vczf xlink.tar.gz xlink/)  
+dist: clean
+	(cd .. && tar vczf xlink.tar.gz xlink/)
 
-zip: all win32
-	mkdir xlink-win32
-	cp xlink.exe xlink-win32
-	cp xlink.dll xlink-win32
-	cp xlink.h xlink-win32
-	cp inpout32/inpout32.dll xlink-win32
-	zip -r ../xlink-win32.zip xlink-win32
-	rm -r xlink-win32
