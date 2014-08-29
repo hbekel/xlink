@@ -1179,7 +1179,7 @@ void shell(void) {
 
   extern char **completion_matches();
 
-  static char* known_commands[16] = { 
+  static char* known_commands[19] = { 
     "help",
     "version", 
     "load", 
