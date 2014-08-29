@@ -23,9 +23,9 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-all: linux win32
-linux: xlink server kernal
-win32: xlink.exe server kernal
+all: linux win32 server kernal firmware
+linux: xlink
+win32: xlink.exe
 server: xlink-server.prg
 kernal: cbm/kernal-901227-03.rom xlink-kernal.rom
 
@@ -63,6 +63,16 @@ xlink-kernal.rom: kernal.asm
 	sh -x patch.sh && \
 	rm -v patch.sh kernal.bin
 
+firmware:
+	(cd driver/at90usb162 && make)
+
+firmware-clean:
+	(cd driver/at90usb162 && make clean)
+
+firmware-install: xlink firmware
+	LD_LIBRARY_PATH=. ./xlink bootstrap && \
+	(cd driver/at90usb162 && make dfu)
+
 install: xlink
 	install -m755 xlink /usr/bin
 	install -m644 libxlink.so /usr/lib
@@ -75,7 +85,7 @@ uninstall:
 	rm -v /usr/include/xlink.h
 	[ -f /etc/bash_completion.d/xlink ] && rm -v /etc/bash_completion.d/xlink
 
-clean:
+clean: firmware-clean
 	[ -f libxlink.so ] && rm -v libxlink.so || true
 	[ -f xlink.dll ] && rm -v xlink.dll || true
 	[ -f xlink ] && rm -v xlink || true
