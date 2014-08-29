@@ -24,7 +24,6 @@ Driver *driver_setup(char* path) {
     if(driver != NULL) {
       driver->free();
     }
-    return NULL;
   }
 
   if (driver == NULL) {
@@ -142,7 +141,11 @@ bool device_is_usb(char* path) {
 
 bool _driver_ready() {
   bool result = false;
-  
+
+  if(driver->_open == NULL) {
+    return result;
+  }
+
   if((result = driver->open())) {
     driver->close();
   }
