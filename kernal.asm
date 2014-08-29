@@ -16,8 +16,24 @@ eof:
 
 .pc = $e479
 powerUpMessage:	{
-.text "**** COMMODORE 64 BASIC V2 ****"
+.text "**** C64 BASIC V2 XLINK V1 ****"
 eof:
+}
+
+.pc = $fd6c 
+fakeMemoryTest:	{ // skip memory checks
+	jsr $fd02 
+	beq cart
+nocart:
+	ldx #$00
+	ldy #$a0
+	jmp done
+	
+cart:
+	ldy #$80
+	
+done:	jmp $fd8c
+eof:	
 }
 	
 .pc = $f541 // begin of modified area in kernal "Load Tape" routine
@@ -36,7 +52,7 @@ irq: {
 	ldy $dd01
 	jsr ack
 
-!next:	cpy #Command.load  // dispatch command
+!next:	cpy #Command.load  // dispatch command...
 	bne !next+
 	jmp load
 
@@ -331,6 +347,7 @@ eof:
 .print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
 .print patch(powerUpMessage, powerUpMessage.eof)
 .print patch(disableTapeLoad, disableTapeLoad.eof)
+.print patch(fakeMemoryTest, fakeMemoryTest.eof)
 .print patch(irq, irq.eof)
 .print patch(ack, ack.eof)
 .print patch(wait, wait.eof)
