@@ -16,13 +16,14 @@ eof:
 
 .pc = $e479
 powerUpMessage:	{
-.text "**** C64 BASIC V2 XLINK V1 ****"
+.text "**** COMMODORE 64 BASIC V2 ****"
 eof:
 }
 
 .pc = $fd6c 
 fakeMemoryTest:	{ // skip memory checks
-	jsr $fd02 
+
+        jsr $fd02 
 	beq cart
 nocart:
 	ldx #$00
