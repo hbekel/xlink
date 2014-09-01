@@ -16,7 +16,7 @@
 
 Driver* driver = NULL;
 
-Driver *driver_setup(char* path) {
+bool driver_setup(char* path) {
 
   if(!(device_is_parport(path) || device_is_usb(path))) {
     logger->error("%s: neither parallel port nor usb device", path);
@@ -90,7 +90,7 @@ Driver *driver_setup(char* path) {
       driver->_free    = &driver_usb_free;
   }    
 
-  return driver;
+  return driver->ready();
 }
 
 bool device_is_parport(char* path) {

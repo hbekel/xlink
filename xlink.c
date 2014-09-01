@@ -129,6 +129,7 @@ bool xlink_ready(void) {
 //------------------------------------------------------------------------------
 
 bool xlink_bootstrap(void) {
+  
   if(driver->open()) {
     driver->boot();
     return true;

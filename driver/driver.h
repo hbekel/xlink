@@ -39,7 +39,7 @@ typedef struct {
   void (*free) (void);
 } Driver;
 
-Driver *driver_setup(char* path);
+bool driver_setup(char* path);
 bool device_is_parport(char*);
 bool device_is_usb(char*);
 
