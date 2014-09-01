@@ -45,9 +45,9 @@ int mode  = MODE_EXEC;
 
 static struct option options[] = {
   {"help",    no_argument,       0, 'h'},
-  {"version", no_argument,       0, 'v'},
+  {"verbose", no_argument,       0, 'v'},
+  {"quiet",   no_argument,       0, 'q'},
   {"device",  required_argument, 0, 'd'},
-  {"level",   required_argument, 0, 'l'},
   {"memory",  required_argument, 0, 'm'},
   {"bank",    required_argument, 0, 'b'},
   {"address", required_argument, 0, 'a'},
@@ -373,7 +373,7 @@ int command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "hvd:l:m:b:a:s:", options, &index);
+    option = getopt_long(self->argc, self->argv, "hvqd:m:b:a:s:", options, &index);
     
     if(option == -1)
       break;
@@ -384,19 +384,19 @@ int command_parse_options(Command *self) {
       usage();
       break;
 
+    case 'q':
+      logger->set("ERROR");
+      break;
+
     case 'v':
-      version();
+      logger->set("DEBUG");
       break;
 
     case 'd':
       if (!xlink_device(optarg)) {
         return false; 
       }
-      break;
-    
-    case 'l':
-      logger->set(optarg);
-      break;
+      break;    
 
     case 'm':
       self->memory = strtol(optarg, NULL, 0);
@@ -459,15 +459,18 @@ char* command_get_name(Command* self) {
 int command_print(Command* self) {
 
   char result[1024];
+  bool print = false;
 
   sprintf(result, "%s ", command_get_name(self));
 
   if((unsigned char) self->memory != 0xff) {
     sprintf(result + strlen(result), "-m 0x%02X ", (unsigned char) self->memory);
+    print = true;
   }
 
   if((unsigned char) self->bank != 0xff) {
     sprintf(result + strlen(result), "-b 0x%02X ", (unsigned char) self->bank);
+    print = true;
   }
 
   if((unsigned short) self->start != 0xffff) {
@@ -477,17 +480,23 @@ int command_print(Command* self) {
       sprintf(result + strlen(result), "-0x%04X", (unsigned short) self->end);
     }
     sprintf(result + strlen(result), " ");
+    print = true;
   }  
 
   if((unsigned short) self->skip != 0xffff) {
-      sprintf(result + strlen(result), "-s 0x%04X ", (unsigned short) self->skip);
+    sprintf(result + strlen(result), "-s 0x%04X ", (unsigned short) self->skip);
+    print = true;
   }
 
   int i;
   for (i=0; i<self->argc; i++) {
     sprintf(result + strlen(result), "%s ", self->argv[i]);
+    print = true;
   }
-  logger->debug(result);
+
+  if (print) {
+    logger->debug(result);
+  }
 
   return true;
 } 
@@ -538,8 +547,6 @@ int command_none(Command* self) {
   StringList *arguments = stringlist_new();
   Commands *commands;
   int result = true;
-
-  command_print(self);
 
   if (self->argc > 0) {
 
@@ -1083,7 +1090,19 @@ int command_ready(Command* self) {
 
 int command_ping(Command* self) {
   command_print(self);
-  return xlink_ping();
+  
+  Watch *watch = watch_new();
+
+  int response = xlink_ping();
+
+  if (response) {
+    logger->info("received reply after %.0fms", watch_elapsed(watch));
+  } 
+  else {
+    logger->info("no reply after %.0fms", watch_elapsed(watch));
+  }
+  watch_free(watch);
+  return response;
 }
 
 //------------------------------------------------------------------------------
@@ -1102,7 +1121,6 @@ int command_execute(Command* self) {
     logger->leave();
     return result;
   }
-
 
   switch(self->id) {
 
@@ -1138,6 +1156,7 @@ int main(int argc, char **argv) {
   Commands *commands;
   int result;
 
+  logger->set("INFO");
   logger->enter(argv[0]);
 
   argc--; argv++;
@@ -1299,8 +1318,8 @@ void usage(void) {
   printf("\n");
   printf("Options:\n");
   printf("         -h, --help                    : show this help\n");
-  printf("         -v, --version                 : show version information\n");
-  printf("         -l, --level <level>           : log level (ERROR|WARN|INFO|DEBUG|TRACE)\n");
+  printf("         -q, --quiet                   : show errors only\n");
+  printf("         -v, --verbose                 : show verbose debug output\n");
 #if linux
   printf("         -d, --device <path>           : ");
   printf("transfer device (default: /dev/xlink)\n");
