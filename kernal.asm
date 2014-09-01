@@ -20,10 +20,18 @@ powerUpMessage:	{
 eof:
 }
 
+	
 .pc = $fd6c 
-fakeMemoryTest:	{ // skip memory checks
+fastMemoryTest:	{ // fast memory check unless cmb key is pressed
 
-        jsr $fd02 
+	lda #%01111111 	// check for cbm key
+	sta $dc00
+	lda $dc01
+	and #%00100000
+	bne fast
+	jmp memoryCheck
+	
+fast:	jsr $fd02 // check for cartridge
 	beq cart
 nocart:
 	ldx #$00
@@ -33,9 +41,10 @@ nocart:
 cart:
 	ldy #$80
 	
-done:	jmp $fd8c
+done:	jmp $fd8c 
 eof:	
 }
+
 	
 .pc = $f541 // begin of modified area in kernal "Load Tape" routine
 disableTapeLoad: {
@@ -336,6 +345,38 @@ return: nop
 	jmp irq.done
 eof:	
 }
+
+memoryCheck: { // relocated original memory check routine 
+
+high:	inc $c2
+low:	lda ($c1),y
+	tax
+	lda #$55
+	sta ($c1),y
+	cmp ($c1),y
+	bne done
+	rol
+	sta ($c1),y
+	cmp ($c1),y
+	bne done
+	txa
+	sta ($c1),y
+	iny
+	bne low
+	beq high
+	
+done:  	tya
+	tax
+	ldy $c2
+	clc
+	jsr $fe2d
+	lda #$08
+	sta $0282
+	lda #$04
+	sta $0288
+	rts
+eof:	
+}
 	
 .pc = $fc92 // end of kernal "Write Tape Leader" routine
 	
@@ -348,7 +389,7 @@ eof:
 .print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
 .print patch(powerUpMessage, powerUpMessage.eof)
 .print patch(disableTapeLoad, disableTapeLoad.eof)
-.print patch(fakeMemoryTest, fakeMemoryTest.eof)
+.print patch(fastMemoryTest, fastMemoryTest.eof)
 .print patch(irq, irq.eof)
 .print patch(ack, ack.eof)
 .print patch(wait, wait.eof)
@@ -363,7 +404,8 @@ eof:
 .print patch(jump, jump.eof)
 .print patch(run, run.eof)
 .print patch(extend, extend.eof)
-.print patch(wedge, wedge.eof)	
+.print patch(wedge, wedge.eof)
+.print patch(memoryCheck, memoryCheck.eof)
 	
 .print "free: 0x" + toHexString(irq.eof) + "-0xf5ab" + ": " + toIntString($f5ab-irq.eof) + " bytes"
-.print "free: 0x" + toHexString(extend.eof) + "-0xfc92" + " " + toIntString($fc92-extend.eof) + " bytes"
+.print "free: 0x" + toHexString(memoryCheck.eof) + "-0xfc92" + " " + toIntString($fc92-memoryCheck.eof) + " bytes"
