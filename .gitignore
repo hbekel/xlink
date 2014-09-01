@@ -1,6 +1,7 @@
 xlink
 *.so
 *.prg
+*.bas
 *.sym
 *.exe
 *.log

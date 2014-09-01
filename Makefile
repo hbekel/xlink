@@ -23,7 +23,7 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-all: linux server kernal
+all: linux server kernal bootstrap
 linux: xlink
 win32: xlink.exe
 server: xlink-server.prg
@@ -51,8 +51,16 @@ extensions.c: tools/compile-extension extensions.asm
 compile-extension: tools/compile-extension.c
 	$(GCC) $(FLAGS) -o tools/compile-extension tools/compile-extension.c
 
+compile-basicloader: tools/compile-basicloader.c
+	$(GCC) $(FLAGS) -o tools/compile-basicloader tools/compile-basicloader.c
+
 xlink-server.prg: server.asm
 	$(KASM) -o xlink-server.prg server.asm
+
+bootstrap: compile-basicloader bootstrap.asm
+	$(KASM) -o bootstrap.prg bootstrap.asm && \
+	tools/compile-basicloader bootstrap.prg > bootstrap.bas && \
+	rm -v bootstrap.prg
 
 xlink-kernal.rom: kernal.asm
 	(cp cbm/kernal-901227-03.rom xlink-kernal.rom && \
@@ -93,7 +101,9 @@ clean: firmware-clean
 	[ -f extensions.c ] && rm -v extensions.c || true
 	[ -f xlink-server.prg ] && rm -v xlink-server.prg || true
 	[ -f xlink-kernal.rom ] && rm -v xlink-kernal.rom || true
+	[ -f bootstrap.bas ] && rm -v bootstrap.bas || true
 	[ -f tools/compile-extension ] && rm -v tools/compile-extension || true
+	[ -f tools/compile-basicloader ] && rm -v tools/compile-basicloader || true
 	[ -f log ] && rm -v log || true
 
 dist: clean
