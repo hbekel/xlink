@@ -31,16 +31,18 @@ void libxlink_initialize() {
 
   logger->suspend();
 
-  driver_setup(default_usb_device);
-
-  if (!driver->ready()) {
-    driver_setup(default_parport_device);
-  }
-
   if (getenv("XLINK_DEVICE") != NULL) {
     driver_setup(getenv("XLINK_DEVICE"));
-  }
+  
+  } else {
 
+    driver_setup(default_usb_device);
+
+    if (!driver->ready()) {
+      driver_setup(default_parport_device);
+    }
+  }
+  
   logger->resume();
 }
 
@@ -76,7 +78,7 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
 
 bool xlink_device(char* path) {
   driver_setup(path);
-  return driver != NULL && driver->ready();
+  return driver->ready();
 }  
 
 //------------------------------------------------------------------------------
