@@ -1,3 +1,5 @@
+.var address = $fb
+
 .pc = $1000
 
 .import source "server.h"
@@ -28,6 +30,7 @@ loop:	jsr wait
 	cpy #Command.load 
 	bne loop
 	jsr load
+	jsr saveServer
 
 done:	cli
 	rts
@@ -54,10 +57,32 @@ done:	lda #$1b
 readHeader: {
 	jsr read stx mem
 	jsr read stx bank
-	jsr read stx start
-	jsr read stx start+1
+	jsr read stx start stx $fb
+	jsr read stx start+1 stx $fc
 	jsr read stx end
 	jsr read stx end+1
 	rts
 }
 
+saveServer: {
+
+	lda #eot-filename
+	ldx #<filename
+	ldy #>filename
+	jsr $ffbd
+	lda #$00
+	ldx $BA       
+	bne skip
+	ldx #$08      
+skip:	ldy #$00
+	jsr $FFBA     
+
+	ldx end
+	ldy end+1
+	lda #$fb
+	jsr $ffd8 
+	rts
+	
+filename: .text "xlink"
+eot:
+}

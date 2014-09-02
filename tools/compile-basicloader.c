@@ -38,11 +38,15 @@ int main(int argc, char **argv) {
 
   l = 0;
 
+  printf("%d print\"please wait...\":print\n", l+=10);
   printf("%d d=%d:s=%d:c=0:l=1000:m=0\n", l+=10, address, size);
-  printf("%d fori=0tos-1:fork=0to7\n", l+=10);
-  printf("%d readv:poked+i+k,v:c=c+v:nextk\n", l+=10);
-  printf("%d readv:ifc<>vthenprint\"error on line\";l:end\n", l+=10);
+  printf("%d for i=0 to s-1:for k=0 to 7\n", l+=10);
+  printf("%d read v:poke d+i+k,v:c=c+v:next k\n", l+=10);
+  printf("%d read v:if c<>v thenp rint\"data checksum error on line\";l:end\n", l+=10);
   printf("%d c=0:l=l+1:i=i+7:nexti\n", l+=10);
+  printf("%d print\"insert disk, then run\":print:print\"  xlink load xlink-server.prg\"\n", l+=10);
+  printf("%d sys4096\n", l+=10);
+  printf("%d print:print\"sys49152:rem start the server\"\n", l+=10);
 
   l = 1000;
 
