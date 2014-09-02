@@ -858,15 +858,6 @@ int command_reset(Command* self) {
 
 //------------------------------------------------------------------------------
 
-extern bool xlink_benchmark(void);
-
-int command_benchmark(Command* self) {
-  command_print(self);
-  return xlink_benchmark();
-}
-
-//------------------------------------------------------------------------------
-
 extern bool xlink_bootstrap(void);
 
 int command_bootstrap(Command *self) {
@@ -875,6 +866,60 @@ int command_bootstrap(Command *self) {
 }
 
 //------------------------------------------------------------------------------
+
+int command_benchmark(Command* self) {
+
+  Watch* watch = watch_new();
+  bool result = false;
+
+  char payload[0x8000];
+  char roundtrip[sizeof(payload)];
+    
+  int start = 0x1000;
+  int end = start + sizeof(payload);
+    
+  logger->info("sending %d bytes...", sizeof(payload));
+    
+  watch_start(watch);
+  
+  xlink_load(0x37, 0x00, start, end, payload, sizeof(payload));
+  
+  float seconds = (watch_elapsed(watch) / 1000.0);
+  float kbs = sizeof(payload)/seconds/1024;
+    
+  logger->info("%.2f seconds at %.2f kb/s", seconds, kbs);       
+    
+  logger->info("receiving %d bytes...", sizeof(payload));
+    
+  watch_start(watch);
+    
+  xlink_save(0x37, 0x00, start, end, roundtrip, sizeof(roundtrip));
+  
+  seconds = (watch_elapsed(watch) / 1000.0);
+  kbs = sizeof(payload)/seconds/1024;
+    
+  logger->info("%.2f seconds at %.2f kb/s", seconds, kbs);
+    
+  logger->info("verifying...");
+  
+  for(int i=0; i<sizeof(payload); i++) {
+    if(payload[i] != roundtrip[i]) {
+      logger->error("roundtrip error at byte %d: %d != %d", i, payload[i], roundtrip[i]);
+      result = false;
+      goto done;
+    }
+  }
+  logger->info("completed successfully");
+  
+  result = true;
+  
+ done:
+  watch_free(watch);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+
 int command_help(Command *self) {
 
   if (self->argc > 0) {
