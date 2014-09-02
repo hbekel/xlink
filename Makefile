@@ -1,9 +1,9 @@
 GCC=gcc
-#GCC-MINGW32=i486-mingw32-gcc
-GCC-MINGW32=i686-pc-mingw32-gcc
+GCC-MINGW32=i486-mingw32-gcc
+#GCC-MINGW32=i686-pc-mingw32-gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
-#KASM=java -jar /usr/share/kickassembler/KickAss.jar
-KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+KASM=java -jar /usr/share/kickassembler/KickAss.jar
+#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 LIBHEADERS=\
 	xlink.h \

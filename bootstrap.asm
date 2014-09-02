@@ -83,6 +83,6 @@ skip:	ldy #$00
 	jsr $ffd8 
 	rts
 	
-filename: .text "xlink"
+filename: .text "XLINK-SERVER"
 eot:
 }

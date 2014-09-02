@@ -12,5 +12,6 @@ xlink
 *.rom
 extensions.c
 compile-extension
+compile-basicloader
 log
 TODO
