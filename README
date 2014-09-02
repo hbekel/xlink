@@ -5,17 +5,15 @@ Parallel Port and C64 User Port with optional reset circuit
 Introduction
 ---------------------------------------------------------------------
 
-Introduction
-
 XLINK is a system for fast 8-bit parallel data transfers between a C64
-and an IBM-PC using a parallel port cable connected to the C64 user
-port.
+and an IBM-PC using a either a parallel port cable or a simple USB
+device connected to the C64 user port.
 
 A command-line client on the PC side is used to send data or commands
 to an interrupt-driven server installed on the C64. It is possible to
 load data from disk into C64 memory, save C64 memory content to disk,
 to peek and poke values to and from C64 memory, run BASIC programs,
-jump to memory addresses, even force a hardware reset of the C64.
+jump to memory addresses, and force a hardware reset of the C64.
 
 Different options exists to install the server on the C64, from a
 simple server.prg that needs to be loaded on the C64 prior to use, or
@@ -50,7 +48,7 @@ the PC Parallel Port to the C64 User port.
 
 A shielded cable is recommended. The cable shield should be connected
 to shield ground on both sides. A 0.1uF capacitor between shield and
-ground at the c64 side can also help to decrease noise. Improper
+ground at the c64 side can also help to reduce noise. Improper
 shielding will most likely cause transfer errors.
 
 CAUTION: There is no protection of any kind. The parallel port pins
