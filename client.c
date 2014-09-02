@@ -1374,11 +1374,9 @@ int help(int id) {
     printf("\n");
     printf("If no start address is given it is assumed that the file is a PRG\n");
     printf("file and that its first two bytes contain the start address in\n");
-    printf("little-endian order. In this case the first two bytes are used as\n");
-    printf("the start address and the remaining bytes are loaded to this\n");
-    printf("address.\n");
+    printf("little-endian order.\n");
     printf("\n");    
-    printf("Otherwise, if no start address is given it is assumed that the\n");
+    printf("Otherwise, if a start address is given it is assumed that the\n");
     printf("file is a plain binary file that does not contain a start\n");
     printf("address. In this case the entire file is loaded to the specified\n");
     printf("address. The --skip option may be used to skip an arbitrary\n");
