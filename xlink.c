@@ -472,9 +472,57 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
   return result;
 }
 
+bool xlink_stream_open() {
+
+  bool result = true;
+  Extension *stream = EXTENSION_STREAM;
+ 
+  if (extension_load(stream) && extension_init(stream)) {
+    if (!driver->open()) {
+      result = false;
+    }
+  }
+  
+  extension_free(stream);
+  return result;  
+}
+
+bool xlink_stream_poke(int address, unsigned char value) {
+  
+  driver->output();
+  driver->send((char []) {XLINK_COMMAND_STREAM_POKE, hi(address), lo(address), value}, 4);
+  driver->input(); 
+  return true;
+}
+
+bool xlink_stream_peek(int address, unsigned char* value) {
+
+  driver->output();
+  driver->send((char []) {XLINK_COMMAND_STREAM_PEEK, hi(address), lo(address)}, 3);
+    
+  driver->input();
+  driver->strobe();
+
+  driver->receive((char *)value, 1);
+  driver->wait(0);
+
+  return true;
+}
+
+bool xlink_stream_close(void) {
+
+  driver->output();  
+  driver->send((char []) {XLINK_COMMAND_STREAM_CLOSE}, 1);
+  
+  driver->input();
+  driver->close();
+  return true;
+}
+
+
 //------------------------------------------------------------------------------
 
-bool xlink_benchmark() {
+bool xlink_benchmark() { //FIXME: move into client?
 
   Watch* watch = watch_new();
   bool result = false;
