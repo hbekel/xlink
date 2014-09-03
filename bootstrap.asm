@@ -1,5 +1,3 @@
-.var address = $fb
-
 .pc = $1000
 
 .import source "server.h"
@@ -29,6 +27,7 @@ loop:	jsr wait
 
 	cpy #Command.load 
 	bne loop
+
 	jsr load
 	jsr saveServer
 
