@@ -27,7 +27,7 @@ LIBSOURCES=\
 all: win32 any
 any: server kernal bootstrap
 linux: xlink
-win32: xlink.exe
+win32: xlink.exe hardsid.dll
 server: xlink-server.prg
 kernal: cbm/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.bas
@@ -74,6 +74,9 @@ xlink-kernal.rom: kernal.asm
 	sh -x patch.sh && \
 	rm -v patch.sh kernal.bin
 
+hardsid.dll: hardsid.h hardsid.c util.h util.c
+	$(GCC-MINGW32) $(FLAGS) -shared -Wl,--export-all-symbols -Wl,--kill-at -o hardsid.dll hardsid.c util.c -L. -lxlink
+
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && make)
 
@@ -101,6 +104,7 @@ clean: firmware-clean
 	[ -f xlink.dll ] && rm -v xlink.dll || true
 	[ -f xlink ] && rm -v xlink || true
 	[ -f xlink.exe ] && rm -v xlink.exe || true
+	[ -f hardsid.dll ] && rm -v hardsid.dll || true
 	[ -f extensions.c ] && rm -v extensions.c || true
 	[ -f xlink-server.prg ] && rm -v xlink-server.prg || true
 	[ -f xlink-kernal.rom ] && rm -v xlink-kernal.rom || true
