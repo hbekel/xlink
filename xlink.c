@@ -62,6 +62,7 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
   switch(nReason) {
 
    case DLL_PROCESS_ATTACH:
+     DisableThreadLibraryCalls(hDllHandle);
      libxlink_initialize(); 
      break;
  
@@ -474,14 +475,8 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
 
 bool xlink_stream_open() {
 
-  bool result = true;
-  Extension *stream = EXTENSION_STREAM;
- 
-  if (extension_load(stream) && extension_init(stream)) {
-    if (!driver->open()) {
-      result = false;
-    }
-  }
+  Extension *stream = EXTENSION_STREAM; 
+  bool result = extension_load(stream) && extension_init(stream) && driver->open();
   
   extension_free(stream);
   return result;  
