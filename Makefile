@@ -1,9 +1,9 @@
 GCC=gcc
-GCC-MINGW32=i486-mingw32-gcc
-#GCC-MINGW32=i686-pc-mingw32-gcc
+#GCC-MINGW32=i486-mingw32-gcc
+GCC-MINGW32=i686-pc-mingw32-gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
-KASM=java -jar /usr/share/kickassembler/KickAss.jar
-#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+#KASM=java -jar /usr/share/kickassembler/KickAss.jar
+KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 LIBHEADERS=\
 	xlink.h \
@@ -23,11 +23,14 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-all: linux server kernal bootstrap
+#all: linux any
+all: win32 any
+any: server kernal bootstrap
 linux: xlink
 win32: xlink.exe
 server: xlink-server.prg
 kernal: cbm/kernal-901227-03.rom xlink-kernal.rom
+bootstrap: bootstrap.bas
 
 libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 	$(GCC) $(FLAGS) -shared -fPIC \
@@ -57,7 +60,7 @@ compile-basicloader: tools/compile-basicloader.c
 xlink-server.prg: server.asm
 	$(KASM) -o xlink-server.prg server.asm
 
-bootstrap: compile-basicloader bootstrap.asm
+bootstrap.bas: compile-basicloader bootstrap.asm
 	$(KASM) -o bootstrap.prg bootstrap.asm && \
 	tools/compile-basicloader bootstrap.prg > bootstrap.bas && \
 	rm -v bootstrap.prg
