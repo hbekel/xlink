@@ -1,9 +1,9 @@
 GCC=gcc
-#GCC-MINGW32=i486-mingw32-gcc
-GCC-MINGW32=i686-pc-mingw32-gcc
+GCC-MINGW32=i486-mingw32-gcc
+#GCC-MINGW32=i686-pc-mingw32-gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
-#KASM=java -jar /usr/share/kickassembler/KickAss.jar
-KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+KASM=java -jar /usr/share/kickassembler/KickAss.jar
+#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 LIBHEADERS=\
 	xlink.h \
@@ -23,8 +23,8 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-#all: linux any
-all: win32 any
+all: linux any
+#all: win32 any
 any: server kernal bootstrap
 linux: xlink
 win32: xlink.exe hardsid.dll
@@ -58,11 +58,12 @@ make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(FLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
 bootstrap.bas: make-bootstrap bootstrap.asm
-	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | sh -x > bootstrap.bas && \
+	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | \
+	sh -x > bootstrap.bas && \
 	rm -v bootstrap.prg
 
 xlink-server.prg: server.asm
-	$(KASM) -o xlink-server.prg server.asm
+	$(KASM) -o xlink-server.prg server.asm > /dev/null
 
 xlink-kernal.rom: kernal.asm
 	(cp cbm/kernal-901227-03.rom xlink-kernal.rom && \
@@ -70,7 +71,7 @@ xlink-kernal.rom: kernal.asm
 	grep PATCH | \
 	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=xlink-kernal.rom bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
 	> patch.sh) && \
-	sh -x patch.sh && \
+	sh patch.sh && \
 	rm -v patch.sh kernal.bin
 
 hardsid.dll: hardsid.h hardsid.c util.h util.c

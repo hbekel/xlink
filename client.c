@@ -878,6 +878,11 @@ int command_benchmark(Command* self) {
   int start = 0x1000;
   int end = start + sizeof(payload);
     
+  if (!xlink_ready()) {
+    logger->error("no response from C64");
+    goto done;
+  }
+
   logger->info("sending %d bytes...", sizeof(payload));
     
   watch_start(watch);
