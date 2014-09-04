@@ -46,23 +46,23 @@ xlink.dll: $(LIBHEADERS) $(LIBSOURCES)
 xlink.exe: xlink.dll client.c client.h disk.c disk.h 
 	$(GCC-MINGW32) $(FLAGS) -o xlink.exe client.c disk.c -L. -lxlink
 
-extensions.c: tools/compile-extension extensions.asm
+extensions.c: tools/make-extension extensions.asm
 	$(KASM) -binfile -o extensions.bin extensions.asm | \
-	grep compile-extension | \
+	grep make-extension | \
 	bash > extensions.c && rm extensions.bin
 
-compile-extension: tools/compile-extension.c
-	$(GCC) $(FLAGS) -o tools/compile-extension tools/compile-extension.c
+make-extension: tools/make-extension.c
+	$(GCC) $(FLAGS) -o tools/make-extension tools/make-extension.c
 
-compile-basicloader: tools/compile-basicloader.c
-	$(GCC) $(FLAGS) -o tools/compile-basicloader tools/compile-basicloader.c
+make-bootstrap: tools/make-bootstrap.c
+	$(GCC) $(FLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
 xlink-server.prg: server.asm
 	$(KASM) -o xlink-server.prg server.asm
 
-bootstrap.bas: compile-basicloader bootstrap.asm
+bootstrap.bas: make-bootstrap bootstrap.asm
 	$(KASM) -o bootstrap.prg bootstrap.asm && \
-	tools/compile-basicloader bootstrap.prg > bootstrap.bas && \
+	tools/make-bootstrap bootstrap.prg > bootstrap.bas && \
 	rm -v bootstrap.prg
 
 xlink-kernal.rom: kernal.asm
@@ -109,8 +109,8 @@ clean: firmware-clean
 	[ -f xlink-server.prg ] && rm -v xlink-server.prg || true
 	[ -f xlink-kernal.rom ] && rm -v xlink-kernal.rom || true
 	[ -f bootstrap.bas ] && rm -v bootstrap.bas || true
-	[ -f tools/compile-extension ] && rm -v tools/compile-extension || true
-	[ -f tools/compile-basicloader ] && rm -v tools/compile-basicloader || true
+	[ -f tools/make-extension ] && rm -v tools/make-extension || true
+	[ -f tools/make-bootstrap ] && rm -v tools/make-bootstrap || true
 	[ -f log ] && rm -v log || true
 
 dist: clean

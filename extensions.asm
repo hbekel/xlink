@@ -379,7 +379,7 @@ close:	rts
    
 	
 .function extension(name, address, offset, size) {
-  .return "tools/compile-extension extensions.bin " + name + " " +
+  .return "tools/make-extension extensions.bin " + name + " " +
 	toIntString(address) + " " +
 	toIntString(offset) + " " +
 	toIntString(size)
