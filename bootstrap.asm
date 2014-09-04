@@ -28,8 +28,7 @@ loop:	jsr wait
 	cpy #Command.load 
 	bne loop
 
-	jsr load
-	jsr saveServer
+	jsr load	
 
 done:	cli
 	rts
@@ -70,11 +69,9 @@ saveServer: {
 	ldy #>filename
 	jsr $ffbd
 	lda #$00
-	ldx $BA       
-	bne skip
-	ldx #$08      
+	ldx #$ba      
 skip:	ldy #$00
-	jsr $FFBA     
+	jsr $ffba     
 
 	ldx end
 	ldy end+1
@@ -85,3 +82,28 @@ skip:	ldy #$00
 filename: .text "XLINK-SERVER"
 eot:
 }
+
+saveToDisk: {
+	lda $ba
+	cmp #$01
+	beq drive8
+
+	lda $ba
+	bne done
+
+drive8:
+	lda #$08
+	sta $BA
+
+done:   jsr saveServer
+	rts
+}
+
+saveToTape: {
+	lda #$01
+	sta $ba
+	jsr saveServer
+	rts
+}
+
+.print "tools/make-bootstrap bootstrap.prg " + toIntString(saveToDisk) + " " + toIntString(saveToTape)

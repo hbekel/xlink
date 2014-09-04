@@ -57,13 +57,12 @@ make-extension: tools/make-extension.c
 make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(FLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
+bootstrap.bas: make-bootstrap bootstrap.asm
+	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | sh -x > bootstrap.bas && \
+	rm -v bootstrap.prg
+
 xlink-server.prg: server.asm
 	$(KASM) -o xlink-server.prg server.asm
-
-bootstrap.bas: make-bootstrap bootstrap.asm
-	$(KASM) -o bootstrap.prg bootstrap.asm && \
-	tools/make-bootstrap bootstrap.prg > bootstrap.bas && \
-	rm -v bootstrap.prg
 
 xlink-kernal.rom: kernal.asm
 	(cp cbm/kernal-901227-03.rom xlink-kernal.rom && \
