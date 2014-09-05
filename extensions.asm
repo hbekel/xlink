@@ -308,9 +308,9 @@ done:	// close files and channels
 //------------------------------------------------------------------------------
     
 .namespace Stream {
-  .label peek  = $01
-  .label poke  = $02
-  .label close = $03
+  .label peek  = $08
+  .label poke  = $09
+  .label close = $0a
 }
     
 stream: {
