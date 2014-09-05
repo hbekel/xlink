@@ -22,7 +22,7 @@ eof:
 
 	
 .pc = $fd6c 
-fastMemoryTest:	{ // fast memory check unless cmb key is pressed
+fastMemoryCheck: { // fast memory check unless cmb key is pressed
 
 	lda #%01111111 	// check for cbm key
 	sta $dc00
@@ -383,13 +383,21 @@ eof:
 .pc = $10000
 
 .function patch(start, end) {
-  .return "PATCH " + toIntString(start-$e000) + " " + toIntString(end-start)
+	
+	.var offset = start - $e000
+	.var count = end-start
+
+        .return "dd conv=notrunc if=kernal.bin of=xlink-kernal.rom bs=1 " +
+	        "skip=" + toIntString(offset) + " " +
+	        "seek=" + toIntString(offset) + " " +
+	        "count=" + toIntString(count)
 }
-    
+
+.print patch(wedge, wedge.eof)	
 .print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
 .print patch(powerUpMessage, powerUpMessage.eof)
 .print patch(disableTapeLoad, disableTapeLoad.eof)
-.print patch(fastMemoryTest, fastMemoryTest.eof)
+.print patch(fastMemoryCheck, fastMemoryCheck.eof)
 .print patch(irq, irq.eof)
 .print patch(ack, ack.eof)
 .print patch(wait, wait.eof)
@@ -404,7 +412,6 @@ eof:
 .print patch(jump, jump.eof)
 .print patch(run, run.eof)
 .print patch(extend, extend.eof)
-.print patch(wedge, wedge.eof)
 .print patch(memoryCheck, memoryCheck.eof)
 	
 .print "free: 0x" + toHexString(irq.eof) + "-0xf5ab" + ": " + toIntString($f5ab-irq.eof) + " bytes"

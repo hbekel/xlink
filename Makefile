@@ -49,7 +49,7 @@ xlink.exe: xlink.dll client.c client.h disk.c disk.h
 extensions.c: tools/make-extension extensions.asm
 	$(KASM) -binfile -o extensions.bin extensions.asm | \
 	grep make-extension | \
-	bash > extensions.c && rm extensions.bin
+	sh > extensions.c && rm extensions.bin
 
 make-extension: tools/make-extension.c
 	$(GCC) $(FLAGS) -o tools/make-extension tools/make-extension.c
@@ -66,13 +66,8 @@ xlink-server.prg: server.asm
 	$(KASM) -o xlink-server.prg server.asm > /dev/null
 
 xlink-kernal.rom: kernal.asm
-	(cp cbm/kernal-901227-03.rom xlink-kernal.rom && \
-	$(KASM) -binfile -o kernal.bin kernal.asm | \
-	grep PATCH | \
-	sed -r 's| +PATCH ([0-9]+) ([0-9]+)|dd conv=notrunc if=kernal.bin of=xlink-kernal.rom bs=1 skip=\1 seek=\1 count=\2 \&> /dev/null|' \
-	> patch.sh) && \
-	sh patch.sh && \
-	rm -v patch.sh kernal.bin
+	cp cbm/kernal-901227-03.rom xlink-kernal.rom && \
+	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
 hardsid.dll: hardsid.h hardsid.c util.h util.c
 	$(GCC-MINGW32) $(FLAGS) -shared -Wl,--export-all-symbols -Wl,--kill-at -o hardsid.dll hardsid.c util.c -L. -lxlink
