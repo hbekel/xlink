@@ -1,12 +1,16 @@
 .pc = $e000
 
 .import source "server.h"
+
+//------------------------------------------------------------------------------	
 	
 .pc = $ea31
 wedge: {
 	jmp irq
 eof:	
 }
+
+//------------------------------------------------------------------------------	
 	
 .pc = $f0d9
 tapeLoadDisabledMessage: {
@@ -14,12 +18,15 @@ tapeLoadDisabledMessage: {
 eof:
 }
 
+//------------------------------------------------------------------------------	
+	
 .pc = $e479
 powerUpMessage:	{
 .text "**** COMMODORE 64 BASIC V2 ****"
 eof:
 }
 
+//------------------------------------------------------------------------------		
 	
 .pc = $fd6c 
 fastMemoryCheck: { // fast memory check unless cmb key is pressed
@@ -45,6 +52,7 @@ done:	jmp $fd8c
 eof:	
 }
 
+//------------------------------------------------------------------------------		
 	
 .pc = $f541 // begin of modified area in kernal "Load Tape" routine
 disableTapeLoad: {
@@ -53,6 +61,8 @@ jsr $f12f
 rts
 eof:
 }
+
+//------------------------------------------------------------------------------	
 	
 irq: {
 	lda $dd0d
@@ -96,9 +106,16 @@ done:	jsr $ffea
 eof:
 }
 
+//------------------------------------------------------------------------------		
+
 .pc = $f5ab // end of kernal "Load Tape" routine
 
+//------------------------------------------------------------------------------		
+
 .pc = $f82e // begin of kernal "Check Tape Status" routine
+	
+
+//------------------------------------------------------------------------------
 	
 wait: {
 loop:   lda $dd0d
@@ -107,6 +124,8 @@ loop:   lda $dd0d
 	rts
 eof:	
 }
+
+//------------------------------------------------------------------------------		
 	
 ack: {
 	lda $dd00
@@ -116,6 +135,8 @@ ack: {
 eof:
 }
 
+//------------------------------------------------------------------------------		
+
 read: {
 	jsr wait
 	ldx $dd01
@@ -123,6 +144,8 @@ read: {
 	rts
 eof:
 }
+
+//------------------------------------------------------------------------------	
 	
 write: {
 	sta $dd01
@@ -131,6 +154,8 @@ write: {
 	rts
 eof:
 }
+
+//------------------------------------------------------------------------------	
 	
 ram: {
 
@@ -155,6 +180,8 @@ codeend:
 	
 eof:	
 }
+
+//------------------------------------------------------------------------------		
 	
 readHeader: {
 	jsr read stx mem
@@ -167,6 +194,8 @@ readHeader: {
 eof:
 }
 
+//------------------------------------------------------------------------------	
+	
 load: {
 	jsr readHeader
 	:screenOff()
@@ -203,6 +232,8 @@ done:	:relinkBasic()
 	jmp irq.done
 eof:	
 }
+
+//------------------------------------------------------------------------------		
 
 save: {
 	jsr readHeader
@@ -253,6 +284,8 @@ done:	lda #$00       // reset CIA2 port B to input
 eof:	
 }
 
+//------------------------------------------------------------------------------		
+
 poke: {
 	jsr read stx mem
 	jsr read stx bank
@@ -280,6 +313,8 @@ done:	jmp irq.done
 eof:	
 }
 
+//------------------------------------------------------------------------------	
+	
 peek: {
 	jsr read stx mem
 	jsr read stx bank
@@ -302,6 +337,9 @@ done:	lda #$00   // reset CIA2 port B to input
 	jmp irq.done
 eof:	
 }
+
+
+//------------------------------------------------------------------------------
 	
 jump: {
 	jsr read stx mem
@@ -322,6 +360,8 @@ jump: {
 eof:	
 }
 
+//------------------------------------------------------------------------------		
+
 run: {
 	ldx #$ff txs     // reset stack pointer
 	lda #$01 sta $cc // cursor off
@@ -332,6 +372,8 @@ run: {
 eof:
 }
 
+//------------------------------------------------------------------------------	
+	
 extend:	{
 	lda #>return pha
 	lda #<return pha
@@ -346,6 +388,8 @@ return: nop
 eof:	
 }
 
+//------------------------------------------------------------------------------	
+	
 memoryCheck: { // relocated original memory check routine 
 
 high:	inc $c2
@@ -377,10 +421,16 @@ done:  	tya
 	rts
 eof:	
 }
+
+//------------------------------------------------------------------------------	
 	
 .pc = $fc92 // end of kernal "Write Tape Leader" routine
+
+//------------------------------------------------------------------------------		
 	
 .pc = $10000
+
+//------------------------------------------------------------------------------		
 
 .function patch(start, end) {
 	
@@ -392,6 +442,8 @@ eof:
 	        "seek=" + toIntString(offset) + " " +
 	        "count=" + toIntString(count)
 }
+
+//------------------------------------------------------------------------------		
 
 .print patch(wedge, wedge.eof)	
 .print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
@@ -413,6 +465,8 @@ eof:
 .print patch(run, run.eof)
 .print patch(extend, extend.eof)
 .print patch(memoryCheck, memoryCheck.eof)
+
+//------------------------------------------------------------------------------		
 	
 .print "free: 0x" + toHexString(irq.eof) + "-0xf5ab" + ": " + toIntString($f5ab-irq.eof) + " bytes"
 .print "free: 0x" + toHexString(memoryCheck.eof) + "-0xfc92" + " " + toIntString($fc92-memoryCheck.eof) + " bytes"
