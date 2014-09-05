@@ -77,10 +77,22 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
 
 //------------------------------------------------------------------------------
 
-bool xlink_device(char* path) {
+bool xlink_set_device(char* path) {
   driver_setup(path);
-  return driver->ready();
+  return xlink_has_device();
 }  
+
+//------------------------------------------------------------------------------
+
+char* xlink_get_device(void) {
+  return driver->path;
+}
+
+//------------------------------------------------------------------------------
+
+bool xlink_has_device(void) {
+  return driver->ready();
+}
 
 //------------------------------------------------------------------------------
 

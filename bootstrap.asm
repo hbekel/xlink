@@ -107,7 +107,7 @@ saveToDisk: {
 
 drive8:
 	lda #$08
-	sta $BA
+	sta $ba
 
 done:   jsr saveServer
 	rts

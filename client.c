@@ -393,7 +393,7 @@ int command_parse_options(Command *self) {
       break;
 
     case 'd':
-      if (!xlink_device(optarg)) {
+      if (!xlink_set_device(optarg)) {
         return false; 
       }
       break;    
@@ -461,7 +461,7 @@ int command_print(Command* self) {
   char result[1024];
   bool print = false;
 
-  sprintf(result, "%s ", command_get_name(self));
+  sprintf(result, "-d %s ",  xlink_get_device());
 
   if((unsigned char) self->memory != 0xff) {
     sprintf(result + strlen(result), "-m 0x%02X ", (unsigned char) self->memory);

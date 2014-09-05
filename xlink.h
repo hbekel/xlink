@@ -20,7 +20,10 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  bool xlink_device(char* path);
+  bool xlink_set_device(char* path);
+  char* xlink_get_device(void);
+  bool xlink_has_device(void);
+
   bool xlink_ping(void);
   bool xlink_reset(void);
   bool xlink_ready(void);
