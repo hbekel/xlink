@@ -24,7 +24,7 @@ LIBSOURCES=\
 	driver/parport.c
 
 #all: linux any
-all: win32 any dos
+all: win32 any
 any: server kernal bootstrap
 linux: xlink
 win32: xlink.exe hardsid.dll
@@ -54,10 +54,10 @@ extensions.c: tools/make-extension extensions.asm
 make-extension: tools/make-extension.c
 	$(GCC) $(FLAGS) -o tools/make-extension tools/make-extension.c
 
-make-bootstrap: tools/make-bootstrap.c
+tools/make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(FLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
-bootstrap.bas: make-bootstrap bootstrap.asm
+bootstrap.bas: tools/make-bootstrap bootstrap.asm
 	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | \
 	sh -x > bootstrap.bas && \
 	rm -v bootstrap.prg
@@ -71,9 +71,6 @@ xlink-kernal.rom: kernal.asm
 
 hardsid.dll: hardsid.h hardsid.c util.h util.c
 	$(GCC-MINGW32) $(FLAGS) -shared -Wl,--export-all-symbols -Wl,--kill-at -o hardsid.dll hardsid.c util.c -L. -lxlink
-
-dos:	bootstrap.bas
-	unix2dos -q bootstrap.bas README LICENCE
 
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && make)
