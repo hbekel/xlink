@@ -82,7 +82,7 @@ saveServer: {
 	jsr $ffbd
 	lda #$00
 	ldx #$ba      
-skip:	ldy #$00
+	ldy #$00
 	jsr $ffba     
 
 	ldx end
