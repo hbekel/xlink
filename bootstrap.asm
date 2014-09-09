@@ -35,7 +35,7 @@ loop:	jsr wait
 	bne loop
 
 	jsr load	
-
+        
 done:	cli
 	rts
 }
@@ -75,13 +75,13 @@ readHeader: {
 //------------------------------------------------------------------------------	
 	
 saveServer: {
-
+        sei
 	lda #eot-filename
 	ldx #<filename
 	ldy #>filename
 	jsr $ffbd
 	lda #$00
-	ldx #$ba      
+	ldx $ba      
 	ldy #$00
 	jsr $ffba     
 
@@ -89,6 +89,7 @@ saveServer: {
 	ldy end+1
 	lda #$fb
 	jsr $ffd8 
+        cli
 	rts
 	
 filename: .text "XLINK-SERVER"
@@ -103,7 +104,7 @@ saveToDisk: {
 	beq drive8
 
 	lda $ba
-	bne done
+	bne done 
 
 drive8:
 	lda #$08
