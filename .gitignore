@@ -1,7 +1,6 @@
 xlink
 *.so
 *.prg
-*.bas
 *.sym
 *.exe
 *.log
@@ -13,5 +12,6 @@ xlink
 extensions.c
 make-extension
 make-bootstrap
+bootstrap.txt
 log
 TODO

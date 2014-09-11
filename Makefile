@@ -30,7 +30,7 @@ linux: xlink
 win32: xlink.exe hardsid.dll
 server: xlink-server.prg
 kernal: cbm/kernal-901227-03.rom xlink-kernal.rom
-bootstrap: bootstrap.bas
+bootstrap: bootstrap.txt
 
 libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 	$(GCC) $(FLAGS) -shared -fPIC \
@@ -57,9 +57,9 @@ make-extension: tools/make-extension.c
 tools/make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(FLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
-bootstrap.bas: tools/make-bootstrap bootstrap.asm
+bootstrap.txt: tools/make-bootstrap bootstrap.asm
 	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | \
-	sh -x > bootstrap.bas && \
+	sh -x > bootstrap.txt && \
 	rm -v bootstrap.prg
 
 xlink-server.prg: server.asm
@@ -103,7 +103,7 @@ clean: firmware-clean
 	[ -f extensions.c ] && rm -v extensions.c || true
 	[ -f xlink-server.prg ] && rm -v xlink-server.prg || true
 	[ -f xlink-kernal.rom ] && rm -v xlink-kernal.rom || true
-	[ -f bootstrap.bas ] && rm -v bootstrap.bas || true
+	[ -f bootstrap.txt ] && rm -v bootstrap.txt || true
 	[ -f tools/make-extension ] && rm -v tools/make-extension || true
 	[ -f tools/make-bootstrap ] && rm -v tools/make-bootstrap || true
 	[ -f log ] && rm -v log || true
