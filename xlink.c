@@ -143,7 +143,7 @@ bool xlink_ready(void) {
 
 //------------------------------------------------------------------------------
 
-bool xlink_bootstrap(void) {
+bool xlink_bootloader(void) {
   
   if(driver->open()) {
     driver->boot();

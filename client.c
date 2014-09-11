@@ -19,24 +19,24 @@
 #include "util.h"
 #include "xlink.h"
 
-#define COMMAND_NONE      0x00
-#define COMMAND_LOAD      0x01
-#define COMMAND_SAVE      0x02
-#define COMMAND_POKE      0x03
-#define COMMAND_PEEK      0x04
-#define COMMAND_JUMP      0x05
-#define COMMAND_RUN       0x06
-#define COMMAND_RESET     0x07
-#define COMMAND_HELP      0x08
-#define COMMAND_DOS       0x09
-#define COMMAND_BACKUP    0x0a
-#define COMMAND_RESTORE   0x0b
-#define COMMAND_VERIFY    0x0c
-#define COMMAND_STATUS    0x0d
-#define COMMAND_READY     0x0e
-#define COMMAND_PING      0x0f
-#define COMMAND_BOOTSTRAP 0x10
-#define COMMAND_BENCHMARK 0x11
+#define COMMAND_NONE       0x00
+#define COMMAND_LOAD       0x01
+#define COMMAND_SAVE       0x02
+#define COMMAND_POKE       0x03
+#define COMMAND_PEEK       0x04
+#define COMMAND_JUMP       0x05
+#define COMMAND_RUN        0x06
+#define COMMAND_RESET      0x07
+#define COMMAND_HELP       0x08
+#define COMMAND_DOS        0x09
+#define COMMAND_BACKUP     0x0a
+#define COMMAND_RESTORE    0x0b
+#define COMMAND_VERIFY     0x0c
+#define COMMAND_STATUS     0x0d
+#define COMMAND_READY      0x0e
+#define COMMAND_PING       0x0f
+#define COMMAND_BOOTLOADER 0x10
+#define COMMAND_BENCHMARK  0x11
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -58,21 +58,21 @@ static struct option options[] = {
 //------------------------------------------------------------------------------
 
 char str2id(const char* arg) {
-  if (strcmp(arg, "load"     ) == 0) return COMMAND_LOAD;
-  if (strcmp(arg, "save"     ) == 0) return COMMAND_SAVE;
-  if (strcmp(arg, "poke"     ) == 0) return COMMAND_POKE;
-  if (strcmp(arg, "peek"     ) == 0) return COMMAND_PEEK;
-  if (strcmp(arg, "jump"     ) == 0) return COMMAND_JUMP;
-  if (strcmp(arg, "run"      ) == 0) return COMMAND_RUN;  
-  if (strcmp(arg, "reset"    ) == 0) return COMMAND_RESET;  
-  if (strcmp(arg, "help"     ) == 0) return COMMAND_HELP;  
-  if (strcmp(arg, "backup"   ) == 0) return COMMAND_BACKUP;  
-  if (strcmp(arg, "restore"  ) == 0) return COMMAND_RESTORE;  
-  if (strcmp(arg, "verify"   ) == 0) return COMMAND_VERIFY;  
-  if (strcmp(arg, "ready"    ) == 0) return COMMAND_READY;  
-  if (strcmp(arg, "ping"     ) == 0) return COMMAND_PING;  
-  if (strcmp(arg, "bootstrap") == 0) return COMMAND_BOOTSTRAP;  
-  if (strcmp(arg, "benchmark") == 0) return COMMAND_BENCHMARK;  
+  if (strcmp(arg, "load"      ) == 0) return COMMAND_LOAD;
+  if (strcmp(arg, "save"      ) == 0) return COMMAND_SAVE;
+  if (strcmp(arg, "poke"      ) == 0) return COMMAND_POKE;
+  if (strcmp(arg, "peek"      ) == 0) return COMMAND_PEEK;
+  if (strcmp(arg, "jump"      ) == 0) return COMMAND_JUMP;
+  if (strcmp(arg, "run"       ) == 0) return COMMAND_RUN;  
+  if (strcmp(arg, "reset"     ) == 0) return COMMAND_RESET;  
+  if (strcmp(arg, "help"      ) == 0) return COMMAND_HELP;  
+  if (strcmp(arg, "backup"    ) == 0) return COMMAND_BACKUP;  
+  if (strcmp(arg, "restore"   ) == 0) return COMMAND_RESTORE;  
+  if (strcmp(arg, "verify"    ) == 0) return COMMAND_VERIFY;  
+  if (strcmp(arg, "ready"     ) == 0) return COMMAND_READY;  
+  if (strcmp(arg, "ping"      ) == 0) return COMMAND_PING;  
+  if (strcmp(arg, "bootloader") == 0) return COMMAND_BOOTLOADER;  
+  if (strcmp(arg, "benchmark" ) == 0) return COMMAND_BENCHMARK;  
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -88,24 +88,24 @@ char str2id(const char* arg) {
 //------------------------------------------------------------------------------
 
 char* id2str(const char id) {
-  if (id == COMMAND_NONE)      return (char*) "main";
-  if (id == COMMAND_LOAD)      return (char*) "load";
-  if (id == COMMAND_SAVE)      return (char*) "save";
-  if (id == COMMAND_POKE)      return (char*) "poke";
-  if (id == COMMAND_PEEK)      return (char*) "peek";
-  if (id == COMMAND_JUMP)      return (char*) "jump";
-  if (id == COMMAND_RUN)       return (char*) "run";
-  if (id == COMMAND_RESET)     return (char*) "reset";
-  if (id == COMMAND_HELP)      return (char*) "help";
-  if (id == COMMAND_DOS)       return (char*) "dos";
-  if (id == COMMAND_BACKUP)    return (char*) "backup";
-  if (id == COMMAND_RESTORE)   return (char*) "restore";
-  if (id == COMMAND_VERIFY)    return (char*) "verify";
-  if (id == COMMAND_STATUS)    return (char*) "status";  
-  if (id == COMMAND_READY)     return (char*) "ready";  
-  if (id == COMMAND_PING)      return (char*) "ping";  
-  if (id == COMMAND_BOOTSTRAP) return (char*) "bootstrap";  
-  if (id == COMMAND_BENCHMARK) return (char*) "benchmark";  
+  if (id == COMMAND_NONE)       return (char*) "main";
+  if (id == COMMAND_LOAD)       return (char*) "load";
+  if (id == COMMAND_SAVE)       return (char*) "save";
+  if (id == COMMAND_POKE)       return (char*) "poke";
+  if (id == COMMAND_PEEK)       return (char*) "peek";
+  if (id == COMMAND_JUMP)       return (char*) "jump";
+  if (id == COMMAND_RUN)        return (char*) "run";
+  if (id == COMMAND_RESET)      return (char*) "reset";
+  if (id == COMMAND_HELP)       return (char*) "help";
+  if (id == COMMAND_DOS)        return (char*) "dos";
+  if (id == COMMAND_BACKUP)     return (char*) "backup";
+  if (id == COMMAND_RESTORE)    return (char*) "restore";
+  if (id == COMMAND_VERIFY)     return (char*) "verify";
+  if (id == COMMAND_STATUS)     return (char*) "status";  
+  if (id == COMMAND_READY)      return (char*) "ready";  
+  if (id == COMMAND_PING)       return (char*) "ping";  
+  if (id == COMMAND_BOOTLOADER) return (char*) "bootloader";  
+  if (id == COMMAND_BENCHMARK)  return (char*) "benchmark";  
   return (char*) "unknown";
 }
 
@@ -280,7 +280,7 @@ int command_arity(Command* self) {
   if (self->id == COMMAND_STATUS)    return 0;
   if (self->id == COMMAND_READY)     return 0;
   if (self->id == COMMAND_PING)      return 0;
-  if (self->id == COMMAND_BOOTSTRAP) return 0;
+  if (self->id == COMMAND_BOOTLOADER) return 0;
   if (self->id == COMMAND_BENCHMARK) return 0;
   return 0;
 
@@ -858,11 +858,11 @@ int command_reset(Command* self) {
 
 //------------------------------------------------------------------------------
 
-extern bool xlink_bootstrap(void);
+extern bool xlink_bootloader(void);
 
-int command_bootstrap(Command *self) {
+int command_bootloader(Command *self) {
   command_print(self);
-  return xlink_bootstrap();
+  return xlink_bootloader();
 }
 
 //------------------------------------------------------------------------------
@@ -1174,24 +1174,24 @@ int command_execute(Command* self) {
 
   switch(self->id) {
 
-  case COMMAND_NONE      : result = command_none(self);      break;
-  case COMMAND_LOAD      : result = command_load(self);      break;
-  case COMMAND_SAVE      : result = command_save(self);      break;
-  case COMMAND_POKE      : result = command_poke(self);      break;
-  case COMMAND_PEEK      : result = command_peek(self);      break;
-  case COMMAND_JUMP      : result = command_jump(self);      break;
-  case COMMAND_RUN       : result = command_run(self);       break;
-  case COMMAND_RESET     : result = command_reset(self);     break;
-  case COMMAND_HELP      : result = command_help(self);      break;
-  case COMMAND_DOS       : result = command_dos(self);       break;
-  case COMMAND_BACKUP    : result = command_backup(self);    break;
-  case COMMAND_RESTORE   : result = command_restore(self);   break;
-  case COMMAND_VERIFY    : result = command_verify(self);    break;
-  case COMMAND_STATUS    : result = command_status(self);    break;
-  case COMMAND_READY     : result = command_ready(self);     break;
-  case COMMAND_PING      : result = command_ping(self);      break;
-  case COMMAND_BOOTSTRAP : result = command_bootstrap(self); break;
-  case COMMAND_BENCHMARK : result = command_benchmark(self); break;
+  case COMMAND_NONE       : result = command_none(self);      break;
+  case COMMAND_LOAD       : result = command_load(self);      break;
+  case COMMAND_SAVE       : result = command_save(self);      break;
+  case COMMAND_POKE       : result = command_poke(self);      break;
+  case COMMAND_PEEK       : result = command_peek(self);      break;
+  case COMMAND_JUMP       : result = command_jump(self);      break;
+  case COMMAND_RUN        : result = command_run(self);       break;
+  case COMMAND_RESET      : result = command_reset(self);     break;
+  case COMMAND_HELP       : result = command_help(self);      break;
+  case COMMAND_DOS        : result = command_dos(self);       break;
+  case COMMAND_BACKUP     : result = command_backup(self);    break;
+  case COMMAND_RESTORE    : result = command_restore(self);   break;
+  case COMMAND_VERIFY     : result = command_verify(self);    break;
+  case COMMAND_STATUS     : result = command_status(self);    break;
+  case COMMAND_READY      : result = command_ready(self);     break;
+  case COMMAND_PING       : result = command_ping(self);      break;
+  case COMMAND_BOOTLOADER : result = command_bootloader(self); break;
+  case COMMAND_BENCHMARK  : result = command_benchmark(self); break;
   }
   
   logger->leave();
@@ -1265,7 +1265,7 @@ void shell(void) {
     "exit",
     "quit",
     "ping",
-    "bootstrap",
+    "bootloader",
     "benchmark",
     NULL };
 
@@ -1387,7 +1387,7 @@ void usage(void) {
 #if linux
   printf("          shell                        : enter interactive command shell\n");
 #endif
-  printf("          bootstrap                    : enter dfu-bootloader (USB devices only)\n");
+  printf("          bootloader                   : enter dfu-bootloader (USB devices only)\n");
   printf("          benchmark                    : test/measure transfer speed\n");
   printf("\n");
   printf("          ping                         : check if the server is available\n");
@@ -1566,10 +1566,10 @@ int help(int id) {
     printf("\n");
     break;
 
-  case COMMAND_BOOTSTRAP:
-    printf("Usage: bootstrap\n");
+  case COMMAND_BOOTLOADER:
+    printf("Usage: bootloader\n");
     printf("\n");
-    printf("Prepare USB devices for firmware updates by entering the atmel dfu-bootloader.\n");
+    printf("Prepare USB devices for firmware updates. Enters the atmel dfu-bootloader.\n");
     printf("\n");
     break;
 
