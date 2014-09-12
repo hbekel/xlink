@@ -79,7 +79,8 @@ firmware-clean:
 	(cd driver/at90usb162 && make clean)
 
 firmware-install: xlink firmware
-	LD_LIBRARY_PATH=. ./xlink bootstrap && \
+	LD_LIBRARY_PATH=. ./xlink bootloader && \
+	sleep 5 && \
 	(cd driver/at90usb162 && make dfu)
 
 install: xlink
