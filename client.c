@@ -1248,9 +1248,8 @@ void shell(void) {
 
   extern char **completion_matches();
 
-  static char* known_commands[19] = { 
+  static char* known_commands[18] = { 
     "help",
-    "version", 
     "load", 
     "save",
     "peek",
