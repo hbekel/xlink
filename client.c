@@ -1505,9 +1505,7 @@ int help(int id) {
   case COMMAND_RESET:
     printf("Usage: reset\n");
     printf("\n");
-    printf("If a reset circuit is installed, this command will hold the PC's INIT\n");
-    printf("line low for a short period of time, which will ground the C64's RESET\n");
-    printf("line, performing a hardware reset.\n");
+    printf("Reset the C64. Works without the server actually running on the C64 side.\n");
     printf("\n");
     break;
 
