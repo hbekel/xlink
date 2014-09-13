@@ -319,15 +319,15 @@ offset:
 address:
 
 stream:	:read()
-		
+
+        cpx #Stream.poke
+	bne !next+
+	jmp poke
+        
 !next:	cpx #Stream.peek
 	bne !next+
 	jmp peek
-		
-!next:	cpx #Stream.poke
-	bne !next+
-	jmp poke
-		
+				
 !next:	cpx #Stream.close
 	bne !next+
 	jmp close
