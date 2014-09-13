@@ -69,7 +69,7 @@ xlink-kernal.rom: kernal.asm
 	cp cbm/kernal-901227-03.rom xlink-kernal.rom && \
 	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
-hardsid.dll: hardsid.h hardsid.c util.h util.c
+hardsid.dll: xlink.dll hardsid.h hardsid.c util.h util.c
 	$(GCC-MINGW32) $(FLAGS) -shared -Wl,--export-all-symbols -Wl,--kill-at -o hardsid.dll hardsid.c util.c -L. -lxlink
 
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h

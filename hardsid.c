@@ -65,7 +65,10 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
 
 void DLLEXPORT InitHardSID_Mapper (void) {
   logger->debug("InitHardSID_Mapper");
-  HardSID_Reset(0);
+
+  for(int i=0; i<sids; i++) {
+    HardSID_Reset(i);
+  }
 }
 BYTE DLLEXPORT GetHardSIDCount (void) { 
   logger->debug("GetHardSIDCount");
