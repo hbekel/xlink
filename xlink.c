@@ -497,7 +497,7 @@ bool xlink_stream_open() {
 bool xlink_stream_poke(int address, unsigned char value) {
   
   driver->output();
-  driver->send((char []) {XLINK_COMMAND_STREAM_POKE, hi(address), lo(address), value}, 4);
+  driver->send((char []) {XLINK_COMMAND_STREAM_POKE, lo(address), hi(address), value}, 4);
   driver->input(); 
   return true;
 }
@@ -505,7 +505,7 @@ bool xlink_stream_poke(int address, unsigned char value) {
 bool xlink_stream_peek(int address, unsigned char* value) {
 
   driver->output();
-  driver->send((char []) {XLINK_COMMAND_STREAM_PEEK, hi(address), lo(address)}, 3);
+  driver->send((char []) {XLINK_COMMAND_STREAM_PEEK, lo(address), hi(address)}, 3);
     
   driver->input();
   driver->strobe();
