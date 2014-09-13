@@ -253,7 +253,7 @@ void Boot(void) {
   Endpoint_ClearOUT();
   Endpoint_ClearStatusStage();
 
-  // detach from the bus and reset
+  // detach from the bus and reset...
   USB_Disable();
   
   // Disable all interrupts

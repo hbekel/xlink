@@ -27,10 +27,18 @@ extern "C" {
   bool xlink_ping(void);
   bool xlink_reset(void);
   bool xlink_ready(void);
-  bool xlink_load(unsigned char memory, unsigned char bank, int start, int end, char* data, int size);
-  bool xlink_save(unsigned char memory, unsigned char bank, int start, int end, char* data, int size);
-  bool xlink_peek(unsigned char memory, unsigned char bank, int address, unsigned char* value);
-  bool xlink_poke(unsigned char memory, unsigned char bank, int address, unsigned char value);
+
+  bool xlink_load(unsigned char memory, unsigned char bank, 
+                  int start, int end, char* data, int size);
+
+  bool xlink_save(unsigned char memory, unsigned char bank, 
+                  int start, int end, char* data, int size);
+  bool xlink_peek(unsigned char memory, unsigned char bank, 
+                  int address, unsigned char* value);
+
+  bool xlink_poke(unsigned char memory, unsigned char bank, 
+                  int address, unsigned char value);
+  
   bool xlink_jump(unsigned char memory, unsigned char bank, int address);
   bool xlink_run(void);
 

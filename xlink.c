@@ -173,7 +173,9 @@ bool xlink_load(unsigned char memory,
     }
 
     driver->output();    
-    driver->send((char []) {XLINK_COMMAND_LOAD, memory, bank, lo(start), hi(start), lo(end), hi(end)}, 7);
+    driver->send((char []) {XLINK_COMMAND_LOAD, memory, bank, 
+          lo(start), hi(start), lo(end), hi(end)}, 7);
+
     driver->send(data, size);
     
     result = true;
@@ -202,7 +204,8 @@ bool xlink_save(unsigned char memory,
     }
 
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_SAVE, memory, bank, lo(start), hi(start), lo(end), hi(end)}, 7);
+    driver->send((char []) {XLINK_COMMAND_SAVE, memory, bank, 
+          lo(start), hi(start), lo(end), hi(end)}, 7);
 
     driver->input();
     driver->strobe();
@@ -254,7 +257,8 @@ bool xlink_poke(unsigned char memory, unsigned char bank, int address, unsigned 
     }
     
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_POKE, memory, bank, lo(address), hi(address), value}, 6);    
+    driver->send((char []) {XLINK_COMMAND_POKE, memory, bank, 
+          lo(address), hi(address), value}, 6);    
 
     driver->close();
     return true;
@@ -277,7 +281,8 @@ bool xlink_jump(unsigned char memory, unsigned char bank, int address) {
     }
 
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_JUMP, memory, bank, hi(address), lo(address)}, 5);    
+    driver->send((char []) {XLINK_COMMAND_JUMP, memory, bank, 
+          hi(address), lo(address)}, 5);    
 
     driver->close();
     return true;
@@ -344,7 +349,9 @@ bool xlink_drive_status(char* status) {
   Extension *lib = EXTENSION_LIB;
   Extension *drive_status = EXTENSION_DRIVE_STATUS;
 
-  if (extension_load(lib) && extension_load(drive_status) && extension_init(drive_status)) {
+  if (extension_load(lib) && 
+      extension_load(drive_status) && 
+      extension_init(drive_status)) {
 
     if (driver->open()) {
       
@@ -395,7 +402,9 @@ bool xlink_dos(char* cmd) {
 
   logger->debug("loading & initialising extensions");
 
-  if(extension_load(lib) && extension_load(dos_command) && extension_init(dos_command)) {
+  if(extension_load(lib) && 
+     extension_load(dos_command) && 
+     extension_init(dos_command)) {
     
     if(driver->open()) {   
 
@@ -428,7 +437,9 @@ bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char*
   Extension *lib = EXTENSION_LIB;
   Extension *sector_read = EXTENSION_SECTOR_READ;
 
-  if (extension_load(lib) && extension_load(sector_read) && extension_init(sector_read)) {
+  if (extension_load(lib) && 
+      extension_load(sector_read) && 
+      extension_init(sector_read)) {
 
     if (driver->open()) {
       
@@ -464,7 +475,9 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
   Extension *lib = EXTENSION_LIB;
   Extension *sector_write = EXTENSION_SECTOR_WRITE;
 
-  if (extension_load(lib) && extension_load(sector_write) && extension_init(sector_write)) {
+  if (extension_load(lib) && 
+      extension_load(sector_write) && 
+      extension_init(sector_write)) {
 
     if (driver->open()) {
       sprintf(U2, "U2 2 0 %02d %02d", track, sector);
