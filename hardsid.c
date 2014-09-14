@@ -13,7 +13,8 @@ static BYTE sids = 0;
 static WORD sid[4] = { 0xd400, 0xd400, 0xd400, 0xd400 };
 static BYTE regs[28];
 static BOOL opened = false;
-static WORD penalty = 0;
+
+//static WORD penalty = 0;
   
 static  void addSid(char *address) {
   if(sids < 4) {
@@ -71,10 +72,19 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
 }
 
 void DLLEXPORT InitHardSID_Mapper (void) {
-  for(int i=0; i<sids; i++) {
-    HardSID_Reset(i);
+  
+  if (xlink_ready()) {
+    opened = opened || xlink_stream_open();
+    
+    if (!opened) {
+      logger->warn("Failed to open xlink stream");
+    }
+  }
+  else {
+    logger->warn("C64 not ready");
   }
 }
+
 BYTE DLLEXPORT GetHardSIDCount (void) { 
   return sids;
 }
@@ -82,11 +92,17 @@ BYTE DLLEXPORT GetHardSIDCount (void) {
 void DLLEXPORT MuteHardSID_Line (BOOL mute) { }
 
 void DLLEXPORT WriteToHardSID (BYTE id, BYTE reg, BYTE data) { 
-  HardSID_Write(id, 0, reg, data);
+  if (opened) {
+    if(regs[reg] != data) {
+
+      xlink_stream_poke(sid[id] | reg, data);
+      regs[reg] = data;
+    }
+  }
 }
 
 BYTE DLLEXPORT ReadFromHardSID (BYTE id, BYTE reg) { 
-  return HardSID_Read(id, 0, reg);
+  return 0;
 }
 void DLLEXPORT SetDebug (BOOL enable) {
   
@@ -94,6 +110,8 @@ void DLLEXPORT SetDebug (BOOL enable) {
   
   logger->debug("SetDebug(%d)", enable);
 }
+
+/*
 
 // Version 2.00 Extensions
 WORD DLLEXPORT HardSID_Version (void) { 
@@ -141,14 +159,13 @@ void DLLEXPORT HardSID_Reset (BYTE id) {
 
 BYTE DLLEXPORT HardSID_Read (BYTE id, WORD cycles, WORD reg) { 
 
-  /*
-  BYTE value = 0;
+  // BYTE value = 0;
+  //
+  // if (opened) {
+  //   xlink_stream_peek(sid[id] | reg, &value); 
+  // }
+  // return value;
 
-  if (opened) {
-    xlink_stream_peek(sid[id] | reg, &value); 
-  }
-  return value;
-  */
   return 0;
 }
 
@@ -192,3 +209,4 @@ WORD DLLEXPORT GetDLLVersion (void) {
 void DLLEXPORT MuteHardSID (BYTE id, BYTE channel, BOOL mute) { }
 
 void DLLEXPORT MuteHardSIDAll (BYTE id, BOOL mute) { }
+*/

@@ -15,7 +15,8 @@ extern "C" {
   void DLLEXPORT WriteToHardSID     (BYTE id, BYTE reg, BYTE data);
   BYTE DLLEXPORT ReadFromHardSID    (BYTE id, BYTE reg);
   void DLLEXPORT SetDebug           (BOOL enable);
-
+  
+  /*
   // Version 2.00 Extensions
   WORD DLLEXPORT HardSID_Version   (void);
   BYTE DLLEXPORT HardSID_Devices   (void);
@@ -43,6 +44,8 @@ extern "C" {
   WORD DLLEXPORT GetDLLVersion (void);
   void DLLEXPORT MuteHardSID (BYTE id, BYTE channel, BOOL mute);
   void DLLEXPORT MuteHardSIDAll (BYTE id, BOOL mute);
+
+  */
 
 #ifdef __cplusplus
 }

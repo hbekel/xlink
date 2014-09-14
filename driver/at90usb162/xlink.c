@@ -52,7 +52,7 @@ void EVENT_USB_Device_ControlRequest(void) {
     case USB_WRITE:   Write(byte);   break;
     case USB_SEND:    Send(size);    break;
     case USB_RECEIVE: Receive(size); break;
-    case USB_BOOT:    Boot();       break;
+    case USB_BOOT:    Boot();        break;
     }
   }
 }
