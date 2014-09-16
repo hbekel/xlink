@@ -66,7 +66,7 @@ check:	lda start+1
 	bne no
 
 yes:	lda #$00
-	jmp push
+        beq push
 
 no:     lda #$01
 
