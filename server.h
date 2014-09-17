@@ -19,6 +19,7 @@
 .label jump        = $05
 .label run         = $06
 .label extend      = $07
+.label identify    = $fe
 }
 	
 .macro wait() { // Wait for handshake from PC (falling edge on FLAG <- Parport STROBE)

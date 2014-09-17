@@ -63,7 +63,7 @@ bootstrap.txt: tools/make-bootstrap bootstrap.asm
 	rm -v bootstrap.prg
 
 xlink-server.prg: server.h server.asm 
-	$(KASM) -o xlink-server.prg server.asm > /dev/null
+	$(KASM) -o xlink-server.prg server.asm
 
 xlink-kernal.rom: server.h kernal.asm
 	cp cbm/kernal-901227-03.rom xlink-kernal.rom && \

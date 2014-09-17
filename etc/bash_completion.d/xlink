@@ -9,7 +9,7 @@ function _xlink {
 
     local long_options="--help --version --level --device --address --skip --memory --bank"
     local short_options="-h -v -l -d -a -s -m -b"
-    local commands="help ready reset bootloader benchmark ping load save poke peek jump run backup restore verify"    
+    local commands="help ready reset bootloader benchmark ping load save poke peek jump run backup restore verify identify"    
     local loglevels="ERROR WARN INFO DEBUG TRACE" 
 
 

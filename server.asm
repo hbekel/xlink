@@ -1,4 +1,5 @@
-.pc = $c000
+.var address = $c000
+.pc = address
 
 .import source "server.h"
 
@@ -71,7 +72,11 @@ irq: {
 !next:	cpy #Command.extend
 	bne !next+
 	jmp extend
-	
+
+!next:	cpy #Command.identify
+	bne !next+
+	jmp identify
+        
 !next:	
 done:	jmp $ea31
 }
@@ -250,6 +255,40 @@ return: nop
 	jmp irq.done
 }
 
+//------------------------------------------------------------------------------
+
+identify: {
+	:wait()        // wait until PC has set its port to input
+	lda #$ff       // and set CIA2 port B to output
+	sta $dd03
+
+        lda #$10       // version 1.0
+        :write()
+
+        lda #$00       // C64
+        :write()
+
+        lda #$00       // RAM based server
+        :write()       
+
+        lda #<address
+        :write()
+
+        lda #>address
+        :write()
+
+        lda #<eos
+        :write()
+
+        lda #>eos
+        :write()        
+        
+done:   lda #$00   // reset CIA2 port B to input
+	sta $dd03
+        
+        jmp irq.done
+}
+        
 //------------------------------------------------------------------------------	
 	
 readHeader: {
@@ -275,3 +314,4 @@ write: {
 	:write()
 	rts
 }
+eos:    

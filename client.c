@@ -37,6 +37,7 @@
 #define COMMAND_PING       0x0f
 #define COMMAND_BOOTLOADER 0x10
 #define COMMAND_BENCHMARK  0x11
+#define COMMAND_IDENTIFY   0x12
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -73,6 +74,7 @@ char str2id(const char* arg) {
   if (strcmp(arg, "ping"      ) == 0) return COMMAND_PING;  
   if (strcmp(arg, "bootloader") == 0) return COMMAND_BOOTLOADER;  
   if (strcmp(arg, "benchmark" ) == 0) return COMMAND_BENCHMARK;  
+  if (strcmp(arg, "identify"  ) == 0) return COMMAND_IDENTIFY;  
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -106,6 +108,7 @@ char* id2str(const char id) {
   if (id == COMMAND_PING)       return (char*) "ping";  
   if (id == COMMAND_BOOTLOADER) return (char*) "bootloader";  
   if (id == COMMAND_BENCHMARK)  return (char*) "benchmark";  
+  if (id == COMMAND_IDENTIFY)   return (char*) "identify";  
   return (char*) "unknown";
 }
 
@@ -264,24 +267,25 @@ void command_free(Command* self) {
 //------------------------------------------------------------------------------
 int command_arity(Command* self) {
 
-  if (self->id == COMMAND_NONE)      return -1;
-  if (self->id == COMMAND_LOAD)      return 1;
-  if (self->id == COMMAND_SAVE)      return 1;
-  if (self->id == COMMAND_POKE)      return 1;
-  if (self->id == COMMAND_PEEK)      return 1;
-  if (self->id == COMMAND_JUMP)      return 1;
-  if (self->id == COMMAND_RUN)       return 1;
-  if (self->id == COMMAND_RESET)     return 0;
-  if (self->id == COMMAND_HELP)      return 1;
-  if (self->id == COMMAND_DOS)       return 0;
-  if (self->id == COMMAND_BACKUP)    return 1;
-  if (self->id == COMMAND_RESTORE)   return 1;
-  if (self->id == COMMAND_VERIFY)    return 1;
-  if (self->id == COMMAND_STATUS)    return 0;
-  if (self->id == COMMAND_READY)     return 0;
-  if (self->id == COMMAND_PING)      return 0;
+  if (self->id == COMMAND_NONE)       return -1;
+  if (self->id == COMMAND_LOAD)       return 1;
+  if (self->id == COMMAND_SAVE)       return 1;
+  if (self->id == COMMAND_POKE)       return 1;
+  if (self->id == COMMAND_PEEK)       return 1;
+  if (self->id == COMMAND_JUMP)       return 1;
+  if (self->id == COMMAND_RUN)        return 1;
+  if (self->id == COMMAND_RESET)      return 0;
+  if (self->id == COMMAND_HELP)       return 1;
+  if (self->id == COMMAND_DOS)        return 0;
+  if (self->id == COMMAND_BACKUP)     return 1;
+  if (self->id == COMMAND_RESTORE)    return 1;
+  if (self->id == COMMAND_VERIFY)     return 1;
+  if (self->id == COMMAND_STATUS)     return 0;
+  if (self->id == COMMAND_READY)      return 0;
+  if (self->id == COMMAND_PING)       return 0;
   if (self->id == COMMAND_BOOTLOADER) return 0;
-  if (self->id == COMMAND_BENCHMARK) return 0;
+  if (self->id == COMMAND_BENCHMARK)  return 0;
+  if (self->id == COMMAND_IDENTIFY)   return 0;
   return 0;
 
 }
@@ -925,6 +929,23 @@ int command_benchmark(Command* self) {
 
 //------------------------------------------------------------------------------
 
+int command_identify(Command *self) {
+  XLinkServerInfo server;
+  
+  if(xlink_identify(&server)) {
+
+    logger->info("%s %s-based server v%d.%d $%04X-$%04X (%d bytes)",
+                 server.machine == XLINK_MACHINE_C64 ? "C64" : "Unknown",
+                 server.type == XLINK_SERVER_TYPE_RAM ? "RAM" : "ROM",
+                 (server.version & 0xf0) >> 4, server.version & 0x0f,
+                 server.start, server.end, server.length);
+    return true;
+  }
+  return false;
+}
+
+//------------------------------------------------------------------------------
+
 int command_help(Command *self) {
 
   if (self->argc > 0) {
@@ -1174,24 +1195,25 @@ int command_execute(Command* self) {
 
   switch(self->id) {
 
-  case COMMAND_NONE       : result = command_none(self);      break;
-  case COMMAND_LOAD       : result = command_load(self);      break;
-  case COMMAND_SAVE       : result = command_save(self);      break;
-  case COMMAND_POKE       : result = command_poke(self);      break;
-  case COMMAND_PEEK       : result = command_peek(self);      break;
-  case COMMAND_JUMP       : result = command_jump(self);      break;
-  case COMMAND_RUN        : result = command_run(self);       break;
-  case COMMAND_RESET      : result = command_reset(self);     break;
-  case COMMAND_HELP       : result = command_help(self);      break;
-  case COMMAND_DOS        : result = command_dos(self);       break;
-  case COMMAND_BACKUP     : result = command_backup(self);    break;
-  case COMMAND_RESTORE    : result = command_restore(self);   break;
-  case COMMAND_VERIFY     : result = command_verify(self);    break;
-  case COMMAND_STATUS     : result = command_status(self);    break;
-  case COMMAND_READY      : result = command_ready(self);     break;
-  case COMMAND_PING       : result = command_ping(self);      break;
+  case COMMAND_NONE       : result = command_none(self);       break;
+  case COMMAND_LOAD       : result = command_load(self);       break;
+  case COMMAND_SAVE       : result = command_save(self);       break;
+  case COMMAND_POKE       : result = command_poke(self);       break;
+  case COMMAND_PEEK       : result = command_peek(self);       break;
+  case COMMAND_JUMP       : result = command_jump(self);       break;
+  case COMMAND_RUN        : result = command_run(self);        break;
+  case COMMAND_RESET      : result = command_reset(self);      break;
+  case COMMAND_HELP       : result = command_help(self);       break;
+  case COMMAND_DOS        : result = command_dos(self);        break;
+  case COMMAND_BACKUP     : result = command_backup(self);     break;
+  case COMMAND_RESTORE    : result = command_restore(self);    break;
+  case COMMAND_VERIFY     : result = command_verify(self);     break;
+  case COMMAND_STATUS     : result = command_status(self);     break;
+  case COMMAND_READY      : result = command_ready(self);      break;
+  case COMMAND_PING       : result = command_ping(self);       break;
   case COMMAND_BOOTLOADER : result = command_bootloader(self); break;
-  case COMMAND_BENCHMARK  : result = command_benchmark(self); break;
+  case COMMAND_BENCHMARK  : result = command_benchmark(self);  break;
+  case COMMAND_IDENTIFY   : result = command_identify(self);   break;
   }
   
   logger->leave();
@@ -1248,7 +1270,7 @@ void shell(void) {
 
   extern char **completion_matches();
 
-  static char* known_commands[18] = { 
+  static char* known_commands[19] = { 
     "help",
     "load", 
     "save",
@@ -1266,6 +1288,7 @@ void shell(void) {
     "ping",
     "bootloader",
     "benchmark",
+    "identify",
     NULL };
 
   char *dupstr(char *s) {

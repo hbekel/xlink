@@ -100,6 +100,10 @@ irq: {
 	bne !next+
 	jmp extend
 
+!next:	cpy #Command.identify
+	bne !next+
+	jmp identify
+        
 !next:
 done:	jsr $ffea
 	jmp $ea34
@@ -389,7 +393,41 @@ eof:
 }
 
 //------------------------------------------------------------------------------	
-	
+
+identify: {
+	:wait()        // wait until PC has set its port to input
+	lda #$ff       // and set CIA2 port B to output
+	sta $dd03
+
+        lda #$10       // version 1.0
+        :write()
+
+        lda #$00       // C64
+        :write()
+
+        lda #$01       // ROM based server
+        :write()       
+
+        lda #<irq
+        :write()
+
+        lda #>irq
+        :write()
+
+        lda #<eos
+        :write()
+
+        lda #>eos
+        :write()        
+        
+done:   lda #$00   // reset CIA2 port B to input
+	sta $dd03
+        
+        jmp irq.done
+eof:    
+}
+
+//------------------------------------------------------------------------------	                
 memoryCheck: { // relocated original memory check routine 
 
 high:	inc $c2
@@ -422,6 +460,8 @@ done:  	tya
 eof:	
 }
 
+eos:   
+        
 //------------------------------------------------------------------------------	
 	
 .pc = $fc92 // end of kernal "Write Tape Leader" routine
@@ -464,9 +504,9 @@ eof:
 .print patch(jump, jump.eof)
 .print patch(run, run.eof)
 .print patch(extend, extend.eof)
+.print patch(identify, identify.eof)
 .print patch(memoryCheck, memoryCheck.eof)
 
-//------------------------------------------------------------------------------		
-	
+//------------------------------------------------------------------------------			
 .print "free: 0x" + toHexString(irq.eof) + "-0xf5ab" + ": " + toIntString($f5ab-irq.eof) + " bytes"
 .print "free: 0x" + toHexString(memoryCheck.eof) + "-0xfc92" + " " + toIntString($fc92-memoryCheck.eof) + " bytes"

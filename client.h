@@ -65,6 +65,7 @@ int command_wait(Command* self);
 int command_help(Command* self);
 int command_bootstrap(Command *self);
 int command_benchmark(Command *self);
+int command_identify(Command *self);
 void command_free(Command* self);
 
 #if windows

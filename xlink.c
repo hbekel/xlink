@@ -18,6 +18,12 @@ extern Driver* driver;
 
 //------------------------------------------------------------------------------
 
+unsigned char xlink_version(void) {
+  return XLINK_VERSION;
+}
+
+//------------------------------------------------------------------------------
+
 void libxlink_initialize() {
 
 #if linux
@@ -92,6 +98,48 @@ char* xlink_get_device(void) {
 
 bool xlink_has_device(void) {
   return driver->ready();
+}
+
+//------------------------------------------------------------------------------
+
+bool xlink_identify(XLinkServerInfo* server) {
+
+  char data[7];
+
+  if(driver->open()) {
+    
+    if(!driver->ping()) {
+      logger->error("no response from C64");
+      driver->close();
+      return false;
+    }
+
+    driver->output();
+    driver->send((char []) {XLINK_COMMAND_IDENTIFY}, 1);
+    
+    driver->input();
+    driver->strobe();
+    
+    driver->receive(data, 7);
+
+    driver->close();
+
+    server->version = data[0];
+    server->machine = data[1];
+    server->type = data[2];
+    
+    server->start = 0;
+    server->start |= data[3];
+    server->start |= data[4] << 8;
+
+    server->end = 0;
+    server->end |= data[5];
+    server->end |= data[6] << 8;
+    
+    server->length = server->end - server->start;
+    return true;
+  }
+  return false;
 }
 
 //------------------------------------------------------------------------------
