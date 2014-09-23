@@ -1415,6 +1415,8 @@ void usage(void) {
   printf("          ping                         : check if the server is available\n");
   printf("          reset                        : reset C64 (only if using reset circuit)\n");
   printf("          ready                        : try to make sure the server is ready\n");
+  printf("          identify                     : identify remote machine and server\n");
+  printf("\n");
   printf("          load  [<opts>] <file>        : load file into C64 memory\n");
   printf("          save  [<opts>] <file>        : save C64 memory to file\n");
   printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
@@ -1599,7 +1601,16 @@ int help(int id) {
     printf("Write 32k of random data into C64 memory, then read it back and compare it\n");
     printf("to the original data while measuring the achieved transfer rates.\n");
     printf("\n");
-    
+    break;
+
+  case COMMAND_IDENTIFY:
+    printf("Usage: identify\n");
+    printf("\n");
+    printf("Query information about the remote server. Reports machine type, server\n");
+    printf("version, server type (RAM- or ROM-based) and server location in memory.\n");
+    printf("\n");
+    break;
+
   }
   return true;
 }
