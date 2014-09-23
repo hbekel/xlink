@@ -1,0 +1,94 @@
+Cmp-Mod V01 Created by CvPcb (2013-07-07 BZR 4022)-stable date = 23.09.2014 09:19:15
+
+BeginCmp
+TimeStamp = /542118E5;
+Reference = C1;
+ValeurCmp = 18pF;
+IdModule  = C1;
+EndCmp
+
+BeginCmp
+TimeStamp = /542118FE;
+Reference = C2;
+ValeurCmp = 18pF;
+IdModule  = C1;
+EndCmp
+
+BeginCmp
+TimeStamp = /54211860;
+Reference = C3;
+ValeurCmp = 1uF;
+IdModule  = C1;
+EndCmp
+
+BeginCmp
+TimeStamp = /542119EC;
+Reference = C4;
+ValeurCmp = 100nF;
+IdModule  = C1;
+EndCmp
+
+BeginCmp
+TimeStamp = /54211A1C;
+Reference = C5;
+ValeurCmp = 4.7nF;
+IdModule  = C1;
+EndCmp
+
+BeginCmp
+TimeStamp = /5421175B;
+Reference = IC1;
+ValeurCmp = AT90USB162-A;
+IdModule  = TQFP32;
+EndCmp
+
+BeginCmp
+TimeStamp = /5421168E;
+Reference = J1;
+ValeurCmp = USERPORT;
+IdModule  = USERPORT;
+EndCmp
+
+BeginCmp
+TimeStamp = /54211803;
+Reference = P1;
+ValeurCmp = USB;
+IdModule  = USB_A;
+EndCmp
+
+BeginCmp
+TimeStamp = /54211829;
+Reference = R1;
+ValeurCmp = 22;
+IdModule  = R1;
+EndCmp
+
+BeginCmp
+TimeStamp = /5421183B;
+Reference = R2;
+ValeurCmp = 22;
+IdModule  = R1;
+EndCmp
+
+BeginCmp
+TimeStamp = /54211A2B;
+Reference = R3;
+ValeurCmp = 1M;
+IdModule  = R1;
+EndCmp
+
+BeginCmp
+TimeStamp = /54211D29;
+Reference = SW1;
+ValeurCmp = DIPSW2;
+IdModule  = DIPSW2;
+EndCmp
+
+BeginCmp
+TimeStamp = /542118AA;
+Reference = X1;
+ValeurCmp = 8Mhz;
+IdModule  = HC-49V;
+EndCmp
+
+EndListe

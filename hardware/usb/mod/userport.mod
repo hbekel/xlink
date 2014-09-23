@@ -1,0 +1,208 @@
+PCBNEW-LibModule-V1  29.01.2014 11:13:10
+# encoding utf-8
+Units mm
+$INDEX
+PLANE
+USERPORT
+$EndINDEX
+$MODULE PLANE
+Po 0 0 0 15 52E8D431 00000000 ~~
+Li PLANE
+Sc 0
+AR 
+Op 0 0 0
+T0 0 2.54 1 1 0 0.15 N I 21 N "PLANE"
+T1 0 -3.81 1 1 0 0.15 N I 21 N "VAL**"
+$PAD
+Sh "1" C 1 1 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po 0 0
+$EndPAD
+$PAD
+Sh "2" C 1 1 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po 0 0
+$EndPAD
+$EndMODULE PLANE
+$MODULE USERPORT
+Po 0 0 0 15 52E8B607 00000000 ~~
+Li USERPORT
+Sc 0
+AR 
+Op 0 0 0
+T0 0 1.27 1 1 0 0.15 N V 21 N "USERPORT"
+T1 0 2.54 1 1 0 0.15 N I 21 N "VAL**"
+$PAD
+Sh "1" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po 23.76 -2.69
+$EndPAD
+$PAD
+Sh "2" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po 19.8 -2.69
+$EndPAD
+$PAD
+Sh "3" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po 15.84 -2.69
+$EndPAD
+$PAD
+Sh "4" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po 11.88 -2.69
+$EndPAD
+$PAD
+Sh "5" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po 7.92 -2.69
+$EndPAD
+$PAD
+Sh "6" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po 3.96 -2.69
+$EndPAD
+$PAD
+Sh "7" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po 0 -2.69
+$EndPAD
+$PAD
+Sh "8" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po -3.96 -2.69
+$EndPAD
+$PAD
+Sh "9" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po -7.92 -2.69
+$EndPAD
+$PAD
+Sh "10" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po -11.88 -2.69
+$EndPAD
+$PAD
+Sh "11" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po -15.84 -2.69
+$EndPAD
+$PAD
+Sh "12" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00008000
+Ne 0 ""
+Po -19.8 -2.69
+$EndPAD
+$PAD
+Sh "A" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po 23.76 -2.69
+$EndPAD
+$PAD
+Sh "B" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po 19.8 -2.69
+$EndPAD
+$PAD
+Sh "C" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po 15.84 -2.69
+$EndPAD
+$PAD
+Sh "D" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po 11.88 -2.69
+$EndPAD
+$PAD
+Sh "E" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po 7.92 -2.69
+$EndPAD
+$PAD
+Sh "F" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po 3.96 -2.69
+$EndPAD
+$PAD
+Sh "H" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po 0 -2.69
+$EndPAD
+$PAD
+Sh "J" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po -3.96 -2.69
+$EndPAD
+$PAD
+Sh "K" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po -7.92 -2.69
+$EndPAD
+$PAD
+Sh "L" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po -11.88 -2.69
+$EndPAD
+$PAD
+Sh "M" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po -15.84 -2.69
+$EndPAD
+$PAD
+Sh "N" R 2 5 0 0 0
+Dr 0 0 0
+At CONN N 00000001
+Ne 0 ""
+Po -19.8 -2.69
+$EndPAD
+$EndMODULE USERPORT
+$EndLIBRARY
