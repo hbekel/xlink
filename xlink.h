@@ -3,18 +3,17 @@
 
 #include <stdbool.h>
 
-#define XLINK_COMMAND_LOAD     0x01
-#define XLINK_COMMAND_SAVE     0x02
-#define XLINK_COMMAND_POKE     0x03
-#define XLINK_COMMAND_PEEK     0x04
-#define XLINK_COMMAND_JUMP     0x05
-#define XLINK_COMMAND_RUN      0x06
-#define XLINK_COMMAND_EXTEND   0x07
-#define XLINK_COMMAND_IDENTIFY 0xfe
-
+#define XLINK_COMMAND_LOAD         0x01
+#define XLINK_COMMAND_SAVE         0x02
+#define XLINK_COMMAND_POKE         0x03
+#define XLINK_COMMAND_PEEK         0x04
+#define XLINK_COMMAND_JUMP         0x05
+#define XLINK_COMMAND_RUN          0x06
+#define XLINK_COMMAND_EXTEND       0x07
 #define XLINK_COMMAND_STREAM_PEEK  0x08
 #define XLINK_COMMAND_STREAM_POKE  0x09
-#define XLINK_COMMAND_STREAM_CLOSE 0x0a 
+#define XLINK_COMMAND_STREAM_CLOSE 0x0a
+#define XLINK_COMMAND_IDENTIFY     0xfe 
 
 #define XLINK_VERSION 0x10
 
@@ -31,7 +30,7 @@ typedef struct {
   unsigned char type;     // XLINK_SERVER_TYPE_{RAM|ROM}
   unsigned short start;   // server start address
   unsigned short end;     // server end address
-  unsigned short length;
+  unsigned short length;  // server code length
 } XLinkServerInfo;
 
 #ifdef __cplusplus
@@ -49,10 +48,10 @@ extern "C" {
 
   bool xlink_identify(XLinkServerInfo*);
 
-  bool xlink_load(unsigned char memory, unsigned char bank, 
+  bool xlink_save(unsigned char memory, unsigned char bank, 
                   int start, int end, char* data, int size);
 
-  bool xlink_save(unsigned char memory, unsigned char bank, 
+  bool xlink_load(unsigned char memory, unsigned char bank, 
                   int start, int end, char* data, int size);
 
   bool xlink_peek(unsigned char memory, unsigned char bank, 
