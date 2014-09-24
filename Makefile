@@ -29,7 +29,7 @@ any: server kernal bootstrap
 linux: xlink
 win32: xlink.exe hardsid.dll
 server: xlink-server.prg
-kernal: cbm/kernal-901227-03.rom xlink-kernal.rom
+kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.txt
 
 libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
@@ -66,7 +66,7 @@ xlink-server.prg: server.h server.asm
 	$(KASM) -o xlink-server.prg server.asm
 
 xlink-kernal.rom: server.h kernal.asm
-	cp cbm/kernal-901227-03.rom xlink-kernal.rom && \
+	cp commodore/kernal-901227-03.rom xlink-kernal.rom && \
 	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
 hardsid.dll: xlink.dll hardsid.h hardsid.c util.h util.c
