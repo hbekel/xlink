@@ -1607,7 +1607,7 @@ int help(int id) {
     printf("Usage: identify\n");
     printf("\n");
     printf("Query information about the remote server. Reports machine type, server\n");
-    printf("version, server type (RAM- or ROM-based) and server location in memory.\n");
+    printf("version, server type (RAM- or ROM-based), memory location and size.\n");
     printf("\n");
     break;
 

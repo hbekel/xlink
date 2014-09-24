@@ -203,10 +203,11 @@ bool xlink_bootloader(void) {
 //------------------------------------------------------------------------------
 
 bool xlink_load(unsigned char memory, 
-	       unsigned char bank, 
-	       int start, 
-	       int end, 
-	       char* data, int size) {
+		unsigned char bank, 
+		int start, 
+		int end, 
+		char* data, 
+		int size) {
   
   logger->enter("xlink_load");
 
@@ -238,10 +239,11 @@ bool xlink_load(unsigned char memory,
 //------------------------------------------------------------------------------
 
 bool xlink_save(unsigned char memory, 
-	       unsigned char bank, 
-	       int start, 
-	       int end, 
-	       char* data, int size) {
+		unsigned char bank, 
+		int start, 
+		int end, 
+		char* data, 
+		int size) {
 
   if(driver->open()) {
 
@@ -268,7 +270,10 @@ bool xlink_save(unsigned char memory,
 
 //------------------------------------------------------------------------------
 
-bool xlink_peek(unsigned char memory, unsigned char bank, int address, unsigned char* value) {
+bool xlink_peek(unsigned char memory, 
+		unsigned char bank, 
+		int address, 
+		unsigned char* value) {
   
   if(driver->open()) {
   
@@ -294,7 +299,10 @@ bool xlink_peek(unsigned char memory, unsigned char bank, int address, unsigned 
 
 //------------------------------------------------------------------------------
 
-bool xlink_poke(unsigned char memory, unsigned char bank, int address, unsigned char value) {
+bool xlink_poke(unsigned char memory, 
+		unsigned char bank, 
+		int address, 
+		unsigned char value) {
 
   if(driver->open()) {
   
@@ -316,7 +324,9 @@ bool xlink_poke(unsigned char memory, unsigned char bank, int address, unsigned 
 
 //------------------------------------------------------------------------------
 
-bool xlink_jump(unsigned char memory, unsigned char bank, int address) {
+bool xlink_jump(unsigned char memory, 
+		unsigned char bank, 
+		int address) {
 
     // jump address is send MSB first (big-endian)    
 
@@ -408,7 +418,6 @@ bool xlink_drive_status(char* status) {
 
       int i = 0;
 
-      //FIXME: possibly infinite loop, add another ack from server before entering?
       while(true) {
 
         driver->receive((char *) &byte, 1);
@@ -546,6 +555,8 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
   return result;
 }
 
+//------------------------------------------------------------------------------
+
 bool xlink_stream_open() {
 
   Extension *stream = EXTENSION_STREAM; 
@@ -555,6 +566,8 @@ bool xlink_stream_open() {
   return result;  
 }
 
+//------------------------------------------------------------------------------
+
 bool xlink_stream_poke(int address, unsigned char value) {
   
   driver->output();
@@ -562,6 +575,8 @@ bool xlink_stream_poke(int address, unsigned char value) {
   driver->input(); 
   return true;
 }
+
+//------------------------------------------------------------------------------
 
 bool xlink_stream_peek(int address, unsigned char* value) {
 
@@ -577,6 +592,8 @@ bool xlink_stream_peek(int address, unsigned char* value) {
   return true;
 }
 
+//------------------------------------------------------------------------------
+
 bool xlink_stream_close(void) {
 
   driver->output();  
@@ -586,5 +603,7 @@ bool xlink_stream_close(void) {
   driver->close();
   return true;
 }
+
+//------------------------------------------------------------------------------
 
 
