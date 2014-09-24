@@ -1,8 +1,7 @@
-.var address = $c000
-.pc = address
-
 .import source "server.h"
 
+.pc = Server.start
+	
 //------------------------------------------------------------------------------
 	
 install: {
@@ -262,25 +261,25 @@ identify: {
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 
-        lda #$10       // version 1.0
+        lda #Server.version   
         :write()
 
-        lda #$00       // C64
+        lda #Server.machine
         :write()
 
-        lda #$00       // RAM based server
+        lda #Server.type
         :write()       
 
-        lda #<address
+        lda #<Server.start
         :write()
 
-        lda #>address
+        lda #>Server.start
         :write()
 
-        lda #<eos
+        lda #<Server.end
         :write()
 
-        lda #>eos
+        lda #>Server.end
         :write()        
         
 done:   lda #$00   // reset CIA2 port B to input
@@ -314,4 +313,17 @@ write: {
 	:write()
 	rts
 }
-eos:    
+
+//------------------------------------------------------------------------------	
+	
+.namespace Server {
+.label start   = $c000
+.label version = $10
+.label type    = $00 // 0 = RAM, 1 = ROM
+.label machine = $00 // 0 = C64
+.label end     = *
+}
+
+//------------------------------------------------------------------------------	
+
+

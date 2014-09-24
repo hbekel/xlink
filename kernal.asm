@@ -399,25 +399,25 @@ identify: {
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 
-        lda #$10       // version 1.0
+        lda #Server.version
         :write()
 
-        lda #$00       // C64
+        lda #Server.machine
         :write()
 
-        lda #$01       // ROM based server
+        lda #Server.type
         :write()       
 
-        lda #<irq
+        lda #<Server.start
         :write()
 
-        lda #>irq
+        lda #>Server.start
         :write()
 
-        lda #<eos
+        lda #<Server.end
         :write()
 
-        lda #>eos
+        lda #>Server.end
         :write()        
         
 done:   lda #$00   // reset CIA2 port B to input
@@ -460,8 +460,16 @@ done:  	tya
 eof:	
 }
 
-eos:   
-        
+//------------------------------------------------------------------------------	
+	
+.namespace Server {
+.label start   = irq
+.label version = $10
+.label type    = $01 // 0 = RAM, 1 = ROM
+.label machine = $00 // 0 = C64
+.label end     = *
+}
+	
 //------------------------------------------------------------------------------	
 	
 .pc = $fc92 // end of kernal "Write Tape Leader" routine
