@@ -59,19 +59,6 @@ typedef struct {
   void (*free) (void);
 } Logger;
 
-void _logger_set(char *level);
-void _logger_enter(char *context);
-void _logger_leave(void);
-void _logger_suspend(void);
-void _logger_resume(void);
-void _logger_log(int level, char *fmt, va_list ap);
-void _logger_error(char *fmt, ...);
-void _logger_warn(char *fmt, ...);
-void _logger_info(char *fmt, ...);
-void _logger_debug(char *fmt, ...);
-void _logger_trace(char *fmt, ...);
-void _logger_free(void);
-
 extern Logger* logger;
 
 //------------------------------------------------------------------------------

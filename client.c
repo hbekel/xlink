@@ -989,14 +989,16 @@ int command_dos(Command *self) {
 
 //------------------------------------------------------------------------------
 
+static bool read_sector(Sector *sector) {
+  printf("\rreading track %02d, sector %02d", sector->track, sector->number); fflush(stdout);    
+  
+  return xlink_sector_read(sector->track, sector->number, sector->bytes); 
+}
+
+//------------------------------------------------------------------------------
+
 int command_backup(Command *self) {
-  
-  bool read_sector(Sector *sector) {
-    printf("\rreading track %02d, sector %02d", sector->track, sector->number); fflush(stdout);    
     
-    return xlink_sector_read(sector->track, sector->number, sector->bytes); 
-  }
-  
   int result = true;
   Disk* disk;
 
@@ -1025,15 +1027,17 @@ int command_backup(Command *self) {
 
 //------------------------------------------------------------------------------
 
+static bool write_sector(Sector *sector) {
+
+  printf("\rwriting track %02d, sector %02d", sector->track, sector->number);
+  fflush(stdout);
+  
+  return xlink_sector_write(sector->track, sector->number, sector->bytes); 
+}
+
+//------------------------------------------------------------------------------
+
 int command_restore(Command *self) {
-
-  bool write_sector(Sector *sector) {
-
-    printf("\rwriting track %02d, sector %02d", sector->track, sector->number);
-    fflush(stdout);
-
-    return xlink_sector_write(sector->track, sector->number, sector->bytes); 
-  }
 
   int result = true;
   
@@ -1087,33 +1091,37 @@ int command_restore(Command *self) {
 
 //------------------------------------------------------------------------------
 
+static bool verify_sector(Sector* expected) {
+  
+  Sector* actual = sector_new(expected->track, expected->number);
+  int result = false;
+  
+  printf("\rverifying track %02d, sector %02d...", 
+	 actual->track, actual->number); fflush(stdout);
+  
+  if(!xlink_sector_read(actual->track, actual->number, actual->bytes)) {
+    goto done;
+  }
+  result = sector_equals(expected, actual);
+  
+ done:
+  sector_free(actual);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+
+static bool verify_sector_skipping_track_18(Sector* expected) {
+  
+  if(expected->track == 18) 
+    return true;
+  
+  return verify_sector(expected);
+}
+
+//------------------------------------------------------------------------------
+
 int command_verify(Command *self) {
-
-  bool verify_sector(Sector* expected) {
-
-    Sector* actual = sector_new(expected->track, expected->number);
-    int result = false;
-
-    printf("\rverifying track %02d, sector %02d...", 
-	   actual->track, actual->number); fflush(stdout);
-
-    if(!xlink_sector_read(actual->track, actual->number, actual->bytes)) {
-      goto done;
-    }
-    result = sector_equals(expected, actual);
-
-  done:
-    sector_free(actual);
-    return result;
-  }
-
-  bool verify_sector_skipping_track_18(Sector* expected) {
-
-    if(expected->track == 18) 
-      return true;
-
-    return verify_sector(expected);
-  }
 
   Disk* disk;
   int result = true;
@@ -1266,6 +1274,66 @@ int main(int argc, char **argv) {
 //------------------------------------------------------------------------------
 
 #if linux
+
+static char *dupstr(char *s) {
+  char *r = calloc(strlen(s) + 1, sizeof(char));
+  strncpy(r, s, strlen(s));
+  return r;
+}
+
+//------------------------------------------------------------------------------
+
+static void trim(char * const a)
+{
+  char *p = a, *q = a;
+  while (isspace(*q)) ++q;
+  while (*q) *p++ = *q++;
+  *p = '\0';
+  while (p > a && isspace(*--p)) *p = '\0';
+}
+
+//------------------------------------------------------------------------------
+
+static char *command_generator(char *text, int state) {
+  static int list_index, len;
+  char *name;
+  
+  if (!state) {
+    list_index = 0;
+    len = strlen(text);
+  }
+  while ((name = known_commands[list_index])) {
+    list_index++;
+    
+    if (strncmp(name, text, len) == 0)
+      return dupstr(name);
+  }
+  return ((char *)NULL);
+}
+
+//------------------------------------------------------------------------------
+
+static char **shell_completion(char *text, int start, int end) {
+  return (char **) completion_matches(text, command_generator);
+}
+
+//------------------------------------------------------------------------------
+
+static int shell_command(char *line) {
+  if(strcmp(line, "help") == 0) {
+    usage();
+    return true;
+  }
+  
+  if((strcmp(line, "quit") == 0) ||
+     (strcmp(line, "exit") == 0)) {
+    exit(EXIT_SUCCESS);
+  }
+  return false;
+}
+
+//------------------------------------------------------------------------------
+
 void shell(void) {
 
   extern char **completion_matches();
@@ -1290,55 +1358,6 @@ void shell(void) {
     "benchmark",
     "identify",
     NULL };
-
-  char *dupstr(char *s) {
-    char *r = calloc(strlen(s) + 1, sizeof(char));
-    strncpy(r, s, strlen(s));
-    return r;
-  }
-  
-  void trim(char * const a)
-  {
-    char *p = a, *q = a;
-    while (isspace(*q)) ++q;
-    while (*q) *p++ = *q++;
-    *p = '\0';
-    while (p > a && isspace(*--p)) *p = '\0';
-  }
-
-  char *command_generator(char *text, int state) {
-    static int list_index, len;
-    char *name;
-    
-    if (!state) {
-      list_index = 0;
-      len = strlen(text);
-    }
-    while ((name = known_commands[list_index])) {
-      list_index++;
-      
-      if (strncmp(name, text, len) == 0)
-        return dupstr(name);
-    }
-    return ((char *)NULL);
-  }
-  
-  char **shell_completion(char *text, int start, int end) {
-    return (char **) completion_matches(text, command_generator);
-  }
-
-  int shell_command(char *line) {
-    if(strcmp(line, "help") == 0) {
-      usage();
-      return true;
-    }
-    
-    if((strcmp(line, "quit") == 0) ||
-       (strcmp(line, "exit") == 0)) {
-      exit(EXIT_SUCCESS);
-    }
-    return false;
-  }
   
   char *line;
   char *prompt = "xlink> ";

@@ -61,13 +61,13 @@ void stringlist_free(StringList *self) {
 #define VA_START va_list ap; va_start(ap, fmt)
 #define VA_END va_end(ap)
 
-void _logger_print_context() {
+static void _logger_print_context() {
   if(logger->context != NULL && logger->context->size > 0) {
     printf("%s: ", stringlist_last(logger->context)); 
   }
 }
 
-void _logger_print_level(int level) {
+static void _logger_print_level(int level) {
   switch(level) {
 
   case LOGLEVEL_ERROR:
@@ -92,7 +92,7 @@ void _logger_print_level(int level) {
   }
 }
 
-void _logger_log(int level, char *fmt, va_list ap) {
+static void _logger_log(int level, char *fmt, va_list ap) {
 
   char format[256];
   int count = 0;
@@ -173,7 +173,7 @@ void _logger_log(int level, char *fmt, va_list ap) {
   fflush(stdout);
 }
 
-void _logger_set(char* level) {
+static void _logger_set(char* level) {
   
   int current_level = logger->level;
 
@@ -189,7 +189,7 @@ void _logger_set(char* level) {
   }
 }
 
-void _logger_enter(char *context) {
+static void _logger_enter(char *context) {
 
   if(logger->context == NULL) {
     logger->context = stringlist_new();
@@ -198,26 +198,26 @@ void _logger_enter(char *context) {
   logger->trace("enter");
 };
 
-void _logger_leave() { 
+static void _logger_leave() { 
   stringlist_remove_last(logger->context);
   logger->trace("return");
 };
 
-void _logger_suspend() {
+static void _logger_suspend() {
   logger->enabled = false;
 }
 
-void _logger_resume() {
+static void _logger_resume() {
   logger->enabled = true;
 }
 
-void _logger_error(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_ERROR, fmt, ap); VA_END; }
-void _logger_warn(char *fmt, ...)  { VA_START; logger->log(LOGLEVEL_WARN,  fmt, ap); VA_END; }
-void _logger_info(char *fmt, ...)  { VA_START; logger->log(LOGLEVEL_INFO,  fmt, ap); VA_END; }
-void _logger_debug(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_DEBUG, fmt, ap); VA_END; }
-void _logger_trace(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_TRACE, fmt, ap); VA_END; }
+static void _logger_error(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_ERROR, fmt, ap); VA_END; }
+static void _logger_warn(char *fmt, ...)  { VA_START; logger->log(LOGLEVEL_WARN,  fmt, ap); VA_END; }
+static void _logger_info(char *fmt, ...)  { VA_START; logger->log(LOGLEVEL_INFO,  fmt, ap); VA_END; }
+static void _logger_debug(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_DEBUG, fmt, ap); VA_END; }
+static void _logger_trace(char *fmt, ...) { VA_START; logger->log(LOGLEVEL_TRACE, fmt, ap); VA_END; }
 
-void _logger_free() {
+static void _logger_free() {
   if(logger->context != NULL) 
     stringlist_free(logger->context);
 }

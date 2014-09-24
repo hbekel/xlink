@@ -42,11 +42,11 @@ extern "C" {
   char* xlink_get_device(void);
   bool xlink_has_device(void);
 
+  bool xlink_identify(XLinkServerInfo*);
+
   bool xlink_ping(void);
   bool xlink_reset(void);
   bool xlink_ready(void);
-
-  bool xlink_identify(XLinkServerInfo*);
 
   bool xlink_save(unsigned char memory, unsigned char bank, 
                   int start, int end, char* data, int size);
