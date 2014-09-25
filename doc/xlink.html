@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>xlink</title>
+<link rel="stylesheet" href="https://stackedit.io/res-min/themes/base.css" />
+<script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML"></script>
+</head>
+<body><div class="container"><h1 id="xlink-c64-data-transfer-and-control-system">Xlink – C64 Data Transfer and Control System </h1>
+
+<p><div class="toc"><div class="toc">
+<ul>
+<li><a href="#xlink-c64-data-transfer-and-control-system">Xlink – C64 Data Transfer and Control System </a><ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#hardware">Hardware</a><ul>
+<li><a href="#usb-adapter">USB Adapter</a></li>
+<li><a href="#parallel-port-cable">Parallel Port Cable</a><ul>
+<li><a href="#reset-circuit">Reset Circuit</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#software">Software</a><ul>
+<li><a href="#downloads">Downloads</a></li>
+<li><a href="#installation">Installation</a><ul>
+<li><a href="#client-installation">Client Installation</a></li>
+<li><a href="#server-installation">Server Installation</a><ul>
+<li><a href="#manually-bootstrapping-the-server">Manually bootstrapping the server</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#building-from-source">Building from source</a></li>
+</ul>
+</li>
+<li><a href="#usage">Usage</a><ul>
+<li><a href="#getting-started">Getting started</a></li>
+<li><a href="#client-documentation">Client documentation</a></li>
+<li><a href="#library-documentation">Library documentation</a></li>
+</ul>
+</li>
+<li><a href="#license">License</a></li>
+<li><a href="#imprint">Imprint</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</p>
+
+
+
+<h2 id="overview">Overview</h2>
+
+<p>Xlink is a data transfer and control system for the Commodore 64.</p>
+
+<p>The Commodore 64 is connected to a PC via a simple <a href="#parallel-port-cable">parallel port cable</a> or via a custom build <a href="#usb-adapter">USB adapter</a>.  A <a href="#client-documentation">command-line client</a> is used on the PC to transfer data to and from C64 memory, run programs on the C64, write or read from an attached disk drive or to initiate a hardware reset.</p>
+
+<p>An interrupt-driven server on the Commode 64 listens to and executes the commands send by the client. The server can be temporarily loaded on the C64, or it can be permanently installed using a customized kernal rom. The latter has the advantage of being instantly available after power-up or reset, which makes the Xlink system well suited for easy cross development using a PC and a real Commodore 64.</p>
+
+<p>The implementation of the underlying functionality is distributed as a <a href="#library-documentation">shared library</a>, making the functionality provided by Xlink readily available for use in other programs.</p>
+
+<p>The Xlink client software and library is supported under Linux and Windows. </p>
+
+
+
+<h2 id="hardware">Hardware</h2>
+
+
+
+<h3 id="usb-adapter">USB Adapter</h3>
+
+<p><a href="adapter-schematics.pdf">Schematics</a> and pcb layout files in KiCad format are included in the source tarball.</p>
+
+<p>The USB adapter can be purchased as a kit for €20 (excluding shipping costs). The kit includes the pcb (with the microcontroller already mounted and programmed) and all the necessary parts and instructions for assembly (including a userport connector and a USB cable). You should be comfortable with soldering through-hole components. </p>
+
+<p>To order a kit, just drop me a line at <a href="mailto:h.bekel@googlemail.com">h.bekel@googlemail.com</a>.</p>
+
+
+
+<h3 id="parallel-port-cable">Parallel Port Cable</h3>
+
+<p>This is a simple 8-bit parallel transfer cable connecting the PC Parallel Port to the C64 userport:</p>
+
+<table>
+<thead>
+<tr>
+  <th>PC Parallel Port</th>
+  <th>C64 Userport</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>GND (18-25)</td>
+  <td>GND (1, 12, A, N)</td>
+</tr>
+<tr>
+  <td>D0 (2)</td>
+  <td>PB0 (C)</td>
+</tr>
+<tr>
+  <td>D1 (3)</td>
+  <td>PB1 (D)</td>
+</tr>
+<tr>
+  <td>D2 (4)</td>
+  <td>PB2 (E)</td>
+</tr>
+<tr>
+  <td>D3 (5)</td>
+  <td>PB3 (F)</td>
+</tr>
+<tr>
+  <td>D4 (6)</td>
+  <td>PB4 (H)</td>
+</tr>
+<tr>
+  <td>D5 (7)</td>
+  <td>PB5 (J)</td>
+</tr>
+<tr>
+  <td>D6 (8)</td>
+  <td>PB6 (K)</td>
+</tr>
+<tr>
+  <td>D7 (9)</td>
+  <td>PB7 (L)</td>
+</tr>
+<tr>
+  <td>BUSY (11)</td>
+  <td>PA2 (M)</td>
+</tr>
+<tr>
+  <td>STROBE (1)</td>
+  <td>/FLAG2 (B)</td>
+</tr>
+</tbody></table>
+
+
+<p>A shielded cable is recommended. The cable shield should be connected to ground on both sides. A 0.1uF capacitor between shield and ground at the c64 side can also help to reduce noise. Improper shielding will most likely cause transfer errors.</p>
+
+<p><strong>WARNING</strong>: </p>
+
+<p>There is no electrical protection of any kind. The parallel port pins are directly connected to port B of CIA2. </p>
+
+<p><strong>Always power down both the PC and C64 before inserting/removing the cable. Turn off the C64 during boot, reboot or shutdown of the PC.</strong></p>
+
+
+
+<h4 id="reset-circuit">Reset Circuit</h4>
+
+<p>This circuit is required for the parallel port cable in order to perform a hardware reset at the C64 userport:</p>
+
+<p><img src="reset.png" alt="reset circuit schematics" title=""></p>
+
+<table>
+<thead>
+<tr>
+  <th>Line</th>
+  <th>Port</th>
+  <th>Pin</th>
+</tr>
+</thead>
+<tbody><tr>
+  <td>INIT</td>
+  <td>Parallel Port</td>
+  <td>16</td>
+</tr>
+<tr>
+  <td>RESET</td>
+  <td>Userport</td>
+  <td>3</td>
+</tr>
+<tr>
+  <td>VCC</td>
+  <td>Userport</td>
+  <td>2</td>
+</tr>
+<tr>
+  <td>GND</td>
+  <td>Userport</td>
+  <td>1, 12, A, N</td>
+</tr>
+</tbody></table>
+
+
+<p><strong>NOTE</strong>: The above circuit holds the C64 RESET line low as long as the parallel port INIT line is held low. The parallel port lines themselves may have been left in an unknown/random state after the PC wakes up from suspend or after the port has been accessed by another program. This means that if the INIT line happens to be permanently low, the C64 will remain in a state of permanent reset and appear frozen or even dead (showing just a black screen after power up). In this case running <code>xlink reset</code> will bring the parallel port lines back to a defined state and the C64 will resume operation.</p>
+
+
+
+<h2 id="software">Software</h2>
+
+
+
+<h3 id="downloads">Downloads</h3>
+
+<ul>
+<li>source package</li>
+<li>binary package linux (static builds?)</li>
+<li>windows installer</li>
+</ul>
+
+
+
+<h3 id="installation">Installation</h3>
+
+
+
+<h4 id="client-installation">Client Installation</h4>
+
+
+
+<h4 id="server-installation">Server Installation</h4>
+
+
+
+<h5 id="manually-bootstrapping-the-server">Manually bootstrapping the server</h5>
+
+<p>If you have no way to transfer the <code>xlink-server.prg</code> to your C64 you can simply type in the following  program:</p>
+
+<pre><code>10 print"please wait...":print
+20 d=4096:s=248:c=0:l=1000:m=0
+30 for i=0 to s-1:for k=0 to 7
+40 read v:poke d+i+k,v:c=c+v:next k
+50 read v:if c&lt;&gt;v then print"data checksum error on line";l:end
+60 c=0:l=l+1:i=i+7:nexti
+70 print"please run":print:print"  xlink load xlink-server.prg":print
+80 sys 4096
+90 print"sys 4311 : rem save server to disk"
+100 print"sys 4329 : rem save server to tape"
+110 print"sys";:print (peek(251)+peek(252)*256);:print": rem start the server
+120 end
+1000 data 76,58,16,173,13,221,41,16,614
+1001 data 240,249,174,1,221,173,0,221,1279
+1002 data 73,4,141,0,221,96,141,1,677
+1003 data 221,173,0,221,73,4,141,0,833
+1004 data 221,173,13,221,41,16,240,249,1174
+1005 data 96,173,0,221,73,4,141,0,708
+1006 data 221,96,173,13,221,41,16,240,1021
+1007 data 249,96,169,0,141,3,221,173,1052
+1008 data 2,221,9,4,141,2,221,173,773
+1009 data 13,221,120,32,50,16,172,1,625
+1010 data 221,32,41,16,192,1,208,243,954
+1011 data 32,93,16,88,96,169,11,141,646
+1012 data 17,208,32,138,16,160,0,32,603
+1013 data 50,16,173,1,221,145,193,32,831
+1014 data 41,16,230,193,208,2,230,194,1114
+1015 data 165,194,197,196,208,233,165,193,1551
+1016 data 197,195,208,227,169,27,141,17,1181
+1017 data 208,96,32,3,16,134,254,32,775
+1018 data 3,16,134,255,32,3,16,134,593
+1019 data 193,134,251,32,3,16,134,194,957
+1020 data 134,252,32,3,16,134,195,32,798
+1021 data 3,16,134,196,96,120,169,12,746
+1022 data 162,203,160,16,32,189,255,169,1186
+1023 data 0,166,186,160,0,32,186,255,985
+1024 data 166,195,164,196,169,251,32,216,1389
+1025 data 255,88,96,88,76,73,78,75,829
+1026 data 45,83,69,82,86,69,82,165,681
+1027 data 186,201,1,240,4,165,186,208,1191
+1028 data 4,169,8,133,186,32,173,16,721
+1029 data 96,169,1,133,186,32,173,16,806
+1030 data 96,0,0,0,0,0,0,0,96
+</code></pre>
+
+<p>This program will first install a rudimentary server that can be used to upload the real server program and subsequently save it to disk or tape. Just run this program and follow the onscreen instructions.</p>
+
+
+
+<h3 id="building-from-source">Building from source</h3>
+
+
+
+<h2 id="usage">Usage</h2>
+
+
+
+<h3 id="getting-started">Getting started</h3>
+
+
+
+<h3 id="client-documentation">Client documentation</h3>
+
+<pre><code>xlink 1.0 Copyright (C) 2014 Henning Bekel &lt;h.bekel@googlemail.com&gt;
+
+Usage: xlink [&lt;opts&gt;] [&lt;command&gt; [&lt;opts&gt;] [&lt;arguments&gt;]]...
+
+Options:
+     -h, --help                    : show this help
+     -q, --quiet                   : show errors only
+     -v, --verbose                 : show verbose debug output
+     -d, --device &lt;device&gt;         : transfer device (default: /dev/xlink)
+     -a, --address &lt;start&gt;[-&lt;end&gt;] : C64 address/range (default: autodetect)
+     -s, --skip &lt;n&gt;                : Skip n bytes of file
+     -m, --memory                  : C64 memory config (default: 0x37)
+     -b, --bank                    : C64 memory bank (unused)
+
+Commands:
+      help  [&lt;command&gt;]            : show detailed help for command
+      bootloader                   : enter dfu-bootloader (USB devices only)
+      benchmark                    : test/measure transfer speed
+
+      ping                         : check if the server is available
+      reset                        : reset C64 (only if using reset circuit)
+      ready                        : try to make sure the server is ready
+      identify                     : identify remote machine and server
+
+      load  [&lt;opts&gt;] &lt;file&gt;        : load file into C64 memory
+      save  [&lt;opts&gt;] &lt;file&gt;        : save C64 memory to file
+      poke  [&lt;opts&gt;] &lt;addr&gt;,&lt;val&gt;  : poke value into C64 memory
+      peek  [&lt;opts&gt;] &lt;addr&gt;        : read value from C64 memory
+      jump  [&lt;opts&gt;] &lt;addr&gt;        : jump to specified address
+      run   [&lt;opts&gt;] [&lt;file&gt;]      : run program, optionally load it before
+      &lt;file&gt;...                    : load file(s) and run last file
+
+      @[&lt;dos-command&gt;]             : read drive status or send dos command
+      backup &lt;file&gt;                : backup disk to d64 file
+      restore &lt;file&gt;               : restore d64 file to disk
+      verify &lt;file&gt;                : verify disk against d64 file
+</code></pre>
+
+<h3 id="library-documentation">Library documentation</h3>
+
+
+
+<h2 id="license">License</h2>
+
+<pre>          XLINK Hardware, Firmware, Client, Server and Library
+        Copyright (c) 2014, Henning Bekel <a href="mailto:h.bekel@googlemail.com">h.bekel@googlemail.com</a>
+
+                        All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+1. Redistributions of source code must retain the above copyright
+   notice, this list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright
+   notice, this list of conditions and the following disclaimer in the
+   documentation and/or other materials provided with the
+   distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+</pre>
+
+<p>The USB adapter firmware is implemented using the LUFA Library by Dean Camera:</p>
+
+<pre>
+
+                       LUFA Library
+             Copyright (C) Dean Camera, 2013.
+
+          dean [at] fourwalledcubicle [dot] com
+                     www.lufa-lib.org
+
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose is hereby granted without fee, provided
+that the above copyright notice appear in all copies and that both
+that the copyright notice and this permission notice and warranty
+disclaimer appear in supporting documentation, and that the name of
+the author not be used in advertising or publicity pertaining to
+distribution of the software without specific, written prior
+permission.
+
+The author disclaims all warranties with regard to this software,
+including all implied warranties of merchantability and fitness.  In
+no event shall the author be liable for any special, indirect or
+consequential damages or any damages whatsoever resulting from loss of
+use, data or profits, whether in an action of contract, negligence or
+other tortious action, arising out of or in connection with the use or
+performance of this software.
+</pre>
+
+<h2 id="imprint">Imprint</h2>
+
+<p>(c) 2014 Henning Bekel <a href="mailto:h.bekel@googlemail.com">h.bekel@googlemail.com</a>. All rights reserved.</p></div></body>
+</html>
