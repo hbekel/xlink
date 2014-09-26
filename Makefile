@@ -7,6 +7,8 @@ GCC-MINGW32=i686-pc-mingw32-gcc
 #KASM=java -jar /usr/share/kickassembler/KickAss.jar
 KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
+RELEASE=1.0
+
 LIBHEADERS=\
 	xlink.h \
 	util.h \
@@ -72,7 +74,8 @@ xlink-kernal.rom: server.h kernal.asm
 	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
 hardsid.dll: xlink.dll hardsid.h hardsid.c util.h util.c
-	$(GCC-MINGW32) $(FLAGS) -shared -Wl,--export-all-symbols -Wl,--kill-at -o hardsid.dll hardsid.c util.c -L. -lxlink
+	$(GCC-MINGW32) $(FLAGS) -shared -Wl,--export-all-symbols -Wl,--kill-at \
+		-o hardsid.dll hardsid.c util.c -L. -lxlink
 
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && make)
@@ -92,7 +95,8 @@ install: xlink any
 	install -m644 -D xlink-server.prg /usr/share/xlink/xlink-server.prg
 	install -m644 -D xlink-kernal.rom /usr/share/xlink/xlink-kernal.rom
 	install -m644 -D bootstrap.txt /usr/share/xlink/xlink-bootstrap.txt
-	[ -d /etc/bash_completion.d ] && install -m644 etc/bash_completion.d/xlink /etc/bash_completion.d/
+	[ -d /etc/bash_completion.d ] &&  \
+		install -m644 etc/bash_completion.d/xlink /etc/bash_completion.d/
 
 uninstall:
 	rm -v /usr/bin/xlink
@@ -115,6 +119,5 @@ clean: firmware-clean
 	[ -f tools/make-bootstrap ] && rm -v tools/make-bootstrap || true
 	[ -f log ] && rm -v log || true
 
-dist: clean
-	(cd .. && tar vczf xlink.tar.gz xlink/)
-
+release: clean
+	git archive --prefix=xlink-$(RELEASE)/ -o ../xlink-$(RELEASE).tar.gz HEAD
