@@ -3,20 +3,13 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <string.h>
-
-#if linux
-  #include <libusb-1.0/libusb.h>
-#elif windows
-  #include <usb.h>
-#endif
-
 #include <sys/time.h>
 
 #include "xlink.h"
 #include "driver.h"
 #include "protocol.h"
-#include "util.h"
 #include "usb.h"
+#include "util.h"
 
 #if !(USB_VID + 0)
 #error "Define an environment variable named USB_VID that contains the usb vendor id"
