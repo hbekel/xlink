@@ -1,7 +1,9 @@
 GCC=gcc
+FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
+
 #GCC-MINGW32=i486-mingw32-gcc
 GCC-MINGW32=i686-pc-mingw32-gcc
-FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
+
 #KASM=java -jar /usr/share/kickassembler/KickAss.jar
 KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
@@ -24,8 +26,8 @@ LIBSOURCES=\
 	driver/parport.c
 
 #all: linux any
-all: win32 any
-any: server kernal bootstrap
+all: win32 c64
+c64: server kernal bootstrap
 linux: xlink
 win32: xlink.exe hardsid.dll
 server: xlink-server.prg
@@ -51,7 +53,7 @@ extensions.c: tools/make-extension extensions.asm
 	grep make-extension | \
 	sh > extensions.c && rm extensions.bin
 
-make-extension: tools/make-extension.c
+tools/make-extension: tools/make-extension.c
 	$(GCC) $(FLAGS) -o tools/make-extension tools/make-extension.c
 
 tools/make-bootstrap: tools/make-bootstrap.c
@@ -83,16 +85,20 @@ firmware-install: xlink firmware
 	sleep 5 && \
 	(cd driver/at90usb162 && make dfu)
 
-install: xlink
+install: xlink any
 	install -m755 xlink /usr/bin
 	install -m644 libxlink.so /usr/lib
 	install -m644 xlink.h /usr/include
+	install -m644 -D xlink-server.prg /usr/share/xlink/xlink-server.prg
+	install -m644 -D xlink-kernal.rom /usr/share/xlink/xlink-kernal.rom
+	install -m644 -D bootstrap.txt /usr/share/xlink/xlink-bootstrap.txt
 	[ -d /etc/bash_completion.d ] && install -m644 etc/bash_completion.d/xlink /etc/bash_completion.d/
 
 uninstall:
 	rm -v /usr/bin/xlink
 	rm -v /usr/lib/libxlink.so
 	rm -v /usr/include/xlink.h
+	rm -rv /usr/share/xlink
 	[ -f /etc/bash_completion.d/xlink ] && rm -v /etc/bash_completion.d/xlink
 
 clean: firmware-clean
