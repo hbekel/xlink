@@ -1275,6 +1275,28 @@ int main(int argc, char **argv) {
 
 #if linux
 
+static char* known_commands[19] = { 
+  "help",
+  "load", 
+  "save",
+  "peek",
+  "poke",
+  "jump",
+  "run",
+  "backup",
+  "restore",
+  "verify",
+  "reset",
+  "ready",
+  "exit",
+  "quit",
+  "ping",
+  "bootloader",
+  "benchmark",
+  "identify",
+  NULL 
+};
+
 static char *dupstr(char *s) {
   char *r = calloc(strlen(s) + 1, sizeof(char));
   strncpy(r, s, strlen(s));
@@ -1314,6 +1336,7 @@ static char *command_generator(char *text, int state) {
 //------------------------------------------------------------------------------
 
 static char **shell_completion(char *text, int start, int end) {
+  extern char **completion_matches();
   return (char **) completion_matches(text, command_generator);
 }
 
@@ -1335,29 +1358,6 @@ static int shell_command(char *line) {
 //------------------------------------------------------------------------------
 
 void shell(void) {
-
-  extern char **completion_matches();
-
-  static char* known_commands[19] = { 
-    "help",
-    "load", 
-    "save",
-    "peek",
-    "poke",
-    "jump",
-    "run",
-    "backup",
-    "restore",
-    "verify",
-    "reset",
-    "ready",
-    "exit",
-    "quit",
-    "ping",
-    "bootloader",
-    "benchmark",
-    "identify",
-    NULL };
   
   char *line;
   char *prompt = "xlink> ";

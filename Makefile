@@ -1,11 +1,11 @@
 GCC=gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 
-#GCC-MINGW32=i486-mingw32-gcc
-GCC-MINGW32=i686-pc-mingw32-gcc
+GCC-MINGW32=i486-mingw32-gcc
+#GCC-MINGW32=i686-pc-mingw32-gcc
 
-#KASM=java -jar /usr/share/kickassembler/KickAss.jar
-KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+KASM=java -jar /usr/share/kickassembler/KickAss.jar
+#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 RELEASE=1.0
 
@@ -27,8 +27,8 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-#all: linux any
-all: win32 c64
+all: linux c64
+#all: win32 c64
 c64: server kernal bootstrap
 linux: xlink
 win32: xlink.exe hardsid.dll
@@ -88,7 +88,7 @@ firmware-install: xlink firmware
 	sleep 5 && \
 	(cd driver/at90usb162 && make dfu)
 
-install: xlink any
+install: xlink c64
 	install -m755 xlink /usr/bin
 	install -m644 libxlink.so /usr/lib
 	install -m644 xlink.h /usr/include

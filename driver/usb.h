@@ -1,13 +1,7 @@
 #ifndef USB_H
 #define USB_H
 
-#include "../target.h"
-
-#if linux
-  #include <libusb-1.0/libusb.h>
-#elif windows
-  #include <usb.h>
-#endif
+#include <usb.h>
 
 bool driver_usb_open(void);
 void driver_usb_close(void);
