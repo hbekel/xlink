@@ -105,7 +105,7 @@ bool xlink_has_device(void) {
 bool xlink_identify(XLinkServerInfo* server) {
 
   char data[7];
-
+  
   if(driver->open()) {
     
     if(!driver->ping()) {
@@ -124,6 +124,16 @@ bool xlink_identify(XLinkServerInfo* server) {
 
     driver->close();
 
+    char checksum = 0xff;
+    
+    for(int i=0; i<sizeof(data); i++) {
+      checksum &= data[i];
+    }
+    if(checksum == 0xff) {
+      logger->error("server does not support identification");
+      return false;
+    }
+    
     server->version = data[0];
     server->machine = data[1];
     server->type = data[2];

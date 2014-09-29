@@ -158,6 +158,8 @@ int valid(int address) {
   return address >= 0x0000 && address <= 0x10000; 
 }
 
+//------------------------------------------------------------------------------
+
 void screenOn(void) {
   xlink_poke(0x37, 0x00, 0xd011, 0x1b);
 }
@@ -930,6 +932,7 @@ int command_benchmark(Command* self) {
 //------------------------------------------------------------------------------
 
 int command_identify(Command *self) {
+
   XLinkServerInfo server;
   
   if(xlink_identify(&server)) {
