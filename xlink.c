@@ -124,13 +124,13 @@ bool xlink_identify(XLinkServerInfo* server) {
 
     driver->close();
 
-    char checksum = 0xff;
+    unsigned char checksum = 0xff;
     
-    for(int i=0; i<sizeof(data); i++) {
+    for(int i=0; i<7; i++) {
       checksum &= data[i];
     }
     if(checksum == 0xff) {
-      logger->error("server does not support identification");
+      logger->error("unknown server (does not support identification)");
       return false;
     }
     
