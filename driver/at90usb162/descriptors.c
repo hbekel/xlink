@@ -8,6 +8,14 @@
 #error "Define an environment variable named USB_PID that contains the usb product id"
 #endif
 
+#define STR_(x) #x
+#define STR(x) STR_(x)
+
+#define LSTR_(x) L""#x
+#define LSTR(x) LSTR_(x)
+
+#define STRLEN(x) strlen(x)
+
 /** Device descriptor structure. This descriptor, located in FLASH memory, describes the overall
  *  device characteristics, including the supported USB version, control endpoint size and the
  *  number of device configurations. The descriptor is read out by the USB host when the enumeration
@@ -80,9 +88,9 @@ const USB_Descriptor_Configuration_t PROGMEM XLink_ConfigurationDescriptor =
  */
 const USB_Descriptor_String_t PROGMEM XLink_LanguageString =
 {
-	.Header                 = {.Size = USB_STRING_LEN(1), .Type = DTYPE_String},
-
-	.UnicodeString          = {LANGUAGE_ID_ENG}
+  .Header        = {.Size = USB_STRING_LEN(1), .Type = DTYPE_String},
+  
+  .UnicodeString = {LANGUAGE_ID_ENG}
 };
 
 /** Manufacturer descriptor string. This is a Unicode string containing the manufacturer's details in human readable
@@ -91,9 +99,9 @@ const USB_Descriptor_String_t PROGMEM XLink_LanguageString =
  */
 const USB_Descriptor_String_t PROGMEM XLink_ManufacturerString =
 {
-	.Header                 = {.Size = USB_STRING_LEN(8), .Type = DTYPE_String},
+  .Header        = {.Size = USB_STRING_LEN(8), .Type = DTYPE_String},
 
-	.UnicodeString          = L"XLINK"
+  .UnicodeString = L"XLINK"
 };
 
 /** Product descriptor string. This is a Unicode string containing the product's details in human readable form,
@@ -102,9 +110,9 @@ const USB_Descriptor_String_t PROGMEM XLink_ManufacturerString =
  */
 const USB_Descriptor_String_t PROGMEM XLink_ProductString =
 {
-	.Header                 = {.Size = USB_STRING_LEN(7), .Type = DTYPE_String},
+  .Header        = {.Size = USB_STRING_LEN(7), .Type = DTYPE_String},
 
-	.UnicodeString          = L"USB2C64"
+  .UnicodeString = L"USB2C64"
 };
 
 /** Serial number string. This is a Unicode string containing the device's unique serial number, expressed as a
@@ -112,9 +120,9 @@ const USB_Descriptor_String_t PROGMEM XLink_ProductString =
  */
 const USB_Descriptor_String_t PROGMEM XLink_SerialString =
 {
-	.Header                 = {.Size = USB_STRING_LEN(5), .Type = DTYPE_String},
+  .Header        = {.Size = USB_STRING_LEN(STRLEN(STR(USB_SERIAL))), .Type = DTYPE_String},
 
-	.UnicodeString          = L"20141"
+  .UnicodeString = LSTR(USB_SERIAL)
 };
 
 /** This function is called by the library when in device mode, and must be overridden (see library "USB Descriptors"
@@ -160,7 +168,7 @@ uint16_t CALLBACK_USB_GetDescriptor(const uint16_t wValue,
 					break;
 				case STRING_ID_Serial:
 					Address = &XLink_SerialString;
-					Size    = pgm_read_byte(&XLink_SerialString.Header.Size);
+					Size    = USB_STRING_LEN(STRLEN(STR(USB_SERIAL)));
 					break;
 			}
 
