@@ -10,9 +10,6 @@
 #define XLINK_COMMAND_JUMP         0x05
 #define XLINK_COMMAND_RUN          0x06
 #define XLINK_COMMAND_EXTEND       0x07
-#define XLINK_COMMAND_STREAM_PEEK  0x08
-#define XLINK_COMMAND_STREAM_POKE  0x09
-#define XLINK_COMMAND_STREAM_CLOSE 0x0a
 #define XLINK_COMMAND_IDENTIFY     0xfe 
 
 #define XLINK_VERSION 0x10
@@ -68,11 +65,6 @@ extern "C" {
   bool xlink_dos(char* cmd);
   bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char* data);
   bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char* data);
-
-  bool xlink_stream_open(void);
-  bool xlink_stream_peek(int address, unsigned char* value);
-  bool xlink_stream_poke(int address, unsigned char value);
-  bool xlink_stream_close(void);
 
 #ifdef __cplusplus
 }

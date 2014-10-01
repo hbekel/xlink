@@ -1,11 +1,11 @@
 GCC=gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 
-GCC-MINGW32=i486-mingw32-gcc
-#GCC-MINGW32=i686-pc-mingw32-gcc
+#GCC-MINGW32=i486-mingw32-gcc
+GCC-MINGW32=i686-pc-mingw32-gcc
 
-KASM=java -jar /usr/share/kickassembler/KickAss.jar
-#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+#KASM=java -jar /usr/share/kickassembler/KickAss.jar
+KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 RELEASE=1.0
 
@@ -27,11 +27,11 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-all: linux c64
-#all: win32 c64
+#all: linux c64
+all: win32 c64
 c64: server kernal bootstrap
 linux: xlink
-win32: xlink.exe hardsid.dll
+win32: xlink.exe
 server: xlink-server.prg
 kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.txt
@@ -73,10 +73,6 @@ xlink-kernal.rom: server.h kernal.asm
 	cp commodore/kernal-901227-03.rom xlink-kernal.rom && \
 	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
-hardsid.dll: xlink.dll hardsid.h hardsid.c util.h util.c
-	$(GCC-MINGW32) $(FLAGS) -shared -Wl,--export-all-symbols -Wl,--kill-at \
-		-o hardsid.dll hardsid.c util.c -L. -lxlink
-
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && make)
 
@@ -110,7 +106,6 @@ clean: firmware-clean
 	[ -f xlink.dll ] && rm -v xlink.dll || true
 	[ -f xlink ] && rm -v xlink || true
 	[ -f xlink.exe ] && rm -v xlink.exe || true
-	[ -f hardsid.dll ] && rm -v hardsid.dll || true
 	[ -f extensions.c ] && rm -v extensions.c || true
 	[ -f xlink-server.prg ] && rm -v xlink-server.prg || true
 	[ -f xlink-kernal.rom ] && rm -v xlink-kernal.rom || true
