@@ -132,7 +132,11 @@ bool device_is_usb(char* path) {
     logger->error("%s: not a character device", path);
     return false;
   }
-  return major(device.st_rdev) == 189;
+  if(major(device.st_rdev) != 189) {
+    logger->error("%s: not a USB device", path);
+    return false;
+  }
+  return true;
 
 #elif windows
   return !device_is_parport(path);
