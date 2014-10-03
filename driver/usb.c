@@ -33,10 +33,10 @@ static char response[1];
 
 bool driver_usb_open() {
   
-  handle = _driver_usb_open_device(USB_VID, "XLINK", USB_PID, "USB2C64");
+  handle = _driver_usb_open_device(USB_VID, USB_PID);
 
   if(handle == NULL) {
-    logger->error("could not find USB device");
+    logger->error("could not find USB device %04x:%04x", USB_VID, USB_PID);
     return false;
   }
   usbMessage(USB_INIT);
@@ -221,13 +221,10 @@ int _driver_usb_get_descriptor_string(usb_dev_handle *dev, int index, int langid
 
 //------------------------------------------------------------------------------
 
-usb_dev_handle* _driver_usb_open_device(int vendor, char *vendorName, int product, char *productName) {
+usb_dev_handle* _driver_usb_open_device(int vendorId, int productId) {
 
   struct usb_bus *bus;
   struct usb_device *dev;
-  char devVendor[256], devProduct[256];
-  
-  usb_dev_handle * handle = NULL;
   
   usb_init();
   usb_find_busses();
@@ -235,35 +232,16 @@ usb_dev_handle* _driver_usb_open_device(int vendor, char *vendorName, int produc
   
   for(bus=usb_get_busses(); bus; bus=bus->next) {
     for(dev=bus->devices; dev; dev=dev->next) {			
-      if(dev->descriptor.idVendor != vendor ||
-         dev->descriptor.idProduct != product)
+      if(dev->descriptor.idVendor != vendorId ||
+         dev->descriptor.idProduct != productId)
         continue;
       
       if(!(handle = usb_open(dev))) {
-        logger->warn("could not open USB device: %s", usb_strerror());
-        continue;
-      }
-      
-      if(_driver_usb_get_descriptor_string(handle, dev->descriptor.iManufacturer, 
-                                           0x0409, devVendor, sizeof(devVendor)) < 0) {
-        logger->warn("could not query manufacturer for device: %s",  usb_strerror());
-        usb_close(handle);
-        continue;
-      }
-      
-      if(_driver_usb_get_descriptor_string(handle, dev->descriptor.iProduct, 
-                                           0x0409, devProduct, sizeof(devVendor)) < 0) {
-        logger->warn("could not query product for device: %s", usb_strerror());
-        usb_close(handle);
-        continue;
-      }
-      
-      if(strcmp(devVendor, vendorName) == 0 && 
-         strcmp(devProduct, productName) == 0)
-        return handle;
-      else
-        usb_close(handle);
-    }
-  } 
+        logger->error("could not open USB device: %s", usb_strerror());
+	return NULL;
+      }      
+      return handle;
+    } 
+  }
   return NULL;
 }
