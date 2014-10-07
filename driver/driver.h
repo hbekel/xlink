@@ -43,6 +43,7 @@ bool driver_setup(char* path);
 bool device_is_parport(char*);
 bool device_is_usb(char*);
 
+bool _driver_setup_and_open(void);
 bool _driver_ready(void);
 bool _driver_open(void);
 void _driver_close(void);

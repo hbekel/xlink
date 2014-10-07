@@ -14,41 +14,49 @@
 #include "parport.h"
 #include "usb.h"
 
-Driver* driver = NULL;
+extern Driver* driver;
+
+bool _driver_setup_and_open(void) {
+
+  bool result = false;
+  
+#if linux
+  char default_usb_device[] = "/dev/xlink";
+  char default_parport_device[] = "/dev/parport0";
+
+#elif windows
+  char default_usb_device[] = "";
+  char default_parport_device[] = "0x378";
+#endif
+
+  logger->suspend();
+
+  if (getenv("XLINK_DEVICE") != NULL) {
+    result = driver_setup(getenv("XLINK_DEVICE"));
+  }
+  else {
+    
+    if(!(result = driver_setup(default_usb_device))) {
+      result = driver_setup(default_parport_device);
+    }
+  }
+  
+  logger->resume();
+
+  if(result) {
+    result = driver->open();
+  }
+  
+  return result;
+}
 
 bool driver_setup(char* path) {
 
   if(!(device_is_parport(path) || device_is_usb(path))) {
     logger->error("%s: neither parallel port nor usb device", path);
-
-    if(driver != NULL) {
-      driver->free();
-    }
+    return false;
   }
 
-  if (driver == NULL) {
-
-    driver = (Driver*) calloc(1, sizeof(Driver));
-    driver->path = (char*) calloc(1, sizeof(char));
-
-    driver->ready   = &_driver_ready;
-    driver->open    = &_driver_open;
-    driver->close   = &_driver_close;
-    driver->strobe  = &_driver_strobe;
-    driver->wait    = &_driver_wait;
-    driver->read    = &_driver_read;
-    driver->write   = &_driver_write;
-    driver->send    = &_driver_send;
-    driver->receive = &_driver_receive;
-    driver->input   = &_driver_input;
-    driver->output  = &_driver_output;
-    driver->ping    = &_driver_ping;
-    driver->reset   = &_driver_reset;
-    driver->boot    = &_driver_boot;
-    driver->free    = &_driver_free;
- }
-
-  driver->path = (char*) realloc((void*) driver->path, (strlen(path)+1) * sizeof(char));
   strcpy(driver->path, path);
 
   if(device_is_parport(driver->path)) {
@@ -146,10 +154,6 @@ bool device_is_usb(char* path) {
 bool _driver_ready() {
   bool result = false;
 
-  if(driver->_open == NULL) {
-    return result;
-  }
-
   if((result = driver->open())) {
     driver->close();
   }
@@ -171,7 +175,10 @@ void _driver_boot()                        { driver->_boot(); }
 void _driver_reset()                       { driver->_reset(); }
 
 void _driver_free() {
-  driver->_free();
+
+  if(driver->_free != NULL) {
+    driver->_free();
+  }
   free(driver->path);
   free(driver);
   driver = NULL;

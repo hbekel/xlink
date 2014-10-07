@@ -1418,8 +1418,8 @@ void usage(void) {
   printf("         -d, --device <path>           : ");
   printf("transfer device (default: /dev/xlink)\n");
 #elif windows
-  printf("         -d, --device <port or \"USB\">  : ");
-  printf("transfer device (default: \"USB\")\n");
+  printf("         -d, --device <port or \"usb\">  : ");
+  printf("transfer device (default: \"usb\")\n");
 #endif
   printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
   printf("         -s, --skip <n>                : Skip n bytes of file\n");

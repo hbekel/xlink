@@ -14,7 +14,7 @@
   #include <windows.h>
 #endif
 
-extern Driver* driver;
+Driver* driver;
 
 //------------------------------------------------------------------------------
 
@@ -26,30 +26,26 @@ unsigned char xlink_version(void) {
 
 void libxlink_initialize() {
 
-#if linux
-  char default_usb_device[] = "/dev/xlink";
-  char default_parport_device[] = "/dev/parport0";
+  driver = (Driver*) calloc(1, sizeof(Driver));
+  driver->path = (char*) calloc(1, sizeof(char));
 
-#elif windows
-  char default_usb_device[] = "";
-  char default_parport_device[] = "0x378";
-#endif
+  driver->ready   = &_driver_ready;
+  driver->open    = &_driver_open;
+  driver->close   = &_driver_close;
+  driver->strobe  = &_driver_strobe;
+  driver->wait    = &_driver_wait;
+  driver->read    = &_driver_read;
+  driver->write   = &_driver_write;
+  driver->send    = &_driver_send;
+  driver->receive = &_driver_receive;
+  driver->input   = &_driver_input;
+  driver->output  = &_driver_output;
+  driver->ping    = &_driver_ping;
+  driver->reset   = &_driver_reset;
+  driver->boot    = &_driver_boot;
+  driver->free    = &_driver_free;
 
-  logger->suspend();
-
-  if (getenv("XLINK_DEVICE") != NULL) {
-    driver_setup(getenv("XLINK_DEVICE"));
-  
-  } else {
-
-    driver_setup(default_usb_device);
-
-    if (!driver->ready()) {
-      driver_setup(default_parport_device);
-    }
-  }
-  
-  logger->resume();
+  driver->_open = &_driver_setup_and_open;
 }
 
 //------------------------------------------------------------------------------
@@ -69,7 +65,7 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
 
    case DLL_PROCESS_ATTACH:
      DisableThreadLibraryCalls(hDllHandle);
-     libxlink_initialize(); 
+     libxlink_initialize();
      break;
  
    case DLL_PROCESS_DETACH:
