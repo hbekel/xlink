@@ -1,11 +1,11 @@
 GCC=gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 
-#GCC-MINGW32=i486-mingw32-gcc
-GCC-MINGW32=i686-pc-mingw32-gcc
+GCC-MINGW32=i686-w64-mingw32-gcc
+#GCC-MINGW32=i686-pc-mingw32-gcc
 
-#KASM=java -jar /usr/share/kickassembler/KickAss.jar
-KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+KASM=java -jar /usr/share/kickassembler/KickAss.jar
+#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 RELEASE=1.0
 
@@ -27,8 +27,8 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-#all: linux c64
-all: win32 c64
+all: linux c64
+#all: win32 c64
 c64: server kernal bootstrap
 linux: xlink
 win32: xlink.exe
@@ -39,13 +39,13 @@ bootstrap: bootstrap.txt
 libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 	$(GCC) $(FLAGS) -shared -fPIC \
 		-Wl,-init,libxlink_initialize,-fini,libxlink_finalize\
-		-o libxlink.so $(LIBSOURCES) -lusb
+		-o libxlink.so $(LIBSOURCES) -lusb-1.0
 
 xlink: libxlink.so client.c client.h disk.c disk.h
 	$(GCC) $(FLAGS) -o xlink client.c disk.c -L. -lxlink -lreadline
 
 xlink.dll: $(LIBHEADERS) $(LIBSOURCES)
-	$(GCC-MINGW32) $(FLAGS) -shared -o xlink.dll $(LIBSOURCES) -lusb
+	$(GCC-MINGW32) $(FLAGS) -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
 
 xlink.exe: xlink.dll client.c client.h disk.c disk.h 
 	$(GCC-MINGW32) $(FLAGS) -o xlink.exe client.c disk.c -L. -lxlink

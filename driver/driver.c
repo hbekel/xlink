@@ -29,8 +29,6 @@ bool _driver_setup_and_open(void) {
   char default_parport_device[] = "0x378";
 #endif
 
-  logger->suspend();
-
   if (getenv("XLINK_DEVICE") != NULL) {
     result = driver_setup(getenv("XLINK_DEVICE"));
   }
@@ -41,12 +39,10 @@ bool _driver_setup_and_open(void) {
     }
   }
   
-  logger->resume();
-
   if(result) {
     result = driver->open();
   }
-  
+
   return result;
 }
 
@@ -61,7 +57,7 @@ bool driver_setup(char* path) {
 
   if(device_is_parport(driver->path)) {
 
-      logger->trace("using parallel port driver");
+    logger->debug("using parallel port device %s", driver->path);
   
       driver->_open    = &driver_parport_open;
       driver->_close   = &driver_parport_close;    
@@ -80,7 +76,7 @@ bool driver_setup(char* path) {
   
   } else if(device_is_usb(driver->path)) {
 
-      logger->trace("using usb driver");
+    logger->trace("using usb adapter driver %s", driver->path);
 
       driver->_open    = &driver_usb_open;
       driver->_close   = &driver_usb_close;    

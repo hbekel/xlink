@@ -1,8 +1,6 @@
 #ifndef USB_H
 #define USB_H
 
-#include <usb.h>
-
 bool driver_usb_open(void);
 void driver_usb_close(void);
 void driver_usb_strobe (void);
@@ -21,8 +19,7 @@ void driver_usb_free(void);
 int usbMessage(int message);
 int usbMessageEndpointIn(int message, char *buffer, int size);
 int usbMessageEndpointOut(int message, char *buffer, int size);
+int usbMessageEndpointOutWithValue(int message, int value);
 int usbMessageEndpoint(int message, char *buffer, int size, int direction);
-
-usb_dev_handle* _driver_usb_open_device(int vendorId, int productId);
 
 #endif // USB_H

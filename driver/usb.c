@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/time.h>
+#include <libusb-1.0/libusb.h>
 
 #include "xlink.h"
 #include "driver.h"
@@ -24,7 +25,7 @@
 
 extern Driver* driver;
 
-static usb_dev_handle *handle = NULL;
+static libusb_device_handle *handle = NULL;
 static char response[1];
 
 //------------------------------------------------------------------------------
@@ -32,11 +33,25 @@ static char response[1];
 //------------------------------------------------------------------------------
 
 bool driver_usb_open() {
+
+  int result;
+  const struct libusb_version* version;
   
-  handle = _driver_usb_open_device(USB_VID, USB_PID);
+  if((result = libusb_init(NULL)) < 0) {
+    logger->debug("could not initialize libusb-1.0: %d", result);
+    return false;
+  }
+
+  version = libusb_get_version();
+  
+  logger->debug("successfully initialized libusb-%d.%d.%d.%d",
+		version->major, version->minor, version->micro, version->nano);
+  
+  handle = libusb_open_device_with_vid_pid(NULL, USB_VID, USB_PID);
 
   if(handle == NULL) {
-    logger->error("could not find USB device %04x:%04x", USB_VID, USB_PID);
+    logger->debug("could not find USB device %04x:%04x", USB_VID, USB_PID);
+    libusb_exit(NULL);
     return false;
   }
   usbMessage(USB_INIT);
@@ -80,8 +95,7 @@ bool driver_usb_wait(int timeout) {
 //------------------------------------------------------------------------------
 
 void driver_usb_write(char value) {
-  usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT, 
-                  USB_WRITE, value, 0, NULL, 0, MESSAGE_TIMEOUT);
+  usbMessageEndpointOutWithValue(USB_WRITE, value);
 } 
 
 //------------------------------------------------------------------------------
@@ -155,8 +169,10 @@ void driver_usb_boot() {
 //------------------------------------------------------------------------------
 
 void driver_usb_close() {
-  if(handle != NULL) 
-    usb_close(handle);
+  if(handle != NULL) {
+    libusb_close(handle);
+    libusb_exit(NULL);
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -174,41 +190,29 @@ int usbMessage(int message) {
 }
 
 int usbMessageEndpointIn(int message, char *buffer, int size) {
-  return usbMessageEndpoint(message, buffer, size, USB_ENDPOINT_IN);
+  return usbMessageEndpoint(message, buffer, size, LIBUSB_ENDPOINT_IN);
 }
 
 int usbMessageEndpointOut(int message, char *buffer, int size) {
-  return usbMessageEndpoint(message, buffer, size, USB_ENDPOINT_OUT);
+  return usbMessageEndpoint(message, buffer, size, LIBUSB_ENDPOINT_OUT);
+}
+
+int usbMessageEndpointOutWithValue(int message, int value) {
+  return libusb_control_transfer(handle,
+				 LIBUSB_REQUEST_TYPE_VENDOR |
+				 LIBUSB_RECIPIENT_DEVICE |
+				 LIBUSB_ENDPOINT_OUT, 
+				 message, value, 0, NULL, 0, MESSAGE_TIMEOUT);
+  
 }
 
 int usbMessageEndpoint(int message, char *buffer, int size, int direction) {
-  return usb_control_msg(handle, USB_TYPE_VENDOR | USB_RECIP_DEVICE | direction, 
-                         message, 0, 0, (char *)buffer, size, MESSAGE_TIMEOUT);
+  return libusb_control_transfer(handle,
+				 LIBUSB_REQUEST_TYPE_VENDOR |
+				 LIBUSB_RECIPIENT_DEVICE |
+				 direction, 
+				 message, 0, 0,
+				 (unsigned char *)buffer, size, MESSAGE_TIMEOUT);
 }
 
 //------------------------------------------------------------------------------
-
-usb_dev_handle* _driver_usb_open_device(int vendorId, int productId) {
-
-  struct usb_bus *bus;
-  struct usb_device *dev;
-  
-  usb_init();
-  usb_find_busses();
-  usb_find_devices();
-  
-  for(bus=usb_get_busses(); bus; bus=bus->next) {
-    for(dev=bus->devices; dev; dev=dev->next) {			
-      if(dev->descriptor.idVendor != vendorId ||
-         dev->descriptor.idProduct != productId)
-        continue;
-      
-      if(!(handle = usb_open(dev))) {
-        logger->error("could not open USB device: %s", usb_strerror());
-	return NULL;
-      }      
-      return handle;
-    } 
-  }
-  return NULL;
-}
