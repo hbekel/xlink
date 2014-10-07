@@ -23,7 +23,6 @@ int usbMessageEndpointIn(int message, char *buffer, int size);
 int usbMessageEndpointOut(int message, char *buffer, int size);
 int usbMessageEndpoint(int message, char *buffer, int size, int direction);
 
-int _driver_usb_get_descriptor_string(usb_dev_handle *dev, int index, int langid, char *buf, int buflen);
 usb_dev_handle* _driver_usb_open_device(int vendorId, int productId);
 
 #endif // USB_H

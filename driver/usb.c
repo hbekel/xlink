@@ -188,39 +188,6 @@ int usbMessageEndpoint(int message, char *buffer, int size, int direction) {
 
 //------------------------------------------------------------------------------
 
-int _driver_usb_get_descriptor_string(usb_dev_handle *dev, int index, int langid, char *buf, int buflen) {
-
-    char buffer[256];
-    int rval, i;
-
-    rval = usb_control_msg(dev, USB_TYPE_STANDARD | USB_RECIP_DEVICE | USB_ENDPOINT_IN, 
-			   USB_REQ_GET_DESCRIPTOR, (USB_DT_STRING << 8) + index, langid, 
-			   buffer, sizeof(buffer), 1000);
-        
-    if(rval < 0) 
-      return rval;
-	
-    if((unsigned char)buffer[0] < rval)
-      rval = (unsigned char)buffer[0];
-    
-    if(buffer[1] != USB_DT_STRING)
-      return 0;
-    
-    rval /= 2;
-    
-    for(i = 1; i < rval && i < buflen; i++) {
-      if(buffer[2 * i + 1] == 0)
-	buf[i-1] = buffer[2 * i];
-      else
-	buf[i-1] = '?';
-    }
-    buf[i-1] = 0;
-    
-    return i-1;
-}
-
-//------------------------------------------------------------------------------
-
 usb_dev_handle* _driver_usb_open_device(int vendorId, int productId) {
 
   struct usb_bus *bus;
