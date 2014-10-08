@@ -197,7 +197,7 @@ bool driver_usb_open() {
     libusb_exit(NULL);
     return false;
   }
-  usbMessage(USB_INIT);
+  control(USB_INIT);
 
   logger->leave();
   return true;
@@ -206,7 +206,7 @@ bool driver_usb_open() {
 //------------------------------------------------------------------------------
 
 void driver_usb_strobe() {
-  usbMessage(USB_STROBE);
+  control(USB_STROBE);
 }
 
 //------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ bool driver_usb_wait(int timeout) {
   response[0] = 0;
 
   bool acked() {
-    if(usbMessageEndpointIn(USB_ACKED, response, sizeof(response))) {
+    if(controlEndpointIn(USB_ACKED, response, sizeof(response))) {
       return response[0] == 1;
     }
     return false;
@@ -240,13 +240,13 @@ bool driver_usb_wait(int timeout) {
 //------------------------------------------------------------------------------
 
 void driver_usb_write(char value) {
-  usbMessageEndpointOutWithValue(USB_WRITE, value);
+  controlEndpointOutWithValue(USB_WRITE, value);
 } 
 
 //------------------------------------------------------------------------------
 
 char driver_usb_read() {
-  usbMessageEndpointIn(USB_READ, response, sizeof(response));
+  controlEndpointIn(USB_READ, response, sizeof(response));
   return response[0];
 } 
 
@@ -256,12 +256,12 @@ void driver_usb_send(char* data, int size) {
 
   while(size > DRIVER_USB_MAX_PAYLOAD_SIZE) {
 
-    usbMessageEndpointOut(USB_SEND, data, DRIVER_USB_MAX_PAYLOAD_SIZE);
+    controlEndpointOut(USB_SEND, data, DRIVER_USB_MAX_PAYLOAD_SIZE);
     
     data += DRIVER_USB_MAX_PAYLOAD_SIZE; 
     size -= DRIVER_USB_MAX_PAYLOAD_SIZE;
   }
-  usbMessageEndpointOut(USB_SEND, data, size);
+  controlEndpointOut(USB_SEND, data, size);
 }
 
 //------------------------------------------------------------------------------
@@ -270,24 +270,24 @@ void driver_usb_receive(char* data, int size) {
 
   while(size > DRIVER_USB_MAX_PAYLOAD_SIZE) {
 
-    usbMessageEndpointIn(USB_RECEIVE, data, DRIVER_USB_MAX_PAYLOAD_SIZE);
+    controlEndpointIn(USB_RECEIVE, data, DRIVER_USB_MAX_PAYLOAD_SIZE);
     
     data += DRIVER_USB_MAX_PAYLOAD_SIZE; 
     size -= DRIVER_USB_MAX_PAYLOAD_SIZE;
   }
-  usbMessageEndpointIn(USB_RECEIVE, data, size);
+  controlEndpointIn(USB_RECEIVE, data, size);
 }
 
 //------------------------------------------------------------------------------
 
 void driver_usb_input() {
-  usbMessage(USB_INPUT);
+  control(USB_INPUT);
 }
 
 //------------------------------------------------------------------------------
 
 void driver_usb_output() {
-  usbMessage(USB_OUTPUT);
+  control(USB_OUTPUT);
 }
 
 //------------------------------------------------------------------------------
@@ -302,13 +302,13 @@ bool driver_usb_ping() {
 //------------------------------------------------------------------------------
 
 void driver_usb_reset() { 
-  usbMessage(USB_RESET);
+  control(USB_RESET);
 }
 
 //------------------------------------------------------------------------------
 
 void driver_usb_boot() { 
-  usbMessage(USB_BOOT);
+  control(USB_BOOT);
 }
 
 //------------------------------------------------------------------------------
@@ -330,19 +330,19 @@ void driver_usb_free() {
 // USB utility functions
 //------------------------------------------------------------------------------
 
-int usbMessage(int message) {
-  return usbMessageEndpointOut(message, NULL, 0);
+int control(int message) {
+  return controlEndpointOut(message, NULL, 0);
 }
 
-int usbMessageEndpointIn(int message, char *buffer, int size) {
-  return usbMessageEndpoint(message, buffer, size, LIBUSB_ENDPOINT_IN);
+int controlEndpointIn(int message, char *buffer, int size) {
+  return controlEndpoint(message, buffer, size, LIBUSB_ENDPOINT_IN);
 }
 
-int usbMessageEndpointOut(int message, char *buffer, int size) {
-  return usbMessageEndpoint(message, buffer, size, LIBUSB_ENDPOINT_OUT);
+int controlEndpointOut(int message, char *buffer, int size) {
+  return controlEndpoint(message, buffer, size, LIBUSB_ENDPOINT_OUT);
 }
 
-int usbMessageEndpointOutWithValue(int message, int value) {
+int controlEndpointOutWithValue(int message, int value) {
   return libusb_control_transfer(handle,
 				 LIBUSB_REQUEST_TYPE_VENDOR |
 				 LIBUSB_RECIPIENT_DEVICE |
@@ -351,7 +351,7 @@ int usbMessageEndpointOutWithValue(int message, int value) {
   
 }
 
-int usbMessageEndpoint(int message, char *buffer, int size, int direction) {
+int controlEndpoint(int message, char *buffer, int size, int direction) {
   return libusb_control_transfer(handle,
 				 LIBUSB_REQUEST_TYPE_VENDOR |
 				 LIBUSB_RECIPIENT_DEVICE |

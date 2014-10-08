@@ -29,10 +29,10 @@ void driver_usb_reset(void);
 void driver_usb_boot(void);
 void driver_usb_free(void);
 
-int usbMessage(int message);
-int usbMessageEndpointIn(int message, char *buffer, int size);
-int usbMessageEndpointOut(int message, char *buffer, int size);
-int usbMessageEndpointOutWithValue(int message, int value);
-int usbMessageEndpoint(int message, char *buffer, int size, int direction);
+int control(int message);
+int controlEndpointIn(int message, char *buffer, int size);
+int controlEndpointOut(int message, char *buffer, int size);
+int controlEndpointOutWithValue(int message, int value);
+int controlEndpoint(int message, char *buffer, int size, int direction);
 
 #endif // USB_H
