@@ -93,7 +93,13 @@ char* xlink_get_device(void) {
 //------------------------------------------------------------------------------
 
 bool xlink_has_device(void) {
-  return driver->ready();
+  bool result;
+  
+  logger->suspend();
+  result = driver->ready();
+  logger->resume();
+
+  return result;
 }
 
 //------------------------------------------------------------------------------

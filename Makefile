@@ -134,3 +134,6 @@ clean: firmware-clean
 
 release: clean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD
+
+haste: clean
+	(cd .. && tar vczf /cygdrive/f/xlink.tar.gz xlink)

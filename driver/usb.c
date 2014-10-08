@@ -192,7 +192,7 @@ bool driver_usb_open() {
   handle = driver_usb_open_device(NULL, &info);
 
   if(handle == NULL) {
-    logger->error("could not open device %s", driver->path);
+    logger->error("could not open device \"%s\"", driver->path);
 
     libusb_exit(NULL);
     return false;

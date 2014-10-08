@@ -71,7 +71,7 @@ static void _logger_print_level(int level) {
   switch(level) {
 
   case LOGLEVEL_ERROR:
-    printf("ERROR: ");
+    printf("ERROR:   ");
     break;
 
   case LOGLEVEL_WARN:
@@ -79,15 +79,15 @@ static void _logger_print_level(int level) {
     break;
 
   case LOGLEVEL_INFO:
-    printf("INFO: ");
+    printf("INFO:    ");
     break;
 
   case LOGLEVEL_DEBUG:
-    printf("DEBUG: ");
+    printf("DEBUG:   ");
     break;
 
   case LOGLEVEL_TRACE:
-    printf("TRACE: ");
+    printf("TRACE:   ");
     break;
   }
 }

@@ -27,7 +27,7 @@ bool _driver_setup_and_open(void) {
   char default_parport_device[] = "/dev/parport0";
 
 #elif windows
-  char default_usb_device[] = "";
+  char default_usb_device[] = "usb";
   char default_parport_device[] = "0x378";
 #endif
 
@@ -35,9 +35,19 @@ bool _driver_setup_and_open(void) {
     result = driver_setup(getenv("XLINK_DEVICE"));
   }
   else {
-    
+
     if(!(result = driver_setup(default_usb_device))) {
+
       result = driver_setup(default_parport_device);
+
+      if(result) {
+	logger->warn("using default parallel port device %s instead",
+		     default_parport_device);
+      }
+    }
+    else {
+      logger->info("using default usb device \"%s\"",
+		   default_usb_device);
     }
   }
   
@@ -52,9 +62,11 @@ bool _driver_setup_and_open(void) {
 
 bool driver_setup(char* path) {
 
+  bool result = false;
+  
   if(!(device_is_parport(path) || device_is_usb(path))) {
     logger->error("%s: neither parallel port nor usb device", path);
-    return false;
+    return result;
   }
 
   driver->path = (char *) realloc(driver->path, strlen(path)+1);
@@ -62,44 +74,55 @@ bool driver_setup(char* path) {
 
   if(device_is_parport(driver->path)) {
 
-    logger->debug("using parallel port device %s", driver->path);
+    logger->debug("trying to use parallel port device %s...", driver->path);
   
-      driver->_open    = &driver_parport_open;
-      driver->_close   = &driver_parport_close;    
-      driver->_strobe  = &driver_parport_strobe;    
-      driver->_wait    = &driver_parport_wait;    
-      driver->_read    = &driver_parport_read;    
-      driver->_write   = &driver_parport_write;    
-      driver->_send    = &driver_parport_send;    
-      driver->_receive = &driver_parport_receive;    
-      driver->_input   = &driver_parport_input;    
-      driver->_output  = &driver_parport_output;    
-      driver->_ping    = &driver_parport_ping;    
-      driver->_reset   = &driver_parport_reset;    
-      driver->_boot    = &driver_parport_boot;    
-      driver->_free    = &driver_parport_free;
-  
+    driver->_open    = &driver_parport_open;
+    driver->_close   = &driver_parport_close;    
+    driver->_strobe  = &driver_parport_strobe;    
+    driver->_wait    = &driver_parport_wait;    
+    driver->_read    = &driver_parport_read;    
+    driver->_write   = &driver_parport_write;    
+    driver->_send    = &driver_parport_send;    
+    driver->_receive = &driver_parport_receive;    
+    driver->_input   = &driver_parport_input;    
+    driver->_output  = &driver_parport_output;    
+    driver->_ping    = &driver_parport_ping;    
+    driver->_reset   = &driver_parport_reset;    
+    driver->_boot    = &driver_parport_boot;    
+    driver->_free    = &driver_parport_free;
+    
+    result = driver->ready();
+    
+    if(result) {
+      logger->debug("using parallel port device %s", driver->path);
+    }
+    
   } else if(device_is_usb(driver->path)) {
+    
+    logger->debug("trying to use usb device \"%s\"...", driver->path);
 
-    logger->trace("using usb adapter driver %s", driver->path);
-
-      driver->_open    = &driver_usb_open;
-      driver->_close   = &driver_usb_close;    
-      driver->_strobe  = &driver_usb_strobe;    
-      driver->_wait    = &driver_usb_wait;
-      driver->_read    = &driver_usb_read;    
-      driver->_write   = &driver_usb_write;    
-      driver->_send    = &driver_usb_send;    
-      driver->_receive = &driver_usb_receive;    
-      driver->_input   = &driver_usb_input;    
-      driver->_output  = &driver_usb_output;    
-      driver->_ping    = &driver_usb_ping;    
-      driver->_reset   = &driver_usb_reset;    
-      driver->_boot    = &driver_usb_boot;    
-      driver->_free    = &driver_usb_free;
-  }    
-
-  return driver->ready();
+    driver->_open    = &driver_usb_open;
+    driver->_close   = &driver_usb_close;    
+    driver->_strobe  = &driver_usb_strobe;    
+    driver->_wait    = &driver_usb_wait;
+    driver->_read    = &driver_usb_read;    
+    driver->_write   = &driver_usb_write;    
+    driver->_send    = &driver_usb_send;    
+    driver->_receive = &driver_usb_receive;    
+    driver->_input   = &driver_usb_input;    
+    driver->_output  = &driver_usb_output;    
+    driver->_ping    = &driver_usb_ping;    
+    driver->_reset   = &driver_usb_reset;    
+    driver->_boot    = &driver_usb_boot;    
+    driver->_free    = &driver_usb_free;
+    
+    result = driver->ready();
+    
+    if(result) {
+      logger->debug("using usb device \"%s\"", driver->path);
+    }
+  }      
+  return result;
 }
 
 //------------------------------------------------------------------------------
