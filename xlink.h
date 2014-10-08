@@ -23,7 +23,7 @@
 
 typedef struct {
   unsigned char version;  // high byte mayor, low byte minor
-  unsigned char machine;  // XLINK_MACHINE_XXX
+  unsigned char machine;  // XLINK_MACHINE_C64
   unsigned char type;     // XLINK_SERVER_TYPE_{RAM|ROM}
   unsigned short start;   // server start address
   unsigned short end;     // server end address

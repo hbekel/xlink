@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 
 #include "disk.h"
+#include "util.h"
 
 Disk* disk_new(int size) {
   
@@ -35,7 +36,7 @@ Disk* disk_load(char *filename) {
   int size;
 
   if ((file = fopen(filename, "rb")) == NULL) {
-    fprintf(stderr, "error loading d64 file: '%s': %s\n", filename, strerror(errno));
+    logger->error("could not load d64 file: '%s': %s", filename, strerror(errno));
     return NULL;
   }
 
@@ -53,7 +54,7 @@ Disk* disk_load(char *filename) {
     size = 40;
   }
   else {
-    fprintf(stderr, "error loading d64 file: file size mismatch\n");
+    logger->error("could not load d64 file: file size mismatch\n");
     return NULL;
   }
 
@@ -127,12 +128,12 @@ bool disk_save(Disk* self, char *filename) {
   }
 
   if((file = fopen(filename, "wb")) == NULL) {
-    fprintf(stderr, "error opening %s\n", filename);
+    logger->error("could not open %s", filename);
     return false;
   }
   
   if(!disk_each_sector(self, &save_sector)) {
-    fprintf(stderr, "error saving sector\n");
+    logger->error("failed to save sector(s)");
     return false;
   }
   

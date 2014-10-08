@@ -132,8 +132,10 @@ libusb_device_handle* driver_usb_open_device(libusb_context* context, DeviceInfo
 	    continue;
 	  }
 
-	  if((result = libusb_get_string_descriptor_ascii(handle, descriptor.iSerialNumber,
-							  (unsigned char *) &serial, sizeof(serial))) < 0) {
+	  result = libusb_get_string_descriptor_ascii(handle, descriptor.iSerialNumber,
+						      (unsigned char *) &serial, sizeof(serial));
+
+	  if(result < 0) {
 	    logger->debug("could not get serial number from device: %d", result);
 	    goto skip;
 	  }
@@ -162,7 +164,7 @@ libusb_device_handle* driver_usb_open_device(libusb_context* context, DeviceInfo
   }
   
  done:
-  libusb_free_device_list(devices,1);  
+  libusb_free_device_list(devices, true);  
   return handle;
 }
 
@@ -176,8 +178,6 @@ bool driver_usb_open() {
   DeviceInfo info;
   int result;
 
-  logger->enter("usb");
-  
   if((result = libusb_init(NULL)) < 0) {
     logger->error("could not initialize libusb-1.0: %d", result);
     return false;
@@ -197,9 +197,9 @@ bool driver_usb_open() {
     libusb_exit(NULL);
     return false;
   }
+
   control(USB_INIT);
 
-  logger->leave();
   return true;
 }
 
