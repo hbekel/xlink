@@ -1,3 +1,8 @@
+RELEASE=1.0
+PREFIX=/usr
+SYSCONFDIR=/etc
+DESTDIR=
+
 GCC=gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 
@@ -6,8 +11,6 @@ GCC-MINGW32=i686-pc-mingw32-gcc
 
 #KASM=java -jar /usr/share/kickassembler/KickAss.jar
 KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
-
-RELEASE=1.0
 
 LIBHEADERS=\
 	xlink.h \
@@ -85,21 +88,22 @@ firmware-install: xlink firmware
 	(cd driver/at90usb162 && make dfu)
 
 install: xlink c64
-	install -m755 xlink /usr/bin
-	install -m644 libxlink.so /usr/lib
-	install -m644 xlink.h /usr/include
-	install -m644 -D xlink-server.prg /usr/share/xlink/xlink-server.prg
-	install -m644 -D xlink-kernal.rom /usr/share/xlink/xlink-kernal.rom
-	install -m644 -D bootstrap.txt /usr/share/xlink/xlink-bootstrap.txt
-	[ -d /etc/bash_completion.d ] &&  \
-		install -m644 etc/bash_completion.d/xlink /etc/bash_completion.d/
+	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
+	install -m644 -D libxlink.so $(DESTDIR)$(PREFIX)/lib/libxlink.so
+	install -m644 -D xlink.h $(DESTDIR)$(PREFIX)/include/xlink.h
+	install -m644 -D xlink-server.prg $(DESTDIR)$(PREFIX)/share/xlink/xlink-server.prg
+	install -m644 -D xlink-kernal.rom $(DESTDIR)$(PREFIX)/share/xlink/xlink-kernal.rom
+	install -m644 -D bootstrap.txt $(DESTDIR)$(PREFIX)/share/xlink/xlink-bootstrap.txt
+	[ -d $(DESTDIR)$(SYSCONFDIR)/bash_completion.d ] &&  \
+		install -m644 etc/bash_completion.d/xlink $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/ || true
 
 uninstall:
-	rm -v /usr/bin/xlink
-	rm -v /usr/lib/libxlink.so
-	rm -v /usr/include/xlink.h
-	rm -rv /usr/share/xlink
-	[ -f /etc/bash_completion.d/xlink ] && rm -v /etc/bash_completion.d/xlink
+	rm -v $(DESTDIR)$(PREFIX)/bin/xlink
+	rm -v $(DESTDIR)$(PREFIX)/lib/libxlink.so
+	rm -v $(DESTDIR)$(PREFIX)/include/xlink.h
+	rm -rv $(DESTDIR)$(PREFIX)/share/xlink
+	[ -f $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink ] && \
+		rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
 clean: firmware-clean
 	[ -f libxlink.so ] && rm -v libxlink.so || true
@@ -116,3 +120,4 @@ clean: firmware-clean
 
 release: clean
 	git archive --prefix=xlink-$(RELEASE)/ -o ../xlink-$(RELEASE).tar.gz HEAD
+
