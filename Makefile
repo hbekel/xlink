@@ -1,7 +1,11 @@
-RELEASE=1.0
+VERSION=1.0
 PREFIX=/usr
 SYSCONFDIR=/etc
 DESTDIR=
+
+USB_VID:=$(USB_VID)
+USB_PID:=$(USB_PID)
+USB_SERIAL=`uuidgen`
 
 GCC=gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
@@ -77,7 +81,8 @@ xlink-kernal.rom: server.h kernal.asm
 	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
-	(cd driver/at90usb162 && make)
+	(cd driver/at90usb162 && \
+		make USB_PID=$(USB_PID) USB_VID=$(USB_VID) USB_SERIAL=$(USB_SERIAL))
 
 firmware-clean:
 	(cd driver/at90usb162 && make clean)
@@ -94,8 +99,10 @@ install: xlink c64
 	install -m644 -D xlink-server.prg $(DESTDIR)$(PREFIX)/share/xlink/xlink-server.prg
 	install -m644 -D xlink-kernal.rom $(DESTDIR)$(PREFIX)/share/xlink/xlink-kernal.rom
 	install -m644 -D bootstrap.txt $(DESTDIR)$(PREFIX)/share/xlink/xlink-bootstrap.txt
+
 	[ -d $(DESTDIR)$(SYSCONFDIR)/bash_completion.d ] &&  \
-		install -m644 etc/bash_completion.d/xlink $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/ || true
+		install -m644 etc/bash_completion.d/xlink \
+			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/ || true
 
 uninstall:
 	rm -v $(DESTDIR)$(PREFIX)/bin/xlink
@@ -119,5 +126,4 @@ clean: firmware-clean
 	[ -f log ] && rm -v log || true
 
 release: clean
-	git archive --prefix=xlink-$(RELEASE)/ -o ../xlink-$(RELEASE).tar.gz HEAD
-
+	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD
