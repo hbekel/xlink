@@ -37,7 +37,7 @@ LIBSOURCES=\
 #all: linux c64
 all: win32 c64
 c64: server kernal bootstrap
-linux: xlink
+linux: xlink udev
 win32: xlink.exe
 server: xlink-server.prg
 kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
@@ -80,6 +80,10 @@ xlink-kernal.rom: server.h kernal.asm
 	cp commodore/kernal-901227-03.rom xlink-kernal.rom && \
 	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
+udev:
+	echo 'SUBSYSTEMS=="usb", ATTRS{idVendor}=="$(subst 0x,,$(USB_VID))", ATTRS{idProduct}=="$(subst 0x,,$(USB_PID))", MODE="0666", SYMLINK+="xlink"' > etc/udev/rules.d/10-xlink.rules
+
+
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && \
 		make USB_PID=$(USB_PID) USB_VID=$(USB_VID) USB_SERIAL=$(USB_SERIAL))
@@ -100,9 +104,11 @@ install: xlink c64
 	install -m644 -D xlink-kernal.rom $(DESTDIR)$(PREFIX)/share/xlink/xlink-kernal.rom
 	install -m644 -D bootstrap.txt $(DESTDIR)$(PREFIX)/share/xlink/xlink-bootstrap.txt
 
-	[ -d $(DESTDIR)$(SYSCONFDIR)/bash_completion.d ] &&  \
-		install -m644 etc/bash_completion.d/xlink \
-			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/ || true
+	install -m644 -D etc/udev/rules.d/10-xlink.rules \
+			$(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
+
+	install -m644 -D etc/bash_completion.d/xlink \
+			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
 uninstall:
 	rm -v $(DESTDIR)$(PREFIX)/bin/xlink
@@ -123,6 +129,7 @@ clean: firmware-clean
 	[ -f bootstrap.txt ] && rm -v bootstrap.txt || true
 	[ -f tools/make-extension ] && rm -v tools/make-extension || true
 	[ -f tools/make-bootstrap ] && rm -v tools/make-bootstrap || true
+	[ -f etc/udev/rules.d/10-xlink.rules ] && rm -v etc/udev/rules.d/10-xlink.rules || true
 	[ -f log ] && rm -v log || true
 
 release: clean
