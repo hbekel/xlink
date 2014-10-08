@@ -10,11 +10,11 @@ USB_SERIAL=`uuidgen`
 GCC=gcc
 FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 
-#GCC-MINGW32=i686-w64-mingw32-gcc
-GCC-MINGW32=i686-pc-mingw32-gcc
+GCC-MINGW32=i686-w64-mingw32-gcc
+#GCC-MINGW32=i686-pc-mingw32-gcc
 
-#KASM=java -jar /usr/share/kickassembler/KickAss.jar
-KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+KASM=java -jar /usr/share/kickassembler/KickAss.jar
+#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 LIBHEADERS=\
 	xlink.h \
@@ -34,8 +34,8 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-#all: linux c64
-all: win32 c64
+all: linux c64
+#all: win32 c64
 c64: server kernal bootstrap
 linux: xlink udev
 win32: xlink.exe
@@ -81,8 +81,8 @@ xlink-kernal.rom: server.h kernal.asm
 	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
 udev:
-	echo 'SUBSYSTEMS=="usb", ATTRS{idVendor}=="$(subst 0x,,$(USB_VID))", ATTRS{idProduct}=="$(subst 0x,,$(USB_PID))", MODE="0666", SYMLINK+="xlink"' > etc/udev/rules.d/10-xlink.rules
-
+	echo 'SUBSYSTEMS=="usb", ATTRS{idVendor}=="$(subst 0x,,$(USB_VID))", ATTRS{idProduct}=="$(subst 0x,,$(USB_PID))", MODE:="0666", SYMLINK+="xlink"' > etc/udev/rules.d/10-xlink.rules
+	echo 'SUBSYSTEMS=="usb", ATTR{idVendor}=="03eb", ATTR{idProduct}=="2ffa", SYMLINK+="dfu", MODE:="666"' >> etc/udev/rules.d/10-xlink.rules
 
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && \
@@ -109,6 +109,8 @@ install: xlink c64
 
 	install -m644 -D etc/bash_completion.d/xlink \
 			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
+
+	udevadm control --reload-rules
 
 uninstall:
 	rm -v $(DESTDIR)$(PREFIX)/bin/xlink
