@@ -1,6 +1,19 @@
 #ifndef USB_H
 #define USB_H
 
+#include <libusb-1.0/libusb.h>
+
+typedef struct {
+  unsigned int vid;
+  unsigned int pid;
+  int bus;
+  int address;
+  char *serial;
+} DeviceInfo;
+
+void driver_usb_lookup(char* path, DeviceInfo* info);
+libusb_device_handle* driver_usb_open_device(libusb_context* context, DeviceInfo *info);
+
 bool driver_usb_open(void);
 void driver_usb_close(void);
 void driver_usb_strobe (void);
