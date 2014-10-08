@@ -53,6 +53,7 @@ bool driver_setup(char* path) {
     return false;
   }
 
+  driver->path = (char *) realloc(driver->path, strlen(path)+1);
   strcpy(driver->path, path);
 
   if(device_is_parport(driver->path)) {
