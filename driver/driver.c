@@ -16,6 +16,8 @@
 
 extern Driver* driver;
 
+//------------------------------------------------------------------------------
+
 bool _driver_setup_and_open(void) {
 
   bool result = false;
@@ -45,6 +47,8 @@ bool _driver_setup_and_open(void) {
 
   return result;
 }
+
+//------------------------------------------------------------------------------
 
 bool driver_setup(char* path) {
 
@@ -98,6 +102,8 @@ bool driver_setup(char* path) {
   return driver->ready();
 }
 
+//------------------------------------------------------------------------------
+
 bool device_is_parport(char* path) {
 
 #if linux
@@ -121,6 +127,8 @@ bool device_is_parport(char* path) {
   return (strtol(path, NULL, 0) > 0) && (errno == 0);   
 #endif
 }
+
+//------------------------------------------------------------------------------
 
 bool device_is_usb(char* path) {
 
@@ -148,6 +156,8 @@ bool device_is_usb(char* path) {
 #endif
 }
 
+//------------------------------------------------------------------------------
+
 bool _driver_ready() {
   bool result = false;
 
@@ -156,6 +166,8 @@ bool _driver_ready() {
   }
   return result;
 }
+
+//------------------------------------------------------------------------------
 
 bool _driver_open()                        { return driver->_open(); }
 void _driver_close()                       { driver->_close(); }
@@ -171,6 +183,8 @@ bool _driver_ping(void)                    { return driver->_ping(); }
 void _driver_boot()                        { driver->_boot(); }
 void _driver_reset()                       { driver->_reset(); }
 
+//------------------------------------------------------------------------------
+
 void _driver_free() {
 
   if(driver->_free != NULL) {
@@ -180,3 +194,5 @@ void _driver_free() {
   free(driver);
   driver = NULL;
 }
+
+//------------------------------------------------------------------------------
