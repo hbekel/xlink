@@ -51,6 +51,7 @@ void libxlink_initialize() {
 //------------------------------------------------------------------------------
 
 void libxlink_finalize(void) {
+
   if(driver != NULL) {
     driver->free();
   }
@@ -75,7 +76,6 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
   return true;
 }
 #endif
-
 
 //------------------------------------------------------------------------------
 
@@ -104,7 +104,7 @@ bool xlink_has_device(void) {
 
 //------------------------------------------------------------------------------
 
-bool xlink_identify(XLinkServerInfo* server) {
+bool xlink_identify(xlink_server* server) {
 
   char data[7];
   
@@ -161,7 +161,7 @@ bool xlink_ping() {
   bool result = false;
 
   if(driver->open()) {
-    result = driver->ping();
+    result = driver->ping();    
     driver->close();
   }
 
@@ -468,8 +468,6 @@ bool xlink_dos(char* cmd) {
   for(int i=0; i<strlen(cmd); i++) {
     command[i] = toupper(cmd[i]);
   }      
-
-  logger->debug("loading & initialising extensions");
 
   if(extension_load(lib) && 
      extension_load(dos_command) && 

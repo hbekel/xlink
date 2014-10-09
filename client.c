@@ -933,7 +933,7 @@ int command_benchmark(Command* self) {
 
 int command_identify(Command *self) {
 
-  XLinkServerInfo server;
+  xlink_server server;
   
   if(xlink_identify(&server)) {
 

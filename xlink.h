@@ -21,26 +21,26 @@
 
 #define XLINK_PING_TIMEOUT 250
 
-typedef struct {
-  unsigned char version;  // high byte mayor, low byte minor
-  unsigned char machine;  // XLINK_MACHINE_C64
-  unsigned char type;     // XLINK_SERVER_TYPE_{RAM|ROM}
-  unsigned short start;   // server start address
-  unsigned short end;     // server end address
-  unsigned short length;  // server code length
-} XLinkServerInfo;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-  unsigned char xlink_version(void);
 
+  typedef struct {
+    unsigned char version;  // high byte mayor, low byte minor
+    unsigned char machine;  // XLINK_MACHINE_C64
+    unsigned char type;     // XLINK_SERVER_TYPE_{RAM|ROM}
+    unsigned short start;   // server start address
+    unsigned short end;     // server end address
+    unsigned short length;  // server code length
+  } xlink_server;
+
+  unsigned char xlink_version(void);
+  
+  bool xlink_has_device(void);  
   bool xlink_set_device(char* path);
   char* xlink_get_device(void);
-  bool xlink_has_device(void);
 
-  bool xlink_identify(XLinkServerInfo*);
-
+  bool xlink_identify(xlink_server* server);
   bool xlink_ping(void);
   bool xlink_reset(void);
   bool xlink_ready(void);
@@ -58,7 +58,6 @@ extern "C" {
                   int address, unsigned char value);
   
   bool xlink_jump(unsigned char memory, unsigned char bank, int address);
-
   bool xlink_run(void);
 
   bool xlink_drive_status(char* status);

@@ -8,13 +8,13 @@ USB_PID:=$(USB_PID)
 USB_SERIAL=`uuidgen`
 
 GCC=gcc
-FLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
+CFLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 
-GCC-MINGW32=i686-w64-mingw32-gcc
-#GCC-MINGW32=i686-pc-mingw32-gcc
+#GCC-MINGW32=i686-w64-mingw32-gcc
+GCC-MINGW32=i686-pc-mingw32-gcc
 
-KASM=java -jar /usr/share/kickassembler/KickAss.jar
-#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+#KASM=java -jar /usr/share/kickassembler/KickAss.jar
+KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 LIBHEADERS=\
 	xlink.h \
@@ -34,8 +34,8 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-all: linux c64
-#all: win32 c64
+#all: linux c64
+all: win32 c64
 c64: server kernal bootstrap
 linux: xlink udev
 win32: xlink.exe
@@ -44,18 +44,18 @@ kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.txt
 
 libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
-	$(GCC) $(FLAGS) -shared -fPIC \
+	$(GCC) $(CFLAGS) -shared -fPIC \
 		-Wl,-init,libxlink_initialize,-fini,libxlink_finalize\
 		-o libxlink.so $(LIBSOURCES) -lusb-1.0
 
 xlink: libxlink.so client.c client.h disk.c disk.h
-	$(GCC) $(FLAGS) -o xlink client.c disk.c -L. -lxlink -lreadline
+	$(GCC) $(CFLAGS) -o xlink client.c disk.c -L. -lxlink -lreadline
 
 xlink.dll: $(LIBHEADERS) $(LIBSOURCES)
-	$(GCC-MINGW32) $(FLAGS) -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
+	$(GCC-MINGW32) $(CFLAGS) -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
 
 xlink.exe: xlink.dll client.c client.h disk.c disk.h 
-	$(GCC-MINGW32) $(FLAGS) -o xlink.exe client.c disk.c -L. -lxlink
+	$(GCC-MINGW32) $(CFLAGS) -o xlink.exe client.c disk.c -L. -lxlink
 
 extensions.c: tools/make-extension extensions.asm
 	$(KASM) -binfile -o extensions.bin extensions.asm | \
@@ -63,10 +63,10 @@ extensions.c: tools/make-extension extensions.asm
 	sh > extensions.c && rm extensions.bin
 
 tools/make-extension: tools/make-extension.c
-	$(GCC) $(FLAGS) -o tools/make-extension tools/make-extension.c
+	$(GCC) $(CFLAGS) -o tools/make-extension tools/make-extension.c
 
 tools/make-bootstrap: tools/make-bootstrap.c
-	$(GCC) $(FLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
+	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
 bootstrap.txt: tools/make-bootstrap bootstrap.asm
 	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | \
