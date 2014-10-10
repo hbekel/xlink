@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include "xlink.h"
+#include "error.h"
 #include "target.h"
 #include "driver/driver.h"
 #include "extension.h"
@@ -26,6 +27,8 @@ unsigned char xlink_version(void) {
 
 void libxlink_initialize() {
 
+  xlink_error = (xlink_error_t *) calloc(1, sizeof(xlink_error_t));
+
   driver = (Driver*) calloc(1, sizeof(Driver));
   driver->path = (char*) calloc(1, sizeof(char));
 
@@ -46,15 +49,19 @@ void libxlink_initialize() {
   driver->free    = &_driver_free;
 
   driver->_open = &_driver_setup_and_open;
+
+  SUCCESS_IF(true);
 }
 
 //------------------------------------------------------------------------------
 
 void libxlink_finalize(void) {
-
+  
   if(driver != NULL) {
     driver->free();
   }
+
+  free(xlink_error);
   logger->free();
 }
 
@@ -245,6 +252,7 @@ bool xlink_load(unsigned char memory,
  done:
   driver->close();
   logger->leave();
+
   return result;
 }
 

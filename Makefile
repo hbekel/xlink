@@ -27,12 +27,15 @@ LIBHEADERS=\
 
 LIBSOURCES=\
 	xlink.c \
+	error.h \
 	util.c \
 	extension.c \
 	extensions.c \
 	driver/driver.c \
 	driver/usb.c \
 	driver/parport.c
+
+LIBFLAGS=-DXLINK_LIBRARY_BUILD
 
 #all: linux c64
 all: win32 c64
@@ -44,7 +47,7 @@ kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.txt
 
 libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
-	$(GCC) $(CFLAGS) -shared -fPIC \
+	$(GCC) $(CFLAGS) $(LIBFLAGS) -shared -fPIC \
 		-Wl,-init,libxlink_initialize,-fini,libxlink_finalize\
 		-o libxlink.so $(LIBSOURCES) -lusb-1.0
 
@@ -52,7 +55,7 @@ xlink: libxlink.so client.c client.h disk.c disk.h
 	$(GCC) $(CFLAGS) -o xlink client.c disk.c -L. -lxlink -lreadline
 
 xlink.dll: $(LIBHEADERS) $(LIBSOURCES)
-	$(GCC-MINGW32) $(CFLAGS) -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
+	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
 
 xlink.exe: xlink.dll client.c client.h disk.c disk.h 
 	$(GCC-MINGW32) $(CFLAGS) -o xlink.exe client.c disk.c -L. -lxlink

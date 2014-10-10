@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#define XLINK_SUCCESS 0x00
+
 #define XLINK_COMMAND_LOAD     0x01
 #define XLINK_COMMAND_SAVE     0x02
 #define XLINK_COMMAND_POKE     0x03
@@ -21,6 +23,12 @@
 
 #define XLINK_PING_TIMEOUT 250
 
+#if defined(XLINK_LIBRARY_BUILD)
+#define IMPORT
+#else
+#define IMPORT __declspec(dllimport)
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -34,6 +42,13 @@ extern "C" {
     unsigned short length;  // server code length
   } xlink_server;
 
+  typedef struct {
+    int code;
+    char message[512];
+  } xlink_error_t;
+
+  IMPORT xlink_error_t* xlink_error;
+  
   unsigned char xlink_version(void);
   
   bool xlink_has_device(void);  
@@ -64,7 +79,7 @@ extern "C" {
   bool xlink_dos(char* cmd);
   bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char* data);
   bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char* data);
-
+  
 #ifdef __cplusplus
 }
 #endif
