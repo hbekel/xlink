@@ -5,6 +5,7 @@
 #include <unistd.h>
 
 #include "target.h"
+#include "error.h"
 #include "xlink.h"
 #include "driver.h"
 #include "parport.h"
@@ -104,7 +105,7 @@ bool driver_parport_open() {
 #if linux
   if((driver->device = open(driver->path, O_RDWR)) == -1) {
 
-    logger->error("Couldn't open %s", driver->path);
+    SET_ERROR(XLINK_ERROR_PARPORT, "Couldn't open %s", driver->path);
     return false;
   }  
   
@@ -112,7 +113,7 @@ bool driver_parport_open() {
     _driver_parport_init();
     return true;
   }
-  logger->error("Couldn't claim %s", driver->path);
+  SET_ERROR(XLINK_ERROR_PARPORT, "Couldn't claim %s", driver->path);
   return false;
 
 #elif windows
@@ -131,17 +132,19 @@ bool driver_parport_open() {
         return true;
       }
       else {
-        logger->error("failed to open inpout32 parallel port driver\n");
+        SET_ERROR(XLINK_ERROR_PARPORT, "failed to open inpout32 parallel port driver\n");
       }		
     }
     else {
-      logger->error("xlink: error: failed to load inpout32.dll\n\n"
-                    "Inpout32 is required for parallel port access:\n\n"    
-                    "    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");	
+      SET_ERROR(XLINK_ERROR_PARPORT, "xlink: error: failed to load inpout32.dll\n\n"
+		                     "Inpout32 is required for parallel port access:\n\n"    
+		                     "    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");	
     }
     return false;
   }  
   _driver_parport_init();
+
+  CLEAR_ERROR_IF(true);
   return true;
 #endif
 }

@@ -55,7 +55,7 @@ void libxlink_initialize() {
   driver->_open = &_driver_setup_and_open;
 
   xlink_error = (xlink_error_t *) calloc(1, sizeof(xlink_error_t));
-  SUCCESS_IF(true);
+  CLEAR_ERROR_IF(true);
 
   xlink_set_debug(XLINK_LOG_LEVEL_NONE);
 }
@@ -120,14 +120,17 @@ bool xlink_has_device(void) {
 
 bool xlink_identify(xlink_server* server) {
 
+  bool result = true;
   char data[7];
   
   if(driver->open()) {
     
     if(!driver->ping()) {
-      logger->error("no response from C64");
+      SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
+
       driver->close();
-      return false;
+      result = false;
+      goto done;
     }
 
     driver->output();
@@ -146,8 +149,10 @@ bool xlink_identify(xlink_server* server) {
       checksum &= data[i];
     }
     if(checksum == 0xff) {
-      logger->error("unknown server (does not support identification)");
-      return false;
+      SET_ERROR(XLINK_ERROR_SERVER, "unknown server (does not support identification)");
+
+      result = false;
+      goto done;
     }
     
     server->version = data[0];
@@ -163,9 +168,11 @@ bool xlink_identify(xlink_server* server) {
     server->end |= data[6] << 8;
     
     server->length = server->end - server->start;
-    return true;
   }
-  return false;
+  
+ done:
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -185,19 +192,23 @@ bool xlink_ping() {
 //------------------------------------------------------------------------------
 
 bool xlink_reset(void) {
-
+  bool result = false;
+  
   if(driver->open()) {
     driver->reset();
     driver->close();
-    return true;
+    result = true;
   }
-  return false;
+  
+  CLEAR_ERROR_IF(result);
+  return result;
 };
 
 //------------------------------------------------------------------------------
 
 bool xlink_ready(void) {
 
+  bool result = true;
   int timeout = 3000;
 
   if(!xlink_ping()) {
@@ -206,24 +217,31 @@ bool xlink_ready(void) {
     while(timeout) {
       if(xlink_ping()) {
         usleep(250*1000); // wait until basic is ready
-        return true;
+        goto done;
       }
       timeout-=XLINK_PING_TIMEOUT;
     }
-    return false;
+    result = false;
+    goto done;
   }
-  return true;
+  
+ done:
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
 
 bool xlink_bootloader(void) {
+  bool result = false;
   
   if(driver->open()) {
     driver->boot();
-    return true;
+    result = true;
   }
-  return false;
+
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -234,16 +252,13 @@ bool xlink_load(unsigned char memory,
 		int end, 
 		char* data, 
 		int size) {
-  
-  logger->enter("xlink_load");
 
-  bool result = true;
+  bool result = false;
 
   if(driver->open()) {
     
     if(!driver->ping()) {
-      logger->error("no response from C64");
-      result = false;
+      SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
       goto done;
     }
 
@@ -258,8 +273,8 @@ bool xlink_load(unsigned char memory,
 
  done:
   driver->close();
-  logger->leave();
 
+  CLEAR_ERROR_IF(result);
   return result;
 }
 
@@ -272,12 +287,13 @@ bool xlink_save(unsigned char memory,
 		char* data, 
 		int size) {
 
+  bool result = false;
+  
   if(driver->open()) {
 
     if(!driver->ping()) {
-      logger->error("no response from C64");
-      driver->close();
-      return false;
+      SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
+      goto done;
     }
 
     driver->output();
@@ -289,10 +305,14 @@ bool xlink_save(unsigned char memory,
 
     driver->receive(data, size);
 
-    driver->close();
-    return true;
+    result = true;
   }
-  return false;
+
+ done:
+  driver->close();
+
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -301,13 +321,14 @@ bool xlink_peek(unsigned char memory,
 		unsigned char bank, 
 		int address, 
 		unsigned char* value) {
+
+  bool result = false;
   
   if(driver->open()) {
   
     if(!driver->ping()) {
-      logger->error("no response from C64");
-      driver->close();
-      return false;
+      SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
+      goto done;
     }
 
     driver->output();
@@ -318,10 +339,14 @@ bool xlink_peek(unsigned char memory,
 
     driver->receive((char *)value, 1);
 
-    driver->close();
-    return true;
+    result = true;
   }
-  return false;
+
+ done:
+  driver->close();
+
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -331,22 +356,27 @@ bool xlink_poke(unsigned char memory,
 		int address, 
 		unsigned char value) {
 
+  bool result = false;
+  
   if(driver->open()) {
   
     if(!driver->ping()) {
-      logger->error("no response from C64");
-      driver->close();
-      return false;
+      SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
+      goto done;
     }
     
     driver->output();
     driver->send((char []) {XLINK_COMMAND_POKE, memory, bank, 
           lo(address), hi(address), value}, 6);    
 
-    driver->close();
-    return true;
+    result = true;
   }
-  return false;
+
+ done:
+  driver->close();
+
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -355,57 +385,68 @@ bool xlink_jump(unsigned char memory,
 		unsigned char bank, 
 		int address) {
 
-    // jump address is send MSB first (big-endian)    
+  bool result = false;
+
+  // jump address is send MSB first (big-endian)    
 
    if(driver->open()) {
   
     if(!driver->ping()) {
-      logger->error("no response from C64");
-      driver->close();
-      return false;
+      SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
+      goto done;
     }
 
     driver->output();
     driver->send((char []) {XLINK_COMMAND_JUMP, memory, bank, 
           hi(address), lo(address)}, 5);    
 
-    driver->close();
-    return true;
+    result = true;
   }
-  return false;
+   
+ done:
+  driver->close();
+
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
 
 bool xlink_run(void) {
 
+  bool result = false;
+  
    if(driver->open()) {
   
     if(!driver->ping()) {
-      logger->error("no response from C64");
-      driver->close();
-      return false;
+      SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
+      goto done;
     }
 
     driver->output();
     driver->send((char []) {XLINK_COMMAND_RUN}, 1);
 
-    driver->close();
-    return true;
+    result = true;
   }
-  return false;
+   
+ done:
+  driver->close();
+
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
 
 bool xlink_extend(int address) {
 
+  bool result = false;
+  
   if(driver->open()) {
   
     if(!driver->ping()) {
-      logger->error("no response from C64");
-      driver->close();
-      return false;
+      SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
+      goto done;      
     }
   
     // send the address-1 high byte first, so the server can 
@@ -416,17 +457,19 @@ bool xlink_extend(int address) {
     driver->output();
     driver->send((char []) {XLINK_COMMAND_EXTEND, hi(address), lo(address)}, 3);
 
-    driver->close();
-    return true;
+    result = true;
   }
-  return false;
+  
+ done:
+  driver->close();
+
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
 
 bool xlink_drive_status(char* status) {
-
-  logger->enter("xlink_drive_status");
 
   unsigned char byte;
   bool result = false;
@@ -459,19 +502,17 @@ bool xlink_drive_status(char* status) {
       result = true;
     }
   }
-
+  
   extension_free(lib);
   extension_free(drive_status);
-  logger->leave();
-
+  
+  CLEAR_ERROR_IF(result);
   return result;
 }
 
 //------------------------------------------------------------------------------
 
 bool xlink_dos(char* cmd) {
-
-  logger->enter("xlink_dos");
 
   bool result = false;
 
@@ -504,8 +545,8 @@ bool xlink_dos(char* cmd) {
   free(command);
   extension_free(lib);
   extension_free(dos_command);
-  logger->leave();
 
+  CLEAR_ERROR_IF(result);
   return result;
 }
 
@@ -544,6 +585,7 @@ bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char*
   extension_free(lib);
   extension_free(sector_read);
 
+  CLEAR_ERROR_IF(result);
   return result;
 }
 
@@ -577,6 +619,8 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
   
   extension_free(lib);
   extension_free(sector_write);
+
+  CLEAR_ERROR_IF(result);
   return result;
 }
 

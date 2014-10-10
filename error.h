@@ -8,13 +8,13 @@
 
 #if defined(XLINK_LIBRARY_BUILD)
 
-#define FAILURE(c, f, ...) xlink_error->code = c; sprintf(xlink_error->message, f, ##__VA_ARGS__); logger->error(f, ##__VA_ARGS__); 
-#define SUCCESS_IF(r) if (r) { xlink_error->code = XLINK_SUCCESS; sprintf(xlink_error->message, "Success"); }
+#define SET_ERROR(c, f, ...) xlink_error->code = c; sprintf(xlink_error->message, f, ##__VA_ARGS__); logger->error(f, ##__VA_ARGS__); 
+#define CLEAR_ERROR_IF(r) if (r) { xlink_error->code = XLINK_SUCCESS; sprintf(xlink_error->message, "Success"); }
 
 #else
 
-#define FAILURE
-#define SUCCESS_IF(r)
+#define SET_ERROR(c, f, ...)
+#define CLEAR_ERROR_IF(r)
 
 #endif
 

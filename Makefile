@@ -113,7 +113,7 @@ install: xlink c64
 	install -m644 -D etc/bash_completion.d/xlink \
 			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
-	udevadm control --reload-rules
+	udevadm control --reload-rules || true
 
 uninstall:
 	rm -v $(DESTDIR)$(PREFIX)/bin/xlink

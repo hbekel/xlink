@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 
 #include "target.h"
+#include "error.h"
 #include "util.h"
 #include "driver.h"
 #include "parport.h"
@@ -65,8 +66,7 @@ bool driver_setup(char* path) {
   bool result = false;
   
   if(!(device_is_parport(path) || device_is_usb(path))) {
-    logger->error("%s: neither parallel port nor usb device", path);
-    return result;
+    goto done;
   }
 
   driver->path = (char *) realloc(driver->path, strlen(path)+1);
@@ -121,29 +121,38 @@ bool driver_setup(char* path) {
     if(result) {
       logger->debug("using usb device \"%s\"", driver->path);
     }
-  }      
+  }
+
+ done:
+  CLEAR_ERROR_IF(result);
   return result;
 }
 
 //------------------------------------------------------------------------------
 
 bool device_is_parport(char* path) {
-
 #if linux
   struct stat device;
-  
+
   if(stat(path, &device) == -1) {
-    logger->error("couldn't stat %s: %s", path, strerror(errno));
+
+    SET_ERROR(XLINK_ERROR_DEVICE, "couldn't stat %s: %s", path, strerror(errno));
     return false;
   }
   
   if(!S_ISCHR(device.st_mode)) {
 
-    logger->error("%s: not a character device", path);
+    SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a character device", path);
     return false;
   }
   
-  return major(device.st_rdev) == 99;
+  if(major(device.st_rdev) != 99) {
+
+    SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a parallel port device", path);
+    return false;	   
+  }
+  CLEAR_ERROR_IF(true);
+  return true;
 
 #elif windows
   errno = 0;
@@ -159,19 +168,24 @@ bool device_is_usb(char* path) {
   struct stat device;
   
   if(stat(path, &device) == -1) {
-    logger->error("couldn't stat %s: %s", path, strerror(errno));
+
+    SET_ERROR(XLINK_ERROR_DEVICE, "couldn't stat %s: %s", path, strerror(errno));
     return false;
   }
   
   if(!S_ISCHR(device.st_mode)) {
 
-    logger->error("%s: not a character device", path);
+    SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a character device", path);
     return false;
   }
+  
   if(major(device.st_rdev) != 189) {
-    logger->error("%s: not a USB device", path);
+
+    SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a USB device", path);
     return false;
   }
+  
+  CLEAR_ERROR_IF(true);
   return true;
 
 #elif windows
@@ -187,6 +201,8 @@ bool _driver_ready() {
   if((result = driver->open())) {
     driver->close();
   }
+  
+  CLEAR_ERROR_IF(result);
   return result;
 }
 
