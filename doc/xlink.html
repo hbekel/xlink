@@ -56,7 +56,7 @@
 
 <p>The Commodore 64 is connected to a PC via a simple <a href="#parallel-port-cable">parallel port cable</a> or via a custom build <a href="#usb-adapter">USB adapter</a>.  A <a href="#client-documentation">command-line client</a> is used on the PC to transfer data to and from C64 memory, run programs on the C64, write or read from an attached disk drive or to initiate a hardware reset.</p>
 
-<p>An interrupt-driven server on the Commode 64 listens to and executes the commands send by the client. The server can be temporarily loaded on the C64, or it can be permanently installed using a customized kernal rom. The latter has the advantage of being instantly available after power-up or reset, which makes the Xlink system well suited for easy cross development using a PC and a real Commodore 64.</p>
+<p>An interrupt-driven server on the Commode 64 listens to and executes the commands send by the client. The server can be temporarily loaded on the C64, or it can be permanently installed using a customized kernal rom. The latter has the advantage of being instantly available after power-up or reset, which makes the Xlink system well suited for fast and easy cross development using a PC and a real Commodore 64.</p>
 
 <p>The implementation of the underlying functionality is distributed as a <a href="#library-documentation">shared library</a>, making the functionality provided by Xlink readily available for use in other programs.</p>
 
@@ -71,12 +71,6 @@
 <h3 id="usb-adapter">USB Adapter</h3>
 
 <p><a href="adapter-schematics.pdf">Schematics</a> and pcb layout files in KiCad format are included in the source tarball.</p>
-
-<p>The USB adapter can be purchased as a kit for €20 (excluding shipping costs). The kit includes the pcb (with the microcontroller already mounted and programmed) and all the necessary parts and instructions for assembly (including a userport connector and a USB cable). You should be comfortable with soldering through-hole components. </p>
-
-<p>To order a kit, just drop me a line at <a href="mailto:h.bekel@googlemail.com">h.bekel@googlemail.com</a>.</p>
-
-
 
 <h3 id="parallel-port-cable">Parallel Port Cable</h3>
 
@@ -207,6 +201,8 @@
 
 <h4 id="client-installation">Client Installation</h4>
 
+<p>Windows: Recommend Zadig driver installer?</p>
+
 
 
 <h4 id="server-installation">Server Installation</h4>
@@ -318,6 +314,8 @@ Commands:
       verify &lt;file&gt;                : verify disk against d64 file
 </code></pre>
 
+
+
 <h3 id="library-documentation">Library documentation</h3>
 
 
@@ -382,6 +380,8 @@ use, data or profits, whether in an action of contract, negligence or
 other tortious action, arising out of or in connection with the use or
 performance of this software.
 </pre>
+
+
 
 <h2 id="imprint">Imprint</h2>
 
