@@ -116,12 +116,12 @@ install: xlink c64
 	udevadm control --reload-rules || true
 
 uninstall:
-	rm -v $(DESTDIR)$(PREFIX)/bin/xlink
-	rm -v $(DESTDIR)$(PREFIX)/lib/libxlink.so
-	rm -v $(DESTDIR)$(PREFIX)/include/xlink.h
-	rm -rv $(DESTDIR)$(PREFIX)/share/xlink
-	[ -f $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink ] && \
-		rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
+	rm -v $(DESTDIR)$(PREFIX)/bin/xlink || true
+	rm -v $(DESTDIR)$(PREFIX)/lib/libxlink.so || true
+	rm -v $(DESTDIR)$(PREFIX)/include/xlink.h || true
+	rm -rv $(DESTDIR)$(PREFIX)/share/xlink || true
+	rm -v $(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
+	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
 clean: firmware-clean
 	[ -f libxlink.so ] && rm -v libxlink.so || true
