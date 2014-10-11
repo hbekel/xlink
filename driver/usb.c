@@ -92,7 +92,7 @@ libusb_device_handle* driver_usb_open_device(libusb_context* context, DeviceInfo
   int i = 0;
   
   if((result = libusb_get_device_list(context, &devices)) < 0) {
-    SET_ERROR(XLINK_ERROR_USB, "could not get usb device list: %d", result);
+    SET_ERROR(XLINK_ERROR_LIBUSB, "could not get usb device list: %d", result);
     return NULL;
   }
 
@@ -154,7 +154,7 @@ libusb_device_handle* driver_usb_open_device(libusb_context* context, DeviceInfo
       
       if(handle == NULL) {
 	if((result = libusb_open(device, &handle)) < 0) {
-	  SET_ERROR(XLINK_ERROR_USB,
+	  SET_ERROR(XLINK_ERROR_LIBUSB,
 		    "could not open usb device %03d/%03d",
 		    libusb_get_bus_number(device),
 		    libusb_get_device_address(device));
@@ -184,7 +184,7 @@ bool driver_usb_open() {
   int result;
 
   if((result = libusb_init(NULL)) < 0) {
-    SET_ERROR(XLINK_ERROR_USB, "could not initialize libusb-1.0: %d", result);
+    SET_ERROR(XLINK_ERROR_LIBUSB, "could not initialize libusb-1.0: %d", result);
     return false;
   }
   version = libusb_get_version();
@@ -197,7 +197,7 @@ bool driver_usb_open() {
   handle = driver_usb_open_device(NULL, &info);
 
   if(handle == NULL) {
-    SET_ERROR(XLINK_ERROR_USB, "could not open device \"%s\"", driver->path);
+    SET_ERROR(XLINK_ERROR_LIBUSB, "could not open device \"%s\"", driver->path);
 
     libusb_exit(NULL);
     return false;

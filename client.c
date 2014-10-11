@@ -467,8 +467,11 @@ int command_print(Command* self) {
   char result[1024];
   bool print = false;
 
-  sprintf(result, "-d %s ",  xlink_get_device());
-
+  if(strlen(xlink_get_device()) > 0) {
+    sprintf(result, "-d %s ",  xlink_get_device());
+    print = true;
+  }
+   
   if((unsigned char) self->memory != 0xff) {
     sprintf(result + strlen(result), "-m 0x%02X ", (unsigned char) self->memory);
     print = true;

@@ -1,23 +1,29 @@
 #ifndef XLINK_H
 #define XLINK_H
 
+#if defined(XLINK_LIBRARY_BUILD)
+#define IMPORT
+#else
+#define IMPORT __declspec(dllimport)
+#endif
+
 #include <stdbool.h>
 
-#define XLINK_VERSION 0x10
+#define XLINK_VERSION          0x10
 
-#define XLINK_SUCCESS       0x00
-#define XLINK_ERROR_DEVICE  0x01
-#define XLINK_ERROR_USB     0x02
-#define XLINK_ERROR_PARPORT 0x03
-#define XLINK_ERROR_SERVER  0x04
+#define XLINK_SUCCESS          0x00
+#define XLINK_ERROR_DEVICE     0x01
+#define XLINK_ERROR_LIBUSB     0x02
+#define XLINK_ERROR_PARPORT    0x03
+#define XLINK_ERROR_SERVER     0x04
 
-#define XLINK_LOG_LEVEL_NONE  0x00
-#define XLINK_LOG_LEVEL_ERROR 0x01
-#define XLINK_LOG_LEVEL_WARN  0x02
-#define XLINK_LOG_LEVEL_INFO  0x03
-#define XLINK_LOG_LEVEL_DEBUG 0x04
-#define XLINK_LOG_LEVEL_TRACE 0x05
-#define XLINK_LOG_LEVEL_ALL   0x06
+#define XLINK_LOG_LEVEL_NONE   0x00
+#define XLINK_LOG_LEVEL_ERROR  0x01
+#define XLINK_LOG_LEVEL_WARN   0x02
+#define XLINK_LOG_LEVEL_INFO   0x03
+#define XLINK_LOG_LEVEL_DEBUG  0x04
+#define XLINK_LOG_LEVEL_TRACE  0x05
+#define XLINK_LOG_LEVEL_ALL    0x06
 
 #define XLINK_COMMAND_LOAD     0x01
 #define XLINK_COMMAND_SAVE     0x02
@@ -28,18 +34,11 @@
 #define XLINK_COMMAND_EXTEND   0x07
 #define XLINK_COMMAND_IDENTIFY 0xfe 
 
-#define XLINK_SERVER_TYPE_RAM 0x00
-#define XLINK_SERVER_TYPE_ROM 0x01
+#define XLINK_PING_TIMEOUT     250
 
-#define XLINK_MACHINE_C64 0x00
-
-#define XLINK_PING_TIMEOUT 250
-
-#if defined(XLINK_LIBRARY_BUILD)
-#define IMPORT
-#else
-#define IMPORT __declspec(dllimport)
-#endif
+#define XLINK_SERVER_TYPE_RAM  0x00
+#define XLINK_SERVER_TYPE_ROM  0x01
+#define XLINK_MACHINE_C64      0x00
 
 #ifdef __cplusplus
 extern "C" {

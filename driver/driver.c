@@ -42,7 +42,7 @@ bool _driver_setup_and_open(void) {
       result = driver_setup(default_parport_device);
 
       if(result) {
-	logger->warn("using default parallel port device %s instead",
+	logger->warn("using default parallel port device %s",
 		     default_parport_device);
       }
     }
