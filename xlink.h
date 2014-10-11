@@ -1,10 +1,14 @@
 #ifndef XLINK_H
 #define XLINK_H
 
-#if defined(XLINK_LIBRARY_BUILD)
-#define IMPORT
+#if windows
+  #if defined(XLINK_LIBRARY_BUILD)
+    #define IMPORT
+  #else
+    #define IMPORT __declspec(dllimport)
+  #endif
 #else
-#define IMPORT __declspec(dllimport)
+  #define IMPORT
 #endif
 
 #include <stdbool.h>
