@@ -55,10 +55,10 @@ xlink: libxlink.so client.c client.h disk.c disk.h
 	$(GCC) $(CFLAGS) -o xlink client.c disk.c -L. -lxlink -lreadline
 
 xlink.dll: $(LIBHEADERS) $(LIBSOURCES)
-	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
+	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -static-libgcc -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
 
 xlink.exe: xlink.dll client.c client.h disk.c disk.h 
-	$(GCC-MINGW32) $(CFLAGS) -o xlink.exe client.c disk.c -L. -lxlink
+	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c -L. -lxlink
 
 extensions.c: tools/make-extension extensions.asm
 	$(KASM) -binfile -o extensions.bin extensions.asm | \
