@@ -46,6 +46,8 @@ typedef struct {
   StringList *context;
   bool enabled;
   void (*set) (char *level);  
+  void (*inc) (void);
+  void (*dec) (void);
   void (*enter) (char *context);
   void (*leave) (void);
   void (*suspend) (void);

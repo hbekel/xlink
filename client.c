@@ -391,11 +391,11 @@ int command_parse_options(Command *self) {
       break;
 
     case 'q':
-      logger->set("ERROR");
+      logger->dec();
       break;
 
     case 'v':
-      logger->set("DEBUG");
+      logger->inc();
       break;
 
     case 'd':

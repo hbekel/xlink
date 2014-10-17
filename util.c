@@ -189,18 +189,28 @@ static void _logger_set(char* level) {
   }
 }
 
+static void _logger_inc() {
+  if(logger->level < LOGLEVEL_ALL) {
+    logger->level++;
+  }
+}
+
+static void _logger_dec() {
+  if(logger->level > LOGLEVEL_NONE) {
+    logger->level--;
+  }
+}
+
 static void _logger_enter(char *context) {
 
   if(logger->context == NULL) {
     logger->context = stringlist_new();
   }
   stringlist_append(logger->context, context);
-  logger->trace("enter");
 };
 
 static void _logger_leave() { 
   stringlist_remove_last(logger->context);
-  logger->trace("return");
 };
 
 static void _logger_suspend() {
@@ -227,6 +237,8 @@ Logger _logger = {
   .context = NULL,
   .enabled = true,
   .set     = &_logger_set,
+  .inc     = &_logger_inc,
+  .dec     = &_logger_dec,
   .enter   = &_logger_enter,
   .leave   = &_logger_leave,
   .suspend = &_logger_suspend,
