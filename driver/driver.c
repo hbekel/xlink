@@ -33,22 +33,22 @@ bool _driver_setup_and_open(void) {
 #endif
 
   if (getenv("XLINK_DEVICE") != NULL) {
-    result = driver_setup(getenv("XLINK_DEVICE"));
+    result = driver_setup(getenv("XLINK_DEVICE"), false);
   }
   else {
 
-    if(!(result = driver_setup(default_usb_device))) {
+    if(!(result = driver_setup(default_usb_device, true))) {
 
-      result = driver_setup(default_parport_device);
+      result = driver_setup(default_parport_device, true);
 
       if(result) {
-	logger->warn("using default parallel port device %s",
-		     default_parport_device);
+        logger->info("using default parallel port device %s",
+                     default_parport_device, true);
       }
     }
     else {
       logger->info("using default usb device \"%s\"",
-		   default_usb_device);
+                   default_usb_device);
     }
   }
   
@@ -61,18 +61,27 @@ bool _driver_setup_and_open(void) {
 
 //------------------------------------------------------------------------------
 
-bool driver_setup(char* path) {
+bool driver_setup(char* path, bool quiet) {
 
   bool result = false;
-  
-  if(!(device_is_parport(path) || device_is_usb(path))) {
+  int type;
+
+  if(quiet) {
+    logger->suspend();
+  }
+
+  if(!device_identify(path, &type)) {
+    goto done;
+  }
+
+  if(!device_is_supported(path, type)) {
     goto done;
   }
 
   driver->path = (char *) realloc(driver->path, strlen(path)+1);
   strcpy(driver->path, path);
 
-  if(device_is_parport(driver->path)) {
+  if(device_is_parport(type)) {
 
     logger->debug("trying to use parallel port device %s...", driver->path);
   
@@ -97,7 +106,7 @@ bool driver_setup(char* path) {
       logger->debug("using parallel port device %s", driver->path);
     }
     
-  } else if(device_is_usb(driver->path)) {
+  } else if(device_is_usb(type)) {
     
     logger->debug("trying to use usb device \"%s\"...", driver->path);
 
@@ -124,19 +133,24 @@ bool driver_setup(char* path) {
   }
 
  done:
+
+  if(quiet) {
+    logger->resume();
+  }
+
   CLEAR_ERROR_IF(result);
   return result;
 }
 
 //------------------------------------------------------------------------------
 
-bool device_is_parport(char* path) {
+bool device_identify(char* path, int* type) {
 #if linux
   struct stat device;
 
   if(stat(path, &device) == -1) {
 
-    SET_ERROR(XLINK_ERROR_DEVICE, "couldn't stat %s: %s", path, strerror(errno));
+    SET_ERROR(XLINK_ERROR_DEVICE, "%s: couldn't stat: %s", path, strerror(errno));
     return false;
   }
   
@@ -145,52 +159,50 @@ bool device_is_parport(char* path) {
     SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a character device", path);
     return false;
   }
-  
-  if(major(device.st_rdev) != 99) {
 
-    SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a parallel port device", path);
-    return false;	   
-  }
+  (*type) = major(device.st_rdev);
+
   CLEAR_ERROR_IF(true);
   return true;
 
 #elif windows
+
+  (*type) = XLINK_DRIVER_DEVICE_USB;
+
   errno = 0;
-  return (strtol(path, NULL, 0) > 0) && (errno == 0);   
+  if ((strtol(path, NULL, 0) > 0) && (errno == 0)) {
+    (*type) = XLINK_DRIVER_DEVICE_PARPORT;
+  }
+  return true;
 #endif
 }
 
 //------------------------------------------------------------------------------
 
-bool device_is_usb(char* path) {
-
+bool device_is_supported(char *path, int type) {
 #if linux
-  struct stat device;
-  
-  if(stat(path, &device) == -1) {
 
-    SET_ERROR(XLINK_ERROR_DEVICE, "couldn't stat %s: %s", path, strerror(errno));
+  if(!(device_is_parport(type) || device_is_usb(type))) {
+
+    SET_ERROR(XLINK_ERROR_DEVICE, 
+              "%s: unsupported device major number: %d", path, type);
     return false;
   }
-  
-  if(!S_ISCHR(device.st_mode)) {
 
-    SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a character device", path);
-    return false;
-  }
-  
-  if(major(device.st_rdev) != 189) {
-
-    SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a USB device", path);
-    return false;
-  }
-  
-  CLEAR_ERROR_IF(true);
-  return true;
-
-#elif windows
-  return !device_is_parport(path);
 #endif
+  return true;
+}
+
+//------------------------------------------------------------------------------
+
+bool device_is_parport(int type) {
+  return type == XLINK_DRIVER_DEVICE_PARPORT;
+}
+
+//------------------------------------------------------------------------------
+
+bool device_is_usb(int type) {
+  return type == XLINK_DRIVER_DEVICE_USB;
 }
 
 //------------------------------------------------------------------------------
@@ -198,10 +210,14 @@ bool device_is_usb(char* path) {
 bool _driver_ready() {
   bool result = false;
 
+  logger->suspend();
+
   if((result = driver->open())) {
     driver->close();
   }
   
+  logger->resume();
+
   CLEAR_ERROR_IF(result);
   return result;
 }

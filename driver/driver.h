@@ -1,6 +1,9 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
+#define XLINK_DRIVER_DEVICE_USB 189
+#define XLINK_DRIVER_DEVICE_PARPORT 99
+
 typedef struct {
   char* path;
   int device;
@@ -39,9 +42,11 @@ typedef struct {
   void (*free) (void);
 } Driver;
 
-bool driver_setup(char* path);
-bool device_is_parport(char*);
-bool device_is_usb(char*);
+bool driver_setup(char*, bool);
+bool device_identify(char*, int*); 
+bool device_is_supported(char*, int);
+bool device_is_parport(int);
+bool device_is_usb(int);
 
 bool _driver_setup_and_open(void);
 bool _driver_ready(void);

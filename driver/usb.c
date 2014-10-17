@@ -74,7 +74,7 @@ void driver_usb_lookup(char *path, DeviceInfo *info) {
   }
 #endif
 
-  logger->debug("%s: vid: %04x pid: %04x bus: %d addr: %d serial: %s",
+  logger->trace("%s: vid: %04x pid: %04x bus: %d addr: %d serial: %s",
 		path, info->vid, info->pid, info->bus, info->address, info->serial);
 }
 
@@ -95,72 +95,68 @@ libusb_device_handle* driver_usb_open_device(libusb_context* context, DeviceInfo
     SET_ERROR(XLINK_ERROR_LIBUSB, "could not get usb device list: %d", result);
     return NULL;
   }
-
+  
   while ((device = devices[i++]) != NULL) {
-
+    
     if((result = libusb_get_device_descriptor(device, &descriptor)) < 0) {
       logger->debug("could not get usb device descriptor: %d", result);
       continue;
     }
-
+    
     if(descriptor.idVendor == info->vid &&
        descriptor.idProduct == info->pid) {
-
-      logger->debug("examining %04x:%04x %03d/%03d",
-		    info->vid, info->pid,
-		    libusb_get_bus_number(device),
-		    libusb_get_device_address(device));
       
       if(info->bus > -1) {
-	if(libusb_get_bus_number(device) != info->bus) {
-	  continue;
-	}
+        if(libusb_get_bus_number(device) != info->bus) {
+          continue;
+        }
       }
-
+      
       if(info->address > -1) {
-	if(libusb_get_device_address(device) != info->address) {
-	  continue;
-	}
+        if(libusb_get_device_address(device) != info->address) {
+          continue;
+        }
       }
-
+      
       if(info->serial != NULL) {
-	if(descriptor.iSerialNumber != 0) {
-
-	  if((result = libusb_open(device, &handle)) < 0) {
-	    logger->debug("could not open usb device %03d/%03d",
-			  libusb_get_bus_number(device),
-			  libusb_get_device_address(device));
-	    continue;
-	  }
-
-	  result = libusb_get_string_descriptor_ascii(handle, descriptor.iSerialNumber,
-						      (unsigned char *) &serial, sizeof(serial));
-
-	  if(result < 0) {
-	    logger->debug("could not get serial number from device: %d", result);
-	    goto skip;
-	  }
-	  
-	  if(strcmp(serial, info->serial) == 0) {
-	    goto done;
-	  }
-	  
-	skip:
-	  libusb_close(handle);
-	  handle = NULL;
-	  continue;
-	}
+        
+        if(descriptor.iSerialNumber != 0) {
+          
+          if((result = libusb_open(device, &handle)) < 0) {
+            logger->debug("could not open usb device %03d/%03d",
+                          libusb_get_bus_number(device),
+                          libusb_get_device_address(device));
+            continue;
+          }
+          
+          result = libusb_get_string_descriptor_ascii(handle, descriptor.iSerialNumber,
+                                                      (unsigned char *) &serial, sizeof(serial));
+          
+          if(result < 0) {
+            logger->debug("could not get serial number from device: %d", result);
+            goto skip;
+          }
+          
+          if(strcmp(serial, info->serial) == 0) {
+            goto done;
+          }
+          
+        skip:
+          libusb_close(handle);
+          handle = NULL;
+          continue;
+        }
       }
       
       if(handle == NULL) {
-	if((result = libusb_open(device, &handle)) < 0) {
-	  SET_ERROR(XLINK_ERROR_LIBUSB,
-		    "could not open usb device %03d/%03d",
-		    libusb_get_bus_number(device),
-		    libusb_get_device_address(device));
-	  
-	  handle = NULL;
-	}
+        if((result = libusb_open(device, &handle)) < 0) {
+          SET_ERROR(XLINK_ERROR_LIBUSB,
+                    "could not open usb device %03d/%03d",
+                    libusb_get_bus_number(device),
+                    libusb_get_device_address(device));
+          
+          handle = NULL;
+        }
       }
       goto done;
     }
