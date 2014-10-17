@@ -83,9 +83,10 @@ xlink-kernal.rom: server.h kernal.asm
 	cp commodore/kernal-901227-03.rom xlink-kernal.rom && \
 	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
-udev:
-	echo 'SUBSYSTEMS=="usb", ATTRS{idVendor}=="$(subst 0x,,$(USB_VID))", ATTRS{idProduct}=="$(subst 0x,,$(USB_PID))", MODE:="0666", SYMLINK+="xlink"' > etc/udev/rules.d/10-xlink.rules
-	echo 'SUBSYSTEMS=="usb", ATTR{idVendor}=="03eb", ATTR{idProduct}=="2ffa", SYMLINK+="dfu", MODE:="666"' >> etc/udev/rules.d/10-xlink.rules
+udev: etc/udev/rules.d/10-xlink.rules
+
+etc/udev/rules.d/10-xlink.rules: tools/make-udev-rules.sh
+	 tools/make-udev-rules.sh > etc/udev/rules.d/10-xlink.rules
 
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && \
