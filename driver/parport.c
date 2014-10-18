@@ -144,7 +144,7 @@ bool driver_parport_open() {
   }  
   _driver_parport_init();
 
-  CLEAR_ERROR_IF(true);
+  CLEAR_ERROR;
   return true;
 #endif
 }

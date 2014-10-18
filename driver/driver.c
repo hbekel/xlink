@@ -162,7 +162,7 @@ bool device_identify(char* path, int* type) {
 
   (*type) = major(device.st_rdev);
 
-  CLEAR_ERROR_IF(true);
+  CLEAR_ERROR;
   return true;
 
 #elif windows

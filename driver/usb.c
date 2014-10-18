@@ -201,7 +201,7 @@ bool driver_usb_open() {
 
   control(USB_INIT);
   
-  CLEAR_ERROR_IF(true);
+  CLEAR_ERROR;
   return true;
 }
 

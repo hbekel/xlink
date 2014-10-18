@@ -10,11 +10,13 @@
 
 #define SET_ERROR(c, f, ...) xlink_error->code = c; sprintf(xlink_error->message, f, ##__VA_ARGS__); logger->error(f, ##__VA_ARGS__); 
 #define CLEAR_ERROR_IF(r) if (r) { xlink_error->code = XLINK_SUCCESS; sprintf(xlink_error->message, "Success"); }
+#define CLEAR_ERROR CLEAR_ERROR_IF(true)
 
 #else
 
 #define SET_ERROR(c, f, ...)
 #define CLEAR_ERROR_IF(r)
+#define CLEAR_ERROR CLEAR_ERROR_IF(true)
 
 #endif
 

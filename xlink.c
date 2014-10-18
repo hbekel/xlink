@@ -55,7 +55,7 @@ void libxlink_initialize() {
   driver->_open = &_driver_setup_and_open;
 
   xlink_error = (xlink_error_t *) calloc(1, sizeof(xlink_error_t));
-  CLEAR_ERROR_IF(true);
+  CLEAR_ERROR;
 
   xlink_set_debug(XLINK_LOG_LEVEL_NONE);
 }
