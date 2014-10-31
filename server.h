@@ -5,7 +5,8 @@
 	
 .var mem   = $fe    // Memory config
 .var bank  = $ff    // bank config
-	
+
+.var sysirq   = $ea31 // System IRQ Routine	
 .var relink   = $a533 // Relink Basic program
 .var insnewl  = $a659 // Insert new line into BASIC program
 .var restxtpt = $a68e // Reset BASIC text pointer
