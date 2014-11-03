@@ -598,8 +598,11 @@ int command_load(Command* self) {
   struct stat st;
   long size;
   int loadAddress;
+  unsigned short newServerAddress;
   char *data;
 
+  xlink_server_info server;
+  
   if (self->argc == 0) {
     logger->error("no file specified");
     return false;
@@ -654,11 +657,30 @@ int command_load(Command* self) {
 
   command_print(self);
 
+  if(xlink_identify(&server)) {
+
+    if(command_requires_server_relocation(self, &server)) {
+
+      if(!command_server_relocation_possible(self, &server, &newServerAddress)) {
+	logger->error("Impossible to relocate ram-based server: out of memory");
+	free(data);
+	return false;
+      }
+
+      if(!command_server_relocate(self, newServerAddress)) {
+	logger->error("Server relocation failed");
+	free(data);
+	return false;
+      }
+    }
+  }
+
   if (!xlink_load(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
     return false;
   }
 
+  
   free(data);
   return true;
 }
@@ -860,6 +882,88 @@ int command_run(Command* self) {
   }
   command_print(self);
   return xlink_run();
+}
+
+//------------------------------------------------------------------------------
+
+int command_requires_server_relocation(Command* self, xlink_server_info* server) {
+
+  bool result = false;
+
+  if(server->type == XLINK_SERVER_TYPE_ROM) {
+    goto done;
+  }
+
+  if ((self->start >= server->start && self->start <= server->end) ||
+      (self->end >= server->start && self->end <= server->end)) {
+    
+    logger->debug("Relocation required: data ($%04X-$%04X) overlaps server ($%04X-$%04X)",
+		  self->start, self->end, server->start, server->end);
+
+    result = true;
+  }
+
+ done:
+  return result;  
+}
+
+//------------------------------------------------------------------------------
+
+int command_server_relocation_possible(Command* self, xlink_server_info* server, unsigned short* address) {
+
+  bool result = false;
+
+  if(0x0801 + server->length < self->start) {
+    (*address) = 0x0801;
+    result = true;
+    goto done;
+  }
+
+  if(self->end + server->length < 0xa000) {
+    (*address) = self->end;
+    result = true;
+    goto done;
+  }
+
+  if(self->end >= 0xc000 && self->end + server->length < 0xd000) {
+    (*address) = self->end;
+    result = true;
+    goto done;
+  }
+  
+ done:
+  return result;  
+}
+
+//------------------------------------------------------------------------------
+
+int command_server_relocate(Command* self, unsigned short address) {
+  bool result = false;
+
+  int size;
+  unsigned char *code = xlink_server(address, &size);
+
+  if(code == NULL) {
+    goto done;
+  }
+
+  code+=2;
+  size-=2;
+
+  logger->debug("Relocating server to $%04X-$%04X", address, address+size);
+
+  if(xlink_load(0x37, 0x00, address, address+size, (char*) code, size)) {
+
+    if(address == 0x0801) {
+      result = xlink_run();
+    } else {
+      result = xlink_jump(0x37, 0x00, address);
+    }
+  }
+  free(code);
+
+ done:
+  return result;
 }
 
 //------------------------------------------------------------------------------
