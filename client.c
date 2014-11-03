@@ -38,6 +38,7 @@
 #define COMMAND_BOOTLOADER 0x10
 #define COMMAND_BENCHMARK  0x11
 #define COMMAND_IDENTIFY   0x12
+#define COMMAND_SERVER     0x13
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -74,7 +75,8 @@ char str2id(const char* arg) {
   if (strcmp(arg, "ping"      ) == 0) return COMMAND_PING;  
   if (strcmp(arg, "bootloader") == 0) return COMMAND_BOOTLOADER;  
   if (strcmp(arg, "benchmark" ) == 0) return COMMAND_BENCHMARK;  
-  if (strcmp(arg, "identify"  ) == 0) return COMMAND_IDENTIFY;  
+  if (strcmp(arg, "identify"  ) == 0) return COMMAND_IDENTIFY;
+  if (strcmp(arg, "server"    ) == 0) return COMMAND_SERVER;  
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -108,7 +110,8 @@ char* id2str(const char id) {
   if (id == COMMAND_PING)       return (char*) "ping";  
   if (id == COMMAND_BOOTLOADER) return (char*) "bootloader";  
   if (id == COMMAND_BENCHMARK)  return (char*) "benchmark";  
-  if (id == COMMAND_IDENTIFY)   return (char*) "identify";  
+  if (id == COMMAND_IDENTIFY)   return (char*) "identify";
+  if (id == COMMAND_SERVER)     return (char*) "server";  
   return (char*) "unknown";
 }
 
@@ -288,6 +291,7 @@ int command_arity(Command* self) {
   if (self->id == COMMAND_BOOTLOADER) return 0;
   if (self->id == COMMAND_BENCHMARK)  return 0;
   if (self->id == COMMAND_IDENTIFY)   return 0;
+  if (self->id == COMMAND_SERVER)     return 1;
   return 0;
 
 }
@@ -936,7 +940,7 @@ int command_benchmark(Command* self) {
 
 int command_identify(Command *self) {
 
-  xlink_server server;
+  xlink_server_info server;
   
   if(xlink_identify(&server)) {
 
@@ -948,6 +952,40 @@ int command_identify(Command *self) {
     return true;
   }
   return false;
+}
+
+//------------------------------------------------------------------------------
+
+int command_server(Command *self) {
+
+  bool result = false;
+
+  FILE *file;
+  int size;
+  unsigned char *data;
+
+  if (self->argc == 0) {
+    logger->error("no file specified");
+    return false;
+  }
+
+  if (self->start == -1) {
+    self->start = 0x0801;
+  }
+
+  data = xlink_server(self->start, &size);
+
+  if ((file = fopen(self->argv[0], "wb")) == NULL) {
+    logger->error("couldn't open %s for writing: %s", strerror(errno));
+    goto done;
+  }
+
+  fwrite(data, sizeof(unsigned char), size, file);
+  fclose(file);
+
+ done:
+  free(data);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1228,6 +1266,7 @@ int command_execute(Command* self) {
   case COMMAND_BOOTLOADER : result = command_bootloader(self); break;
   case COMMAND_BENCHMARK  : result = command_benchmark(self);  break;
   case COMMAND_IDENTIFY   : result = command_identify(self);   break;
+  case COMMAND_SERVER     : result = command_server(self);     break;    
   }
   
   logger->leave();
@@ -1300,6 +1339,7 @@ static char* known_commands[19] = {
   "bootloader",
   "benchmark",
   "identify",
+  "server",
   NULL 
 };
 
@@ -1437,6 +1477,7 @@ void usage(void) {
   printf("          bootloader                   : enter dfu-bootloader (USB devices only)\n");
   printf("          benchmark                    : test/measure transfer speed\n");
   printf("\n");
+  printf("          server [-a<addr>] <file>     : create ram based server program\n");
   printf("          ping                         : check if the server is available\n");
   printf("          reset                        : reset C64 (only if using reset circuit)\n");
   printf("          ready                        : try to make sure the server is ready\n");
@@ -1636,6 +1677,16 @@ int help(int id) {
     printf("\n");
     break;
 
+  case COMMAND_SERVER:
+    printf("Usage: server [--address <address>] <file>\n");
+    printf("\n");
+    printf("Write the ram-based C64 server programm to file. Use address to specify the\n");
+    printf("start address for the server code. If the address is $0801 the code will be\n");
+    printf("prefixed with a single line basic program that installs the server. This is the\n");
+    printf("default if no address is specified.\n");
+    printf("\n");
+    break;
+    
   }
   return true;
 }

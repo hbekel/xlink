@@ -118,7 +118,7 @@ bool xlink_has_device(void) {
 
 //------------------------------------------------------------------------------
 
-bool xlink_identify(xlink_server* server) {
+bool xlink_identify(xlink_server_info* server) {
 
   bool result = true;
   char data[7];

@@ -55,7 +55,7 @@ extern "C" {
     unsigned short start;   // server start address
     unsigned short end;     // server end address
     unsigned short length;  // server code length
-  } xlink_server;
+  } xlink_server_info;
 
   typedef struct {
     int code;
@@ -71,7 +71,8 @@ extern "C" {
   bool xlink_set_device(char* path);
   char* xlink_get_device(void);
 
-  bool xlink_identify(xlink_server* server);
+  unsigned char* xlink_server(unsigned short address, int *size);
+  bool xlink_identify(xlink_server_info* server);
   bool xlink_ping(void);
   bool xlink_reset(void);
   bool xlink_ready(void);
@@ -90,7 +91,7 @@ extern "C" {
   
   bool xlink_jump(unsigned char memory, unsigned char bank, int address);
   bool xlink_run(void);
-
+  
   bool xlink_drive_status(char* status);
   bool xlink_dos(char* cmd);
   bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char* data);

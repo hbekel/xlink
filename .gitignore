@@ -10,8 +10,10 @@ xlink
 *.bin
 *.rom
 extensions.c
+server.c
 make-extension
 make-bootstrap
+make-server
 bootstrap.txt
 log
 TODO

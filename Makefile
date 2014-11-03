@@ -31,6 +31,7 @@ LIBSOURCES=\
 	util.c \
 	extension.c \
 	extensions.c \
+	server.c \
 	driver/driver.c \
 	driver/usb.c \
 	driver/parport.c
@@ -39,10 +40,9 @@ LIBFLAGS=-DXLINK_LIBRARY_BUILD
 
 #all: linux c64
 all: win32 c64
-c64: server kernal bootstrap
+c64: kernal bootstrap
 linux: xlink udev
 win32: xlink.exe
-server: xlink-server.prg
 kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.txt
 
@@ -76,8 +76,15 @@ bootstrap.txt: tools/make-bootstrap bootstrap.asm
 	sh -x > bootstrap.txt && \
 	rm -v bootstrap.prg
 
-xlink-server.prg: server.h server.asm 
-	$(KASM) -o xlink-server.prg server.asm
+tools/make-server: tools/make-server.c
+	$(GCC) $(CFLAGS) -o tools/make-server tools/make-server.c
+
+server.c: tools/make-server server.h server.asm 
+	$(KASM) :pc=257 -o base server.asm  # 257 = $0101
+	$(KASM) :pc=513 -o high server.asm  # 513 = $0201
+	$(KASM) :pc=258 -o low  server.asm  # 258 = $0102
+	tools/make-server base low high > server.c
+	rm -v base low high
 
 xlink-kernal.rom: server.h kernal.asm
 	cp commodore/kernal-901227-03.rom xlink-kernal.rom && \
@@ -131,11 +138,12 @@ clean: firmware-clean
 	[ -f xlink ] && rm -v xlink || true
 	[ -f xlink.exe ] && rm -v xlink.exe || true
 	[ -f extensions.c ] && rm -v extensions.c || true
-	[ -f xlink-server.prg ] && rm -v xlink-server.prg || true
+	[ -f server.c ] && rm -v server.c || true
 	[ -f xlink-kernal.rom ] && rm -v xlink-kernal.rom || true
 	[ -f bootstrap.txt ] && rm -v bootstrap.txt || true
 	[ -f tools/make-extension ] && rm -v tools/make-extension || true
 	[ -f tools/make-bootstrap ] && rm -v tools/make-bootstrap || true
+	[ -f tools/make-server ] && rm -v tools/make-server || true
 	[ -f etc/udev/rules.d/10-xlink.rules ] && rm -v etc/udev/rules.d/10-xlink.rules || true
 	[ -f log ] && rm -v log || true
 

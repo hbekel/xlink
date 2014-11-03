@@ -1,9 +1,9 @@
 .import source "server.h"
 
-.pc = Server.start
-	
+.pc = cmdLineVars.get("pc").asNumber()
+
 //------------------------------------------------------------------------------
-	
+
 install: {
         lda #$00  // set CIA2 port B to input
 	sta $dd03
@@ -261,25 +261,25 @@ identify: {
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 
-        lda #Server.version   
+        lda Server.version   
         :write()
 
-        lda #Server.machine
+        lda Server.machine
         :write()
 
-        lda #Server.type
+        lda Server.type
         :write()       
 
-        lda #<Server.start
+        lda Server.start
         :write()
 
-        lda #>Server.start
+        lda Server.start+1
         :write()
 
-        lda #<Server.end
+        lda Server.end
         :write()
 
-        lda #>Server.end
+        lda Server.end+1
         :write()        
         
 done:   lda #$00   // reset CIA2 port B to input
@@ -316,12 +316,12 @@ write: {
 
 //------------------------------------------------------------------------------	
 	
-.namespace Server {
-.label start   = $c000
-.label version = $10
-.label type    = $00 // 0 = RAM, 1 = ROM
-.label machine = $00 // 0 = C64
-.label end     = *
+Server:	{
+start:	 .word install
+version: .byte $10
+type:	 .byte $00 // 0 = RAM, 1 = ROM
+machine: .byte $00 // 0 = C64
+end:	 .word *
 }
 
 //------------------------------------------------------------------------------	
