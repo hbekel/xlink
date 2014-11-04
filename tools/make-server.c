@@ -108,12 +108,12 @@ int main(int argc, char **argv) {
 
   printf("#include <stdlib.h>\n");
   printf("#include \"xlink.h\"\n");
+  printf("#include \"error.h\"\n");  
 
-  printf("static unsigned char* xlink_server_basic(int *size) {\n");
+  printf("unsigned char* xlink_server_basic(int *size) {\n");
   printf("unsigned char basic[15] = { 0x01, 0x08, 0x0b, 0x08, 0x0a, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x32, 0x00, 0x00, 0x00, 0x00 };\n");
-  printf("int ignored;\n");
 
-  printf("unsigned char* code = xlink_server(0x080e, &ignored);\n");
+  printf("unsigned char* code = xlink_server(0x080e, size);\n");
   printf("unsigned char* result = (unsigned char*) calloc((*size)+11, sizeof(unsigned char));\n");
 
   printf("for(int i=0; i<15; i++) { result[i] = basic[i]; }\n");
@@ -128,10 +128,9 @@ int main(int argc, char **argv) {
 
   printf("(*size) = %d;\n", size);
 
-  printf("if(address == 0x0801) { return xlink_server_basic(size); }\n");
-
   printf("if(address+%d > 0x10000) {\n", size);
-  printf("  return NULL;\n");
+  printf("   SET_ERROR(XLINK_ERROR_SERVER, \"Can't create server: out of memory\");\n");
+  printf("   return NULL;\n");
   printf("}\n");
   
   printf("unsigned char code[%d] = { ", size);

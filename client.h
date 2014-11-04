@@ -39,9 +39,9 @@ int commands_execute(Commands* self);
 void commands_print(Commands* self);
 void commands_free(Commands* self);
 
+int command_server_usable_after_possible_relocation(Command* self);
 int command_requires_server_relocation(Command* self, xlink_server_info* server);
 int command_server_relocation_possible(Command* self, xlink_server_info* server, unsigned short* address);
-int command_server_relocate(Command* self, unsigned short address);
 
 Command* command_new(int *argc, char ***argv);
 int command_arity(Command* self);

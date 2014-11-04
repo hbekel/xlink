@@ -598,10 +598,7 @@ int command_load(Command* self) {
   struct stat st;
   long size;
   int loadAddress;
-  unsigned short newServerAddress;
   char *data;
-
-  xlink_server_info server;
   
   if (self->argc == 0) {
     logger->error("no file specified");
@@ -657,23 +654,10 @@ int command_load(Command* self) {
 
   command_print(self);
 
-  if(xlink_identify(&server)) {
-
-    if(command_requires_server_relocation(self, &server)) {
-
-      if(!command_server_relocation_possible(self, &server, &newServerAddress)) {
-	logger->error("Impossible to relocate ram-based server: out of memory");
-	free(data);
-	return false;
-      }
-
-      if(!command_server_relocate(self, newServerAddress)) {
-	logger->error("Server relocation failed");
-	free(data);
-	return false;
-      }
-    }
-  }
+  if(!command_server_usable_after_possible_relocation(self)) {
+    free(data);
+    return false;
+  }      
 
   if (!xlink_load(self->memory, self->bank, self->start, self->end, data, size)) {
     free(data);
@@ -761,7 +745,6 @@ int command_save(Command* self) {
 
 int command_poke(Command* self) {
   char *argument;
-  int address;
   unsigned char value;
   
   if (self->argc == 0) {
@@ -780,7 +763,7 @@ int command_poke(Command* self) {
   char* val = argument + comma + 1;
   addr[comma] = '\0';
 
-  address = strtol(addr, NULL, 0);
+  self->start = strtol(addr, NULL, 0);
   value = strtol(val, NULL, 0);
 
   if (self->memory == 0xff)
@@ -789,9 +772,15 @@ int command_poke(Command* self) {
   if (self->bank == 0xff)
     self->bank = 0x00;
 
+  self->end = self->start;
+  
   command_print(self);
 
-  return xlink_poke(self->memory, self->bank, address, value);
+  if(!command_server_usable_after_possible_relocation(self)) {
+    return false;
+  }      
+
+  return xlink_poke(self->memory, self->bank, self->start, value);
 }
 
 //------------------------------------------------------------------------------
@@ -886,6 +875,31 @@ int command_run(Command* self) {
 
 //------------------------------------------------------------------------------
 
+int command_server_usable_after_possible_relocation(Command* self) {
+
+  unsigned short newServerAddress;  
+  xlink_server_info server;
+  
+  if(xlink_identify(&server)) {
+
+    if(command_requires_server_relocation(self, &server)) {
+
+      if(!command_server_relocation_possible(self, &server, &newServerAddress)) {
+	logger->error("Impossible to relocate ram-based server: out of memory");
+	return false;
+      }
+
+      if(!xlink_relocate(newServerAddress)) {
+	logger->error("Failed to relocate ram-based server: %s", xlink_error->message);
+	return false;
+      }
+    }
+  }
+  return true;
+}
+
+//------------------------------------------------------------------------------
+
 int command_requires_server_relocation(Command* self, xlink_server_info* server) {
 
   bool result = false;
@@ -933,37 +947,6 @@ int command_server_relocation_possible(Command* self, xlink_server_info* server,
   
  done:
   return result;  
-}
-
-//------------------------------------------------------------------------------
-
-int command_server_relocate(Command* self, unsigned short address) {
-  bool result = false;
-
-  int size;
-  unsigned char *code = xlink_server(address, &size);
-
-  if(code == NULL) {
-    goto done;
-  }
-
-  code+=2;
-  size-=2;
-
-  logger->debug("Relocating server to $%04X-$%04X", address, address+size);
-
-  if(xlink_load(0x37, 0x00, address, address+size, (char*) code, size)) {
-
-    if(address == 0x0801) {
-      result = xlink_run();
-    } else {
-      result = xlink_jump(0x37, 0x00, address);
-    }
-  }
-  free(code);
-
- done:
-  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -1077,7 +1060,15 @@ int command_server(Command *self) {
     self->start = 0x0801;
   }
 
-  data = xlink_server(self->start, &size);
+  if(self->start == 0x0801) {
+    data = xlink_server_basic(&size);
+  } else {
+    data = xlink_server(self->start, &size);
+
+    if(data == NULL) {
+      return false;
+    }    
+  }
 
   if ((file = fopen(self->argv[0], "wb")) == NULL) {
     logger->error("couldn't open %s for writing: %s", strerror(errno));
@@ -1784,10 +1775,9 @@ int help(int id) {
   case COMMAND_SERVER:
     printf("Usage: server [--address <address>] <file>\n");
     printf("\n");
-    printf("Write the ram-based C64 server programm to file. Use address to specify the\n");
-    printf("start address for the server code. If the address is $0801 the code will be\n");
-    printf("prefixed with a single line basic program that installs the server. This is the\n");
-    printf("default if no address is specified.\n");
+    printf("Write a ram-based C64 server programm to file. Use address to specify the\n");
+    printf("start address for the server code. If the address is $0801 the server can\n");
+    printf("be started with RUN. This is the default if no address is specified.\n");
     printf("\n");
     break;
     

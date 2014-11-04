@@ -469,6 +469,27 @@ bool xlink_extend(int address) {
 
 //------------------------------------------------------------------------------
 
+bool xlink_relocate(unsigned short address) {
+
+  bool result = false;
+  
+  Extension* relocate = EXTENSION_SERVER_RELOCATE;
+
+  int size;
+  unsigned char* server = xlink_server(address, &size);  
+  
+  if(extension_load(relocate) && extension_init(relocate)) {
+    result = xlink_load(0x37|0x80, 0x00, address, address+size, (char*) server, size);
+  }
+  
+  free(server);
+  free(relocate);
+  CLEAR_ERROR_IF(result);
+  return result;  
+}
+
+//------------------------------------------------------------------------------
+
 bool xlink_drive_status(char* status) {
 
   unsigned char byte;

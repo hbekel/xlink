@@ -60,21 +60,13 @@ xlink.dll: $(LIBHEADERS) $(LIBSOURCES)
 xlink.exe: xlink.dll client.c client.h disk.c disk.h 
 	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c -L. -lxlink
 
+tools/make-extension: tools/make-extension.c
+	$(GCC) $(CFLAGS) -o tools/make-extension tools/make-extension.c
+
 extensions.c: tools/make-extension extensions.asm
 	$(KASM) -binfile -o extensions.bin extensions.asm | \
 	grep make-extension | \
 	sh > extensions.c && rm extensions.bin
-
-tools/make-extension: tools/make-extension.c
-	$(GCC) $(CFLAGS) -o tools/make-extension tools/make-extension.c
-
-tools/make-bootstrap: tools/make-bootstrap.c
-	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
-
-bootstrap.txt: tools/make-bootstrap bootstrap.asm
-	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | \
-	sh -x > bootstrap.txt && \
-	rm -v bootstrap.prg
 
 tools/make-server: tools/make-server.c
 	$(GCC) $(CFLAGS) -o tools/make-server tools/make-server.c
@@ -85,6 +77,14 @@ server.c: tools/make-server server.h server.asm
 	$(KASM) :pc=258 -o low  server.asm  # 258 = $0102
 	tools/make-server base low high > server.c
 	rm -v base low high
+
+tools/make-bootstrap: tools/make-bootstrap.c
+	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
+
+bootstrap.txt: tools/make-bootstrap bootstrap.asm
+	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | \
+	sh -x > bootstrap.txt && \
+	rm -v bootstrap.prg
 
 xlink-kernal.rom: server.h kernal.asm
 	cp commodore/kernal-901227-03.rom xlink-kernal.rom && \

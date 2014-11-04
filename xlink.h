@@ -71,7 +71,10 @@ extern "C" {
   bool xlink_set_device(char* path);
   char* xlink_get_device(void);
 
+  unsigned char* xlink_server_basic(int *size);
   unsigned char* xlink_server(unsigned short address, int *size);
+  bool xlink_relocate(unsigned short address);
+  
   bool xlink_identify(xlink_server_info* server);
   bool xlink_ping(void);
   bool xlink_reset(void);
