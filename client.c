@@ -1205,7 +1205,6 @@ int command_server(Command *self) {
   if (self->start == -1) {
     self->start = 0x0801;
   }
-
   if(self->start == 0x0801) {
     data = xlink_server_basic(&size);
   } else {

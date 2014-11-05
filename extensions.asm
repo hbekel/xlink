@@ -311,7 +311,7 @@ address:
 	jsr read // read command
 	jsr read stx mem
 	jsr read stx bank
-	jsr read stx start stx jump
+	jsr read stx start   stx jump
 	jsr read stx start+1 stx jump+1
 	jsr read stx end
 	jsr read stx end+1
@@ -333,12 +333,12 @@ address:
 	ldx #$31
 	ldy #$ea
 	stx $0314
-	ldy $0315 
+	sty $0315 
 
 	ldx #$ff txs // reset stack pointer
 
-	lda #$a4 pha // rts in server.install returns back to direct mode (?)
-	lda #$80 pha // ($a480 = direct mode REPL)
+	lda #$a4 pha // rts in server.install will return back to direct mode
+	lda #$80 pha // ($a480 = BASIC REPL)
 	
 	lda jump+1 pha // push high byte of jump address
 	lda jump pha   // push low byte of jump address
