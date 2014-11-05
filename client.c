@@ -1723,7 +1723,7 @@ void usage(void) {
   printf("          reset                        : reset C64 (only if using reset circuit)\n");
   printf("          ready                        : try to make sure the server is ready\n");
   printf("          ping                         : check if the server is available\n");
-  printf("          identify                     : identify remote machine and server\n");
+  printf("          identify                     : identify remote server and machine\n");
   printf("\n");
   printf("          load  [<opts>] <file>        : load file into C64 memory\n");
   printf("          save  [<opts>] <file>        : save C64 memory to file\n");
@@ -1738,8 +1738,8 @@ void usage(void) {
   printf("          restore <file>               : restore d64 file to disk\n");
   printf("          verify <file>                : verify disk against d64 file\n");
   printf("\n");
-  printf("          bootloader                   : enter dfu-bootloader (USB devices only)\n");
   printf("          benchmark                    : test/measure transfer speed\n");
+  printf("          bootloader                   : enter dfu-bootloader (USB devices only)\n");  
   printf("\n");
 }
 
