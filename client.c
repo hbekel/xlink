@@ -1110,6 +1110,8 @@ int command_benchmark(Command* self) {
   Watch* watch = watch_new();
   bool result = false;
 
+  xlink_server_info server;
+  
   char payload[0x8000];
   char roundtrip[sizeof(payload)];
     
@@ -1124,6 +1126,12 @@ int command_benchmark(Command* self) {
   logger->info("sending %d bytes...", sizeof(payload));
     
   watch_start(watch);
+
+  if(xlink_identify(&server)) {
+    if(server.type == XLINK_SERVER_TYPE_RAM) {
+      xlink_relocate(0xc000);
+    }
+  }
   
   xlink_load(0x37, 0x00, start, end, payload, sizeof(payload));
   
