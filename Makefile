@@ -46,19 +46,25 @@ win32: xlink.exe
 kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.txt
 
+testsuite: testsuite.c
+	$(GCC) -o testsuite testsuite.c range.c
+
+test: testsuite
+	./testsuite
+
 libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 	$(GCC) $(CFLAGS) $(LIBFLAGS) -shared -fPIC \
 		-Wl,-init,libxlink_initialize,-fini,libxlink_finalize\
 		-o libxlink.so $(LIBSOURCES) -lusb-1.0
 
-xlink: libxlink.so client.c client.h disk.c disk.h
-	$(GCC) $(CFLAGS) -o xlink client.c disk.c -L. -lxlink -lreadline
+xlink: libxlink.so client.c client.h disk.c disk.h range.c range.h
+	$(GCC) $(CFLAGS) -o xlink client.c disk.c range.c -L. -lxlink -lreadline
 
 xlink.dll: $(LIBHEADERS) $(LIBSOURCES)
 	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -static-libgcc -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
 
-xlink.exe: xlink.dll client.c client.h disk.c disk.h 
-	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c -L. -lxlink
+xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h
+	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c range.c -L. -lxlink
 
 tools/make-extension: tools/make-extension.c
 	$(GCC) $(CFLAGS) -o tools/make-extension tools/make-extension.c
@@ -133,6 +139,7 @@ uninstall:
 	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
 clean: firmware-clean
+	[ -f testsuite ] && rm -v testsuite || true
 	[ -f libxlink.so ] && rm -v libxlink.so || true
 	[ -f xlink.dll ] && rm -v xlink.dll || true
 	[ -f xlink ] && rm -v xlink || true
