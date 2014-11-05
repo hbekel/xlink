@@ -640,11 +640,17 @@ int command_load(Command* self) {
   }
 
   if (self->memory == 0xff) {
+
+    Range* io = range_new(0xd000, 0xc000);
+    Range* data = range_new(self->start, self->end);
     
-    if(self->end > 0xD000 && self->start < 0xE000)
+    if(range_inside(data, io))
       self->memory = 0x33; // write to ram below io by default
     else 
-      self->memory = 0x37;    
+      self->memory = 0x37;
+
+    free(io);
+    free(data);
   }
 
   if (self->bank == 0xff) {
@@ -669,7 +675,6 @@ int command_load(Command* self) {
     return false;
   }
 
-  
   free(data);
   return true;
 }
@@ -1923,7 +1928,7 @@ int help(int id) {
     printf("Usage: relocate <address>\n");
     printf("\n");
     printf("Relocate the currently running ram-based server to the specified address.\n");
-    printf("Note that the server can not be relocated to areas occupied by IO or ROM.\n");
+    printf("Note that the server can not be relocated to areas occupied by ROM or IO.\n");
     printf("\n");
     break;
     
