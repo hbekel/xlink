@@ -306,7 +306,6 @@ serverRelocate: {
 offset:
 .pseudopc $0334 {
 address:	
-
 	jsr read // answer ping
 	jsr read // read command
 	jsr read stx mem
@@ -327,10 +326,8 @@ address:
 	:next()
 
 	:screenOn()
-
-	// reset sysirq vector
 	
-	ldx #$31
+	ldx #$31 // reset sysirq vector
 	ldy #$ea
 	stx $0314
 	sty $0315 
@@ -338,14 +335,14 @@ address:
 	ldx #$ff txs // reset stack pointer
 
 	lda #$a4 pha // rts in server.install will return back to direct mode
-	lda #$80 pha // ($a480 = BASIC REPL)
+	lda #$7f pha // ($a480 -> BASIC REPL)
 	
 	lda jump+1 pha // push high byte of jump address
 	lda jump pha   // push low byte of jump address
 	
 	lda #$00 tax tay pha // clear registers & push clean flags 
 	
-	rti // will jump to the new servers install routine
+	rti // will jump to the install routine of the relocated server
 
 read: {
 	:read()
