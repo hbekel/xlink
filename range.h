@@ -10,6 +10,7 @@ typedef struct {
 
 Range* range_new(int start, int end);
 bool range_equals(Range* self, Range* range);
+bool range_valid(Range* self);
 int range_size(Range* self);
 void range_move(Range* self, int amount);
 bool range_inside(Range* self, Range* range);

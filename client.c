@@ -40,6 +40,7 @@
 #define COMMAND_BENCHMARK  0x11
 #define COMMAND_IDENTIFY   0x12
 #define COMMAND_SERVER     0x13
+#define COMMAND_RELOCATE   0x14
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -77,7 +78,8 @@ char str2id(const char* arg) {
   if (strcmp(arg, "bootloader") == 0) return COMMAND_BOOTLOADER;  
   if (strcmp(arg, "benchmark" ) == 0) return COMMAND_BENCHMARK;  
   if (strcmp(arg, "identify"  ) == 0) return COMMAND_IDENTIFY;
-  if (strcmp(arg, "server"    ) == 0) return COMMAND_SERVER;  
+  if (strcmp(arg, "server"    ) == 0) return COMMAND_SERVER;
+  if (strcmp(arg, "relocate"  ) == 0) return COMMAND_RELOCATE;    
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -112,7 +114,8 @@ char* id2str(const char id) {
   if (id == COMMAND_BOOTLOADER) return (char*) "bootloader";  
   if (id == COMMAND_BENCHMARK)  return (char*) "benchmark";  
   if (id == COMMAND_IDENTIFY)   return (char*) "identify";
-  if (id == COMMAND_SERVER)     return (char*) "server";  
+  if (id == COMMAND_SERVER)     return (char*) "server";
+  if (id == COMMAND_RELOCATE)   return (char*) "relocate";    
   return (char*) "unknown";
 }
 
@@ -293,6 +296,7 @@ int command_arity(Command* self) {
   if (self->id == COMMAND_BENCHMARK)  return 0;
   if (self->id == COMMAND_IDENTIFY)   return 0;
   if (self->id == COMMAND_SERVER)     return 1;
+  if (self->id == COMMAND_RELOCATE)   return 1;  
   return 0;
 
 }
@@ -1009,6 +1013,77 @@ int command_server_relocation_possible(Command* self, xlink_server_info* server,
 
 //------------------------------------------------------------------------------
 
+int command_relocate(Command *self) {
+
+  bool result = false;
+  
+  xlink_server_info server;
+
+  if(self->argc != 1) {
+    logger->error("no relocation address specified");
+    return false;
+  }
+  
+  if(!xlink_identify(&server)) {
+    logger->error("failed to identify server");
+    return false;
+  }
+
+  if(server.type == XLINK_SERVER_TYPE_ROM) {
+    logger->info("identified ROM-based server (no relocation required)");
+    return true;
+  }
+
+  unsigned short address = strtol(self->argv[0], NULL, 0);
+  
+  Range* lorom = range_new(server.memtop, 0xc000); 
+  Range* hirom = range_new(0xe000, 0x10000);
+  Range* io    = range_new(0xd000, 0xe000);    
+  Range* code  = range_new(address, address + server.length);
+
+  if(!range_valid(code)) {
+    logger->error("cannot relocate server to $%04X-$%04X: invalid memory range",
+		  code->start, code->end);
+    goto done;
+  }
+  
+  if(server.type == XLINK_SERVER_TYPE_RAM) {
+   
+    if(range_inside(code, lorom)) {
+      logger->error("cannot relocate server to $%04X-$%04X: range occupies lower rom area $%04X-$%04X",
+		    code->start, code->end, lorom->start, lorom->end);
+      goto done;
+    }
+
+    if(range_inside(code, hirom)) {
+      logger->error("cannot relocate server to $%04X-$%04X: range occupies upper rom area $%04X-$%04X",
+		    code->start, code->end, hirom->start, hirom->end);
+      goto done;
+    }
+
+    if(range_inside(code, io)) {
+      logger->error("cannot relocate server to $%04X-$%04X: range occupies io area $%04X-$%04X",
+		    code->start, code->end, io->start, io->end);
+      goto done;
+    }
+
+    result = xlink_relocate(address);
+    goto done;
+  }
+
+  logger->error("unknown server type: %d", server.type);
+  
+ done:
+    free(lorom);
+    free(hirom);
+    free(io);
+    free(code);
+
+  return result;
+}
+
+//------------------------------------------------------------------------------
+
 int command_reset(Command* self) {
   command_print(self);
   return xlink_reset();
@@ -1419,7 +1494,8 @@ int command_execute(Command* self) {
   case COMMAND_BOOTLOADER : result = command_bootloader(self); break;
   case COMMAND_BENCHMARK  : result = command_benchmark(self);  break;
   case COMMAND_IDENTIFY   : result = command_identify(self);   break;
-  case COMMAND_SERVER     : result = command_server(self);     break;    
+  case COMMAND_SERVER     : result = command_server(self);     break;
+  case COMMAND_RELOCATE   : result = command_relocate(self);   break;        
   }
   
   logger->leave();
@@ -1473,7 +1549,7 @@ int main(int argc, char **argv) {
 
 #if linux
 
-static char* known_commands[19] = { 
+static char* known_commands[20] = { 
   "help",
   "load", 
   "save",
@@ -1493,6 +1569,7 @@ static char* known_commands[19] = {
   "benchmark",
   "identify",
   "server",
+  "relocate",
   NULL 
 };
 
@@ -1627,13 +1704,13 @@ void usage(void) {
 #if linux
   printf("          shell                        : enter interactive command shell\n");
 #endif
-  printf("          bootloader                   : enter dfu-bootloader (USB devices only)\n");
-  printf("          benchmark                    : test/measure transfer speed\n");
   printf("\n");
-  printf("          server [-a<addr>] <file>     : create ram based server program\n");
-  printf("          ping                         : check if the server is available\n");
+  printf("          server [-a<addr>] <file>     : create server and save to file\n");
+  printf("          relocate <addr>              : relocate running server\n");
+  printf("\n");  
   printf("          reset                        : reset C64 (only if using reset circuit)\n");
   printf("          ready                        : try to make sure the server is ready\n");
+  printf("          ping                         : check if the server is available\n");
   printf("          identify                     : identify remote machine and server\n");
   printf("\n");
   printf("          load  [<opts>] <file>        : load file into C64 memory\n");
@@ -1648,6 +1725,9 @@ void usage(void) {
   printf("          backup <file>                : backup disk to d64 file\n");
   printf("          restore <file>               : restore d64 file to disk\n");
   printf("          verify <file>                : verify disk against d64 file\n");
+  printf("\n");
+  printf("          bootloader                   : enter dfu-bootloader (USB devices only)\n");
+  printf("          benchmark                    : test/measure transfer speed\n");
   printf("\n");
 }
 
@@ -1836,6 +1916,14 @@ int help(int id) {
     printf("Write a ram-based C64 server programm to file. Use address to specify the\n");
     printf("start address for the server code. If the address is $0801 the server can\n");
     printf("be started with RUN. This is the default if no address is specified.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_RELOCATE:
+    printf("Usage: relocate <address>\n");
+    printf("\n");
+    printf("Relocate the currently running ram-based server to the specified address.\n");
+    printf("Note that the server can not be relocated to areas occupied by IO or ROM.\n");
     printf("\n");
     break;
     

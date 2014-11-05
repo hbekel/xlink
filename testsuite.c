@@ -65,7 +65,13 @@ void test_range() {
   check(range_inside(range, other), "Range $1000-$2000 not within Range $0800-$2000");
 
   free(range);
-  free(other);  
+  free(other);
+
+  range = range_new(-23, 34);
+  check(!range_valid(range), "Range -23-34 is falsely considered valid");
+
+  range->start = 0;
+  check(range_valid(range), "Range 0-34 is falsely considered invalid");
 }
 
 int main(int argc, char** argv) {

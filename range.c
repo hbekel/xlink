@@ -13,6 +13,14 @@ Range* range_new(int start, int end) {
   return self;
 }
 
+bool range_valid(Range* self) {
+  return
+    self->start >= self->min &&
+    self->start <= self->max &&
+    self->end >= self->min &&
+    self->end <= self->max;
+}
+
 void range_print(Range* self) {
   printf("$%04X-$%04X\n", self->start, self->end);
 }
