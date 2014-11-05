@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
   printf("unsigned char basic[15] = { 0x01, 0x08, 0x0b, 0x08, 0x0a, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x32, 0x00, 0x00, 0x00, 0x00 };\n");
 
   printf("unsigned char* code = xlink_server(0x080e, size);\n");
-  printf("unsigned char* result = (unsigned char*) calloc((*size)+11, sizeof(unsigned char));\n");
+  printf("unsigned char* result = (unsigned char*) calloc((*size)+13, sizeof(unsigned char));\n");
 
   printf("for(int i=0; i<15; i++) { result[i] = basic[i]; }\n");
   printf("for(int i=0; i<(*size)-2; i++) { result[i+15] = code[i+2]; }\n");
