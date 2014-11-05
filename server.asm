@@ -280,7 +280,13 @@ identify: {
         :write()
 
         lda Server.end+1
-        :write()        
+        :write()
+
+	lda memtop
+	:write()
+
+	lda memtop+1
+	:write()
         
 done:   lda #$00   // reset CIA2 port B to input
 	sta $dd03

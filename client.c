@@ -931,7 +931,7 @@ int command_server_relocation_possible(Command* self, xlink_server_info* server,
   bool result = true;
   
   Range* screen = range_new(0x0400, 0x07e7);  
-  Range* lower  = range_new(0x0801, 0xa000);
+  Range* lower  = range_new(0x0801, server->memtop);
   Range* upper  = range_new(0xc000, 0xd000);
   Range* all    = range_new(screen->start, upper->end);
 
@@ -963,7 +963,7 @@ int command_server_relocation_possible(Command* self, xlink_server_info* server,
     }
   }
 
-  // ...the end of the lower memory area ($0801-$a000)
+  // ...the end of the lower memory area ($0801-$8000 or $0801-$a000)
   
   code->start = lower->end - server->length;
   code->end = lower->end;
@@ -1089,11 +1089,11 @@ int command_identify(Command *self) {
   
   if(xlink_identify(&server)) {
 
-    logger->info("%s %s-based server v%d.%d $%04X-$%04X (%d bytes)",
+    logger->info("%s %s-based server v%d.%d $%04X-$%04X (%d bytes) (memtop $%04X)",
                  server.machine == XLINK_MACHINE_C64 ? "C64" : "Unknown",
                  server.type == XLINK_SERVER_TYPE_RAM ? "RAM" : "ROM",
                  (server.version & 0xf0) >> 4, server.version & 0x0f,
-                 server.start, server.end, server.length);
+                 server.start, server.end, server.length, server.memtop);
     return true;
   }
   return false;

@@ -55,6 +55,7 @@ extern "C" {
     unsigned short start;   // server start address
     unsigned short end;     // server end address
     unsigned short length;  // server code length
+    unsigned short memtop;  // current top of (lower) memory (0xa000 or 0x8000)
   } xlink_server_info;
 
   typedef struct {

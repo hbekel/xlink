@@ -121,7 +121,7 @@ bool xlink_has_device(void) {
 bool xlink_identify(xlink_server_info* server) {
 
   bool result = true;
-  char data[7];
+  char data[9];
   
   if(driver->open()) {
     
@@ -139,13 +139,13 @@ bool xlink_identify(xlink_server_info* server) {
     driver->input();
     driver->strobe();
     
-    driver->receive(data, 7);
+    driver->receive(data, 9);
 
     driver->close();
 
     unsigned char checksum = 0xff;
     
-    for(int i=0; i<7; i++) {
+    for(int i=0; i<9; i++) {
       checksum &= data[i];
     }
     if(checksum == 0xff) {
@@ -166,8 +166,12 @@ bool xlink_identify(xlink_server_info* server) {
     server->end = 0;
     server->end |= data[5];
     server->end |= data[6] << 8;
+
+    server->memtop = 0;
+    server->memtop |= data[7];
+    server->memtop |= data[8] << 8;
     
-    server->length = server->end - server->start;
+    server->length = server->end - server->start;   
   }
   
  done:

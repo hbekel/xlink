@@ -11,6 +11,7 @@
 .var insnewl  = $a659 // Insert new line into BASIC program
 .var restxtpt = $a68e // Reset BASIC text pointer
 .var warmst   = $a7ae // Basic warm start (e.g. RUN)
+.var memtop   = $0283 // Top of lower memory area
 
 .namespace Command {
 .label load        = $01
