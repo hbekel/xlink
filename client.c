@@ -15,6 +15,7 @@
 
 #include "target.h"
 #include "client.h"
+#include "range.h"
 #include "disk.h"
 #include "util.h"
 #include "xlink.h"
@@ -905,19 +906,21 @@ int command_requires_server_relocation(Command* self, xlink_server_info* server)
   bool result = false;
 
   if(server->type == XLINK_SERVER_TYPE_ROM) {
-    goto done;
+    return false;
   }
 
-  if ((self->start >= server->start && self->start <= server->end) ||
-      (self->end >= server->start && self->end <= server->end)) {
+  Range* data = range_new(self->start, self->end);
+  Range* code = range_new(server->start, server->end);
+
+  if(range_overlaps(data, code)) {
     
     logger->debug("Relocation required: data ($%04X-$%04X) overlaps server ($%04X-$%04X)",
 		  self->start, self->end, server->start, server->end);
-
+    
     result = true;
   }
-
- done:
+  free(data);
+  free(code);
   return result;  
 }
 
@@ -925,27 +928,82 @@ int command_requires_server_relocation(Command* self, xlink_server_info* server)
 
 int command_server_relocation_possible(Command* self, xlink_server_info* server, unsigned short* address) {
 
-  bool result = false;
+  bool result = true;
+  
+  Range* screen = range_new(0x0400, 0x07e7);  
+  Range* lower  = range_new(0x0801, 0xa000);
+  Range* upper  = range_new(0xc000, 0xd000);
+  Range* all    = range_new(screen->start, upper->end);
 
-  if(0x0801 + server->length < self->start) {
-    (*address) = 0x0801;
-    result = true;
-    goto done;
-  }
+  Range* data = range_new(self->start, self->end);
+  Range* code = range_new(server->start, server->end);
+  
+  // first check if the data already covers the complete range of possible memory areas
 
-  if(self->end + server->length < 0xa000) {
-    (*address) = self->end;
-    result = true;
-    goto done;
-  }
-
-  if(self->end >= 0xc000 && self->end + server->length < 0xd000) {
-    (*address) = self->end;
-    result = true;
+  if(range_inside(all, data)) {
+    result = false;
     goto done;
   }
   
- done:
+  // else try to relocate server as close as possible to...
+
+  // ...the end of the upper memory area ($c000-$d000)
+  
+  code->start = upper->end - server->length;
+  code->end = upper->end;
+  
+  while(range_inside(code, upper)) {
+
+    if(range_overlaps(code, data)) {
+      range_move(code, -1);
+    }
+    else {
+      (*address) = code->start;
+      goto done;
+    }
+  }
+
+  // ...the end of the lower memory area ($0801-$a000)
+  
+  code->start = lower->end - server->length;
+  code->end = lower->end;
+
+  while(range_inside(code, lower)) {
+    
+    if(range_overlaps(code, data)) {
+      range_move(code, -1);
+    }
+    else {
+      (*address) = code->start;
+      goto done;
+    }
+  }
+
+  // ...the end of the default screen memory area ($0801-$a000)
+
+  code->start = screen->end - server->length;
+  code->end = screen->end;
+
+  while(range_inside(code, screen)) {
+    
+    if(range_overlaps(code, data)) {
+      range_move(code, -1);
+    }
+    else {
+      (*address) = code->start;
+      goto done;
+    }
+  }
+  
+  result = false;
+  
+ done:  
+  free(code);
+  free(data);
+  free(upper);
+  free(lower);
+  free(screen);
+  free(all);
   return result;  
 }
 
