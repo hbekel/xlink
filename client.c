@@ -473,7 +473,7 @@ char* command_get_name(Command* self) {
 
 int command_print(Command* self) {
 
-  char result[1024];
+  char result[1024] = "";;
   bool print = false;
 
   if(strlen(xlink_get_device()) > 0) {

@@ -46,7 +46,7 @@ win32: xlink.exe
 kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.txt
 
-testsuite: testsuite.c
+testsuite: testsuite.c range.c
 	$(GCC) -o testsuite testsuite.c range.c
 
 test: testsuite
@@ -117,7 +117,6 @@ install: xlink c64
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
 	install -m644 -D libxlink.so $(DESTDIR)$(PREFIX)/lib/libxlink.so
 	install -m644 -D xlink.h $(DESTDIR)$(PREFIX)/include/xlink.h
-	install -m644 -D xlink-server.prg $(DESTDIR)$(PREFIX)/share/xlink/xlink-server.prg
 	install -m644 -D xlink-kernal.rom $(DESTDIR)$(PREFIX)/share/xlink/xlink-kernal.rom
 	install -m644 -D bootstrap.txt $(DESTDIR)$(PREFIX)/share/xlink/xlink-bootstrap.txt
 
