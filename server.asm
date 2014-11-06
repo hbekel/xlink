@@ -262,31 +262,31 @@ identify: {
 	sta $dd03
 
         lda Server.version   
-        :write()
+        jsr write
 
         lda Server.machine
-        :write()
+        jsr write
 
         lda Server.type
-        :write()       
+        jsr write       
 
         lda Server.start
-        :write()
+        jsr write
 
         lda Server.start+1
-        :write()
+        jsr write
 
         lda Server.end
-        :write()
+        jsr write
 
         lda Server.end+1
-        :write()
+        jsr write
 
 	lda memtop
-	:write()
+	jsr write
 
 	lda memtop+1
-	:write()
+	jsr write
         
 done:   lda #$00   // reset CIA2 port B to input
 	sta $dd03
