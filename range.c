@@ -72,7 +72,9 @@ bool range_overlaps(Range* self, Range* range) {
 
   return
     (self->start >= range->start && self->start <= range->end) ||
-    (self->end >= range->start && self->end <= range->end);  
+    (self->end >= range->start && self->end <= range->end) ||  
+    (range->start >= self->start && range->start <= self->end) ||
+    (range->end >= self->start && range->end <= self->end);  
 }
 
 void range_free(Range* self) {

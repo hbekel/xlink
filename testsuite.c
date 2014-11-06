@@ -72,6 +72,17 @@ void test_range() {
 
   range->start = 0;
   check(range_valid(range), "Range 0-34 is falsely considered invalid");
+
+  free(range);
+
+  range = range_new(0x080e, 0x0af7);
+  other = range_new(0x0801, 0x2b77);
+
+  check(range_overlaps(range, other), "Ranges $080e-$0af7 and $0801-$2b77 don't overlap");
+  check(range_overlaps(other, range), "Ranges $0801-$2b77 and $080e-$0af7 don't overlap");
+
+  free(range);
+  free(other);
 }
 
 int main(int argc, char** argv) {
