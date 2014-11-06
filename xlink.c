@@ -160,15 +160,15 @@ bool xlink_identify(xlink_server_info* server) {
     server->type = data[2];
     
     server->start = 0;
-    server->start |= data[3];
+    server->start |= (unsigned char) data[3];
     server->start |= (((unsigned char) data[4]) << 8);
 
     server->end = 0;
-    server->end |= data[5];
+    server->end |= (unsigned char) data[5];
     server->end |= (((unsigned char) data[6]) << 8);
 
     server->memtop = 0;
-    server->memtop |= data[7];
+    server->memtop |= (unsigned char) data[7];
     server->memtop |= (((unsigned char) data[8]) << 8);
     
     server->length = server->end - server->start;   
@@ -484,7 +484,7 @@ bool xlink_relocate(unsigned short address) {
 
   if(extension_load(relocate) && extension_init(relocate)) {
 
-    result = xlink_load(0x37, 0x00, address, address+size-2, (char*) (server+2), size-2);
+    result = xlink_load(0x37|0x80, 0x00, address, address+size-2, (char*) (server+2), size-2);
 
     extension_unload(relocate);
   }
