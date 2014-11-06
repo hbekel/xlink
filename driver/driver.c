@@ -22,6 +22,7 @@ extern Driver* driver;
 bool _driver_setup_and_open(void) {
 
   bool result = false;
+  bool quiet = logger->level <= XLINK_LOG_LEVEL_INFO;
   
 #if linux
   char default_usb_device[] = "/dev/xlink";
@@ -37,13 +38,13 @@ bool _driver_setup_and_open(void) {
   }
   else {
 
-    if(!(result = driver_setup(default_usb_device, true))) {
+    if(!(result = driver_setup(default_usb_device, quiet))) {
 
-      result = driver_setup(default_parport_device, true);
+      result = driver_setup(default_parport_device, quiet);
 
       if(result) {
         logger->info("using default parallel port device %s",
-                     default_parport_device, true);
+                     default_parport_device);
       }
     }
     else {
@@ -83,7 +84,7 @@ bool driver_setup(char* path, bool quiet) {
 
   if(device_is_parport(type)) {
 
-    logger->debug("trying to use parallel port device %s...", driver->path);
+    logger->debug("trying to use parallel port device \"%s\"...", driver->path);
   
     driver->_open    = &driver_parport_open;
     driver->_close   = &driver_parport_close;    
@@ -103,8 +104,11 @@ bool driver_setup(char* path, bool quiet) {
     result = driver->ready();
     
     if(result) {
-      logger->debug("using parallel port device %s", driver->path);
+      logger->debug("using parallel port device \"%s\"", driver->path);
     }
+    else {
+      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize parallel port device \"%s\"", driver->path);
+    }	
     
   } else if(device_is_usb(type)) {
     
@@ -129,6 +133,9 @@ bool driver_setup(char* path, bool quiet) {
     
     if(result) {
       logger->debug("using usb device \"%s\"", driver->path);
+    }
+    else {
+      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize usb device \"%s\"", driver->path);
     }
   }
 
@@ -209,14 +216,15 @@ bool device_is_usb(int type) {
 
 bool _driver_ready() {
   bool result = false;
-
-  logger->suspend();
+  bool quiet = logger->level <= XLINK_LOG_LEVEL_INFO;
+  
+  if(quiet) logger->suspend();
 
   if((result = driver->open())) {
     driver->close();
   }
   
-  logger->resume();
+  if(quiet) logger->resume();
 
   CLEAR_ERROR_IF(result);
   return result;

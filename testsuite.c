@@ -83,10 +83,12 @@ void test_range() {
 
   free(range);
   free(other);
+
+  printf("passed range tests\n");
 }
 
 int main(int argc, char** argv) {
   test_range();
-  
+
   exit(EXIT_SUCCESS);
 }

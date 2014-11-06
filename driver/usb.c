@@ -185,7 +185,7 @@ bool driver_usb_open() {
   }
   version = libusb_get_version();
   
-  logger->debug("initialized libusb-%d.%d.%d.%d",
+  logger->trace("initialized libusb-%d.%d.%d.%d",
 		version->major, version->minor, version->micro, version->nano);
 
   driver_usb_lookup(driver->path, &info);
