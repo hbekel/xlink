@@ -483,11 +483,15 @@ bool xlink_relocate(unsigned short address) {
   unsigned char* server = xlink_server(address, &size);  
 
   if(extension_load(relocate) && extension_init(relocate)) {
+
     result = xlink_load(0x37, 0x00, address, address+size-2, (char*) (server+2), size-2);
+
+    extension_unload(relocate);
   }
   
+  extension_free(relocate);  
   free(server);
-  free(relocate);
+  
   CLEAR_ERROR_IF(result);
   return result;  
 }
@@ -526,8 +530,10 @@ bool xlink_drive_status(char* status) {
       driver->close();
       result = true;
     }
+    extension_unload(lib);
+    extension_unload(drive_status);
   }
-  
+
   extension_free(lib);
   extension_free(drive_status);
   
@@ -565,6 +571,8 @@ bool xlink_dos(char* cmd) {
       driver->close();
       result = true;
     }
+    extension_unload(lib);
+    extension_unload(dos_command);
   }
   
   free(command);
@@ -605,6 +613,8 @@ bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char*
       driver->close();      
       result = true;
     }
+    extension_unload(lib);
+    extension_unload(sector_read);
   }
 
   extension_free(lib);
@@ -640,6 +650,8 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
       driver->close();
       result = true;
     }
+    extension_unload(lib);
+    extension_unload(sector_write);
   }
   
   extension_free(lib);
