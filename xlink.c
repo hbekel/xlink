@@ -161,15 +161,15 @@ bool xlink_identify(xlink_server_info* server) {
     
     server->start = 0;
     server->start |= data[3];
-    server->start |= data[4] << 8;
+    server->start |= (((unsigned char) data[4]) << 8);
 
     server->end = 0;
     server->end |= data[5];
-    server->end |= data[6] << 8;
+    server->end |= (((unsigned char) data[6]) << 8);
 
     server->memtop = 0;
     server->memtop |= data[7];
-    server->memtop |= data[8] << 8;
+    server->memtop |= (((unsigned char) data[8]) << 8);
     
     server->length = server->end - server->start;   
   }
