@@ -1857,7 +1857,7 @@ int help(int id) {
   case COMMAND_BACKUP:
     printf("Usage: backup <file>.d64\n");
     printf("\n");
-    printf("Backup a disk to a d64 file. Reads 35 tracks from disks and saves them to\n");
+    printf("Backup a disk to a d64 file. Reads 35 tracks from disk and saves them to\n");
     printf("the specified file. Note that no error checking is performed and no error\n");
     printf("information is appended to the d64 file.\n");
     printf("\n");
@@ -1919,6 +1919,7 @@ int help(int id) {
     printf("\n");
     printf("Query information about the remote server. Reports machine type, server\n");
     printf("version, server type (RAM- or ROM-based), memory location and size.\n");
+    printf("Additionally reports the top of the lower memory area ($A000 or $8000).\n");    
     printf("\n");
     break;
 
@@ -1935,7 +1936,7 @@ int help(int id) {
     printf("Usage: relocate <address>\n");
     printf("\n");
     printf("Relocate the currently running ram-based server to the specified address.\n");
-    printf("Note that the server can not be relocated to areas occupied by ROM or IO.\n");
+    printf("Note that the server cannot be relocated to areas occupied by ROM or IO.\n");
     printf("\n");
     break;
     
