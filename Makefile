@@ -77,12 +77,13 @@ extensions.c: tools/make-extension extensions.asm
 tools/make-server: tools/make-server.c
 	$(GCC) $(CFLAGS) -o tools/make-server tools/make-server.c
 
-server.c: tools/make-server server.h server.asm 
+server.c: tools/make-server server.h server.asm loader.asm 
 	$(KASM) :pc=257 -o base server.asm  # 257 = $0101
 	$(KASM) :pc=513 -o high server.asm  # 513 = $0201
 	$(KASM) :pc=258 -o low  server.asm  # 258 = $0102
-	tools/make-server base low high > server.c
-	rm -v base low high
+	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" -o loader loader.asm)
+	tools/make-server base low high loader > server.c
+	rm -v base low high loader
 
 tools/make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c

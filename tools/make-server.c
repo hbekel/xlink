@@ -40,15 +40,16 @@ int main(int argc, char **argv) {
   struct stat st;
   int size;
   
-  unsigned char *base = (unsigned char *) calloc(1, sizeof(unsigned char));
-  unsigned char *high = (unsigned char *) calloc(1, sizeof(unsigned char));
-  unsigned char *low  = (unsigned char *) calloc(1, sizeof(unsigned char));
+  unsigned char *base   = (unsigned char *) calloc(1, sizeof(unsigned char));
+  unsigned char *high   = (unsigned char *) calloc(1, sizeof(unsigned char));
+  unsigned char *low    = (unsigned char *) calloc(1, sizeof(unsigned char));
+  unsigned char *loader = (unsigned char *) calloc(1, sizeof(unsigned char));
   
   argc--;
   argv++;
 
-  if(argc < 3) {
-    fprintf(stderr, "usage: make-server <base> <low> <high>\n");
+  if(argc < 4) {
+    fprintf(stderr, "usage: make-server <base> <low> <high> <loader>\n");
     goto done;
   }
 
@@ -59,6 +60,9 @@ int main(int argc, char **argv) {
     goto done;
   
   if(!load(argv[2], &high))
+    goto done;  
+
+  if(!load(argv[3], &loader))
     goto done;  
   
   stat(argv[0], &st);
@@ -75,6 +79,9 @@ int main(int argc, char **argv) {
     fprintf(stderr, "error: files must be of equal size\n");
     goto done;
   }
+
+  stat(argv[3], &st);
+  int loader_size = st.st_size;
   
   int count = 0;
   address** table = (address**) calloc(count, sizeof(address*));
@@ -111,15 +118,20 @@ int main(int argc, char **argv) {
   printf("#include \"error.h\"\n");  
 
   printf("unsigned char* xlink_server_basic(int *size) {\n");
-  printf("unsigned char basic[15] = { 0x01, 0x08, 0x0b, 0x08, 0x0a, 0x00, 0x9e, 0x32, 0x30, 0x36, 0x32, 0x00, 0x00, 0x00, 0x00 };\n");
+  
+  printf("unsigned char loader[%d] = {", loader_size);
+  for(int i=0; i<loader_size; i++) {
+    printf("%d,", loader[i]);
+  }
+  printf("};\n");
 
-  printf("unsigned char* code = xlink_server(0x080e, size);\n");
-  printf("unsigned char* result = (unsigned char*) calloc((*size)+13, sizeof(unsigned char));\n");
+  printf("unsigned char* code = xlink_server(0xd000-%d+2, size);\n", size);
+  printf("unsigned char* result = (unsigned char*) calloc((*size)+%d-2, sizeof(unsigned char));\n", loader_size);
 
-  printf("for(int i=0; i<15; i++) { result[i] = basic[i]; }\n");
-  printf("for(int i=0; i<(*size)-2; i++) { result[i+15] = code[i+2]; }\n");
+  printf("for(int i=0; i<%d; i++) { result[i] = loader[i]; }\n", loader_size);
+  printf("for(int i=0; i<(*size)-2; i++) { result[i+%d] = code[i+2]; }\n", loader_size);
   printf("free(code);\n");
-  printf("(*size) = (*size) + 13;\n");
+  printf("(*size) = (*size) + %d -2;\n", loader_size);
   printf("return result;\n");
   
   printf("}\n");
@@ -161,5 +173,6 @@ int main(int argc, char **argv) {
   free(base);
   free(high);
   free(low);
+  free(loader);
   return result;
 }
