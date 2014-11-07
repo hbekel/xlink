@@ -21,8 +21,6 @@ Extension *extension_new(short address, short size, char* code) {
 
 int extension_load(Extension *self) {
   
-  logger->enter("extension_load");
-
   bool result = false;
   
   if (!xlink_save(0x37|0x80, 0x00, self->address, self->address+self->size, self->cache, self->size)) {
@@ -35,33 +33,22 @@ int extension_load(Extension *self) {
   
  done:
   self->loaded = result;
-  logger->leave();
   return result;
 }
 
 int extension_unload(Extension *self) {
-
-  logger->enter("extension_unload");
 
   bool result = false;
 
   if(self->loaded) {
     result = xlink_load(0x37|0x80, 0x00, self->address, self->address+self->size, self->cache, self->size);
     self->loaded = !result;
-  }
-  
-  logger->leave();
+  }  
   return result;  
 }
 
 int extension_init(Extension *self) {
-
-  logger->enter("extension_init");
-
-  bool result = xlink_extend(self->address);
-  
-  logger->leave();
-  return result;
+  return xlink_extend(self->address);  
 }
 
 void extension_free(Extension *self) {

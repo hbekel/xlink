@@ -895,13 +895,15 @@ int command_server_usable_after_possible_relocation(Command* self) {
     if(command_requires_server_relocation(self, &server)) {
 
       if(!command_server_relocation_possible(self, &server, &newServerAddress)) {
-	logger->error("Impossible to relocate ram-based server: out of memory");
-	return false;
+        logger->error("Impossible to relocate ram-based server: out of memory");
+        return false;
       }
 
+      logger->debug("Relocating server to $%04X", newServerAddress);
+
       if(!xlink_relocate(newServerAddress)) {
-	logger->error("Failed to relocate ram-based server: %s", xlink_error->message);
-	return false;
+        logger->error("Failed to relocate ram-based server: %s", xlink_error->message);
+        return false;
       }
     }
   }
@@ -1123,15 +1125,15 @@ int command_benchmark(Command* self) {
     goto done;
   }
 
-  logger->info("sending %d bytes...", sizeof(payload));
-    
-  watch_start(watch);
-
   if(xlink_identify(&server)) {
     if(server.type == XLINK_SERVER_TYPE_RAM) {
       xlink_relocate(0xc000);
     }
   }
+
+  logger->info("sending %d bytes...", sizeof(payload));
+    
+  watch_start(watch);
   
   xlink_load(0x37, 0x00, start, end, payload, sizeof(payload));
   
@@ -1561,7 +1563,7 @@ int main(int argc, char **argv) {
 
 #if linux
 
-static char* known_commands[20] = { 
+static char* known_commands[21] = { 
   "help",
   "load", 
   "save",

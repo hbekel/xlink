@@ -71,23 +71,11 @@ static void _logger_print_level(int level) {
   switch(level) {
 
   case LOGLEVEL_ERROR:
-    printf("ERROR:   ");
+    printf("error: ");
     break;
-
+    
   case LOGLEVEL_WARN:
-    printf("WARNING: ");
-    break;
-
-  case LOGLEVEL_INFO:
-    printf("INFO:    ");
-    break;
-
-  case LOGLEVEL_DEBUG:
-    printf("DEBUG:   ");
-    break;
-
-  case LOGLEVEL_TRACE:
-    printf("TRACE:   ");
+    printf("warning: ");
     break;
   }
 }
@@ -105,9 +93,9 @@ static void _logger_log(int level, char *fmt, va_list ap) {
 
   if(level > logger->level || !logger->enabled) return;
 
-  _logger_print_level(level);
   _logger_print_context();
-
+  _logger_print_level(level);
+  
   while (*fmt) {
     for (j = 0; fmt[j] && fmt[j] != '%'; j++)
       format[j] = fmt[j];                   
