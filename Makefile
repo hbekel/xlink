@@ -10,11 +10,11 @@ USB_SERIAL=`uuidgen`
 GCC=gcc
 CFLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 
-#GCC-MINGW32=i686-w64-mingw32-gcc
-GCC-MINGW32=i686-pc-mingw32-gcc
+GCC-MINGW32=i686-w64-mingw32-gcc
+#GCC-MINGW32=i686-pc-mingw32-gcc
 
-#KASM=java -jar /usr/share/kickassembler/KickAss.jar
-KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+KASM=java -jar /usr/share/kickassembler/KickAss.jar
+#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 LIBHEADERS=\
 	xlink.h \
@@ -38,8 +38,8 @@ LIBSOURCES=\
 
 LIBFLAGS=-DXLINK_LIBRARY_BUILD
 
-#all: linux c64
-all: win32 c64
+all: linux c64
+#all: win32 c64
 c64: kernal bootstrap
 linux: xlink udev
 win32: xlink.exe

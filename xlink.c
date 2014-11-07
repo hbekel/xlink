@@ -120,16 +120,14 @@ bool xlink_has_device(void) {
 
 bool xlink_identify(xlink_server_info* server) {
 
-  bool result = true;
+  bool result = false;
   char data[9];
   
   if(driver->open()) {
     
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-
       driver->close();
-      result = false;
       goto done;
     }
 
@@ -150,8 +148,6 @@ bool xlink_identify(xlink_server_info* server) {
     }
     if(checksum == 0xff) {
       SET_ERROR(XLINK_ERROR_SERVER, "unknown server (does not support identification)");
-
-      result = false;
       goto done;
     }
     
@@ -172,6 +168,8 @@ bool xlink_identify(xlink_server_info* server) {
     server->memtop |= (((unsigned char) data[8]) << 8);
     
     server->length = server->end - server->start;   
+    
+    result = true;
   }
   
  done:
