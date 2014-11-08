@@ -239,6 +239,7 @@ bool xlink_bootloader(void) {
   
   if(driver->open()) {
     driver->boot();
+    driver->close();
     result = true;
   }
 
@@ -269,13 +270,12 @@ bool xlink_load(unsigned char memory,
           lo(start), hi(start), lo(end), hi(end)}, 7);
 
     driver->send(data, size);
-    
+
+    driver->close();
     result = true;
   }
 
  done:
-  driver->close();
-
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -307,12 +307,11 @@ bool xlink_save(unsigned char memory,
 
     driver->receive(data, size);
 
+    driver->close();
     result = true;
   }
 
  done:
-  driver->close();
-
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -341,12 +340,11 @@ bool xlink_peek(unsigned char memory,
 
     driver->receive((char *)value, 1);
 
+    driver->close();
     result = true;
   }
 
  done:
-  driver->close();
-
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -371,12 +369,11 @@ bool xlink_poke(unsigned char memory,
     driver->send((char []) {XLINK_COMMAND_POKE, memory, bank, 
           lo(address), hi(address), value}, 6);    
 
+    driver->close();
     result = true;
   }
 
  done:
-  driver->close();
-
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -391,23 +388,22 @@ bool xlink_jump(unsigned char memory,
 
   // jump address is send MSB first (big-endian)    
 
-   if(driver->open()) {
+  if(driver->open()) {
   
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
       goto done;
     }
-
+    
     driver->output();
     driver->send((char []) {XLINK_COMMAND_JUMP, memory, bank, 
           hi(address), lo(address)}, 5);    
 
+    driver->close();    
     result = true;
   }
-   
+  
  done:
-  driver->close();
-
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -428,12 +424,11 @@ bool xlink_run(void) {
     driver->output();
     driver->send((char []) {XLINK_COMMAND_RUN}, 1);
 
+    driver->close();
     result = true;
   }
    
  done:
-  driver->close();
-
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -459,12 +454,11 @@ bool xlink_extend(int address) {
     driver->output();
     driver->send((char []) {XLINK_COMMAND_EXTEND, hi(address), lo(address)}, 3);
 
+    driver->close();
     result = true;
   }
   
  done:
-  driver->close();
-
   CLEAR_ERROR_IF(result);
   return result;
 }
