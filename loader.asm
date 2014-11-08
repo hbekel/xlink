@@ -16,6 +16,8 @@ done:
 
 .macro decword(ptr) {
 	dec ptr
+        lda ptr
+        cmp #$ff
 	bne done
 	dec ptr+1
 done:	
@@ -44,13 +46,12 @@ copy:	lda (src),y
 	:incword(src)
 	:incword(dst)
 	:decword(cnt)
-	lda cnt+1
-	bne copy
 	lda cnt
 	bne copy
+	lda cnt+1
+	bne copy
 
-	jsr dest
-	rts
+        jmp dest
 }
 	
 code:
