@@ -1207,6 +1207,9 @@ int command_server(Command *self) {
   if (self->start == -1) {
     self->start = 0x0801;
   }
+
+  command_print(self);
+
   if(self->start == 0x0801) {
     data = xlink_server_basic(&size);
   } else {
@@ -1224,6 +1227,8 @@ int command_server(Command *self) {
 
   fwrite(data, sizeof(unsigned char), size, file);
   fclose(file);
+
+  result = true;
 
  done:
   free(data);
