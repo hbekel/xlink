@@ -11,10 +11,9 @@ int main(int argc, char **argv) {
   int size;
   int l;
   int checksum = 0;
-  int saveToDisk, saveToTape;
 
-  if(argc < 3) {
-    fprintf(stderr, "Usage: compile-extension.c <file> <saveToDiskAddress> <saveToTapeAddress>\n");
+  if(argc < 1) {
+    fprintf(stderr, "Usage: make-bootstrap <file>");
     return EXIT_FAILURE;
   }
 
@@ -24,9 +23,6 @@ int main(int argc, char **argv) {
     fprintf(stderr, "%s: error opening %s\n", argv[0], filename);
     return EXIT_FAILURE;
   }
-
-  saveToDisk = strtol(argv[2], NULL, 0);
-  saveToTape = strtol(argv[3], NULL, 0);
 
   address = fgetc(f);
   address = address | fgetc(f) << 8;
@@ -48,11 +44,11 @@ int main(int argc, char **argv) {
   printf("%d read v:poke d+i+k,v:c=c+v:next k\n", l+=10);
   printf("%d read v:if c<>v then print\"data checksum error on line\";l:end\n", l+=10);
   printf("%d c=0:l=l+1:i=i+7:nexti\n", l+=10);
-  printf("%d print\"please run\":print:print\"  xlink load xlink-server.prg\":print\n", l+=10);
+  printf("%d print\"on your pc, please run\":print\n", l+=10);
+  printf("%d print\"xlink server xlink.prg load xlink.prg\":print\n", l+=10);
+  printf("%d print\"then save the server:\":print\n", l+=10);
+  printf("%d print\"save\"chr$(34)\"xlink\"chr$(34)\",8\"chr$(145)\n", l+=10);
   printf("%d sys %d\n", l+=10, address);
-  printf("%d print\"sys %d : rem save server to disk\"\n", l+=10, saveToDisk);
-  printf("%d print\"sys %d : rem save server to tape\"\n", l+=10, saveToTape);
-  printf("%d print\"sys\";:print (peek(251)+peek(252)*256);:print\": rem start the server\n", l+=10);
   printf("%d end\n", l+=10);
   l = 1000;
 
@@ -60,7 +56,7 @@ int main(int argc, char **argv) {
     if (i%8 == 0) {
       
       if(checksum) {
-	printf("%d\n", checksum);
+        printf("%d\n", checksum);
       }
       printf("%d data ", l);
       

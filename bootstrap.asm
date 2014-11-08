@@ -1,4 +1,4 @@
-.pc = $1000
+.pc = $3000
 
 .import source "server.h"
 
@@ -37,7 +37,7 @@ loop:	jsr wait
 	jsr load	
         
 done:	cli
-	rts
+	jmp $a480
 }
 
 //------------------------------------------------------------------------------	
@@ -55,7 +55,12 @@ load: {
 	jsr ack
 	:next()
 
-done:	lda #$1b
+done:   lda end
+        sta bend
+        lda end+1
+        sta bend+1
+
+        lda #$1b
 	sta $d011
 	rts
 }
@@ -72,57 +77,4 @@ readHeader: {
 	rts
 }
 
-//------------------------------------------------------------------------------	
-	
-saveServer: {
-        sei
-	lda #eot-filename
-	ldx #<filename
-	ldy #>filename
-	jsr $ffbd
-	lda #$00
-	ldx $ba      
-	ldy #$00
-	jsr $ffba     
-
-	ldx end
-	ldy end+1
-	lda #$fb
-	jsr $ffd8 
-        cli
-	rts
-	
-filename: .text "XLINK-SERVER"
-eot:
-}
-
-//------------------------------------------------------------------------------	
-	
-saveToDisk: {
-	lda $ba
-	cmp #$01
-	beq drive8
-
-	lda $ba
-	bne done 
-
-drive8:
-	lda #$08
-	sta $ba
-
-done:   jsr saveServer
-	rts
-}
-
-//------------------------------------------------------------------------------	
-
-saveToTape: {
-	lda #$01
-	sta $ba
-	jsr saveServer
-	rts
-}
-
-//------------------------------------------------------------------------------	
-	
-.print "tools/make-bootstrap bootstrap.prg " + toIntString(saveToDisk) + " " + toIntString(saveToTape)
+//------------------------------------------------------------------------------

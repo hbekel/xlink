@@ -1228,6 +1228,8 @@ int command_server(Command *self) {
   fwrite(data, sizeof(unsigned char), size, file);
   fclose(file);
 
+  logger->info("wrote %s (%d bytes)", self->argv[0], size);
+
   result = true;
 
  done:

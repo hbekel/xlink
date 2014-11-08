@@ -89,8 +89,8 @@ tools/make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
 bootstrap.txt: tools/make-bootstrap bootstrap.asm
-	$(KASM) -o bootstrap.prg bootstrap.asm | grep 'make-bootstrap' | \
-	sh -x > bootstrap.txt && \
+	$(KASM) -o bootstrap.prg bootstrap.asm && \
+	tools/make-bootstrap bootstrap.prg > bootstrap.txt && \
 	rm -v bootstrap.prg
 
 xlink-kernal.rom: server.h kernal.asm
