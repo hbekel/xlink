@@ -6,20 +6,12 @@
 #include <avr/wdt.h>
 #include <avr/power.h>
 #include <avr/interrupt.h>
-#include <util/delay.h>
-
-#include <LUFA/Common/Common.h>
-#include <LUFA/Drivers/USB/USB.h>
-#include "descriptors.h"
 
 #include "../protocol.h"
 
-#define PIN_RESET  (1 << PINC5)
-#define PIN_STROBE (1 << PINC2)
-#define PIN_ACK    (1 << PINB2)
-
-#define MAGIC_BOOT_KEY            0xFEEDBABE
-#define BOOTLOADER_START_ADDRESS  0x3000
+#define PIN_RESET  (1 << PIND0)
+#define PIN_STROBE (1 << PINC4)
+#define PIN_ACK    (1 << PINC5)
 
 void SetupHardware(void);
 void SetupSTROBE(void);
@@ -31,18 +23,13 @@ void AssertRESET(void);
 void Init(void);
 void Reset(void);
 void Strobe(void);
-void Acked(void);
+uint8_t Acked(void);
 void Input(void);
 void Output(void);
-void Read(void);
+uint8_t Read(void);
 void Write(uint8_t byte);
 void Send(uint16_t size);
 void Receive(uint16_t size);
-
-void BootCheck(void) ATTR_INIT_SECTION(3);
-void BootCheck(void);
 void Boot(void);
-
-void EVENT_USB_Device_ControlRequest(void);
 
 #endif // XLINK_H

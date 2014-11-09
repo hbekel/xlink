@@ -102,17 +102,27 @@ udev: etc/udev/rules.d/10-xlink.rules
 etc/udev/rules.d/10-xlink.rules: tools/make-udev-rules.sh
 	 tools/make-udev-rules.sh > etc/udev/rules.d/10-xlink.rules
 
-firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
+at90usb: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && \
 		make USB_PID=$(USB_PID) USB_VID=$(USB_VID) USB_SERIAL=$(USB_SERIAL))
 
-firmware-clean:
+at90usb-clean:
 	(cd driver/at90usb162 && make clean)
 
-firmware-install: xlink firmware
+at90usb-install: xlink at90usb
 	LD_LIBRARY_PATH=. ./xlink bootloader && \
 	sleep 5 && \
 	(cd driver/at90usb162 && make dfu)
+
+atmega: driver/atmega8/xlink.c driver/atmega8/xlink.h
+	(cd driver/atmega8 && \
+		make USB_PID=$(USB_PID) USB_VID=$(USB_VID) USB_SERIAL=$(USB_SERIAL))
+
+atmega-clean:
+	(cd driver/atmega8 && make clean)
+
+atmega-install: at90usb
+	(cd driver/atmega8 && make install)
 
 install: xlink c64
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
@@ -138,7 +148,7 @@ uninstall:
 	rm -v $(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
 	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
-clean: firmware-clean
+clean: at90usb-clean atmega-clean
 	[ -f testsuite ] && rm -v testsuite || true
 	[ -f libxlink.so ] && rm -v libxlink.so || true
 	[ -f xlink.dll ] && rm -v xlink.dll || true
