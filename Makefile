@@ -3,18 +3,21 @@ PREFIX=/usr
 SYSCONFDIR=/etc
 DESTDIR=
 
+USB_MANUFACTURER="Henning Bekel <h.bekel@googlemail.com>"
+USB_PRODUCT="XLink USB Adapter"
+
 USB_VID:=$(USB_VID)
 USB_PID:=$(USB_PID)
-USB_SERIAL=`uuidgen`
+USB_SERIAL:=$(USB_SERIAL)
 
 GCC=gcc
 CFLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -std=gnu99 -Wall -O3 -I.
 
-GCC-MINGW32=i686-w64-mingw32-gcc
-#GCC-MINGW32=i686-pc-mingw32-gcc
+#GCC-MINGW32=i686-w64-mingw32-gcc
+GCC-MINGW32=i686-pc-mingw32-gcc
 
-KASM=java -jar /usr/share/kickassembler/KickAss.jar
-#KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+#KASM=java -jar /usr/share/kickassembler/KickAss.jar
+KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 LIBHEADERS=\
 	xlink.h \
@@ -38,8 +41,8 @@ LIBSOURCES=\
 
 LIBFLAGS=-DXLINK_LIBRARY_BUILD
 
-all: linux c64
-#all: win32 c64
+#all: linux c64
+all: win32 c64
 c64: kernal bootstrap
 linux: xlink udev
 win32: xlink.exe
@@ -102,26 +105,41 @@ udev: etc/udev/rules.d/10-xlink.rules
 etc/udev/rules.d/10-xlink.rules: tools/make-udev-rules.sh
 	 tools/make-udev-rules.sh > etc/udev/rules.d/10-xlink.rules
 
-at90usb: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
+at90usb162: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && \
-		make USB_PID=$(USB_PID) USB_VID=$(USB_VID) USB_SERIAL=$(USB_SERIAL))
+		make USB_PID=$(USB_PID) \
+		     USB_VID=$(USB_VID) \
+		     USB_SERIAL=$(USB_SERIAL) \
+		     USB_MANUFACTURER=$(USB_MANUFACTURER) \
+		     USB_PRODUCT=$(USB_PRODUCT) && \
+		echo -e "\nFIRMWARE SERIAL NUMBER: $(USB_SERIAL)")
 
-at90usb-clean:
+at90usb162-clean:
 	(cd driver/at90usb162 && make clean)
 
-at90usb-install: xlink at90usb
+at90usb162-install: xlink at90usb162
 	LD_LIBRARY_PATH=. ./xlink bootloader && \
 	sleep 5 && \
 	(cd driver/at90usb162 && make dfu)
 
-atmega: driver/atmega8/xlink.c driver/atmega8/xlink.h
+atmega8: driver/atmega8/xlink.c driver/atmega8/xlink.h
 	(cd driver/atmega8 && \
-		make USB_PID=$(USB_PID) USB_VID=$(USB_VID) USB_SERIAL=$(USB_SERIAL))
+		make USB_VID=`../../tools/vusb-config-word.sh $(USB_VID)` \
+		     USB_VID_LENGTH=`../../tools/vusb-config-string-length.sh $(USB_VID)` \
+		     USB_PID=`../../tools/vusb-config-word.sh $(USB_PID)` \
+		     USB_PID_LENGTH=`../../tools/vusb-config-string-length.sh $(USB_PID)` \
+		     USB_SERIAL=`../../tools/vusb-config-string.sh $(USB_SERIAL)` \
+		     USB_SERIAL_LENGTH="`../../tools/vusb-config-string-length.sh $(USB_SERIAL)`" \
+		     USB_MANUFACTURER="`../../tools/vusb-config-string.sh $(USB_MANUFACTURER)`" \
+		     USB_MANUFACTURER_LENGTH=`../../tools/vusb-config-string-length.sh $(USB_MANUFACTURER)` \
+		     USB_PRODUCT="`../../tools/vusb-config-string.sh $(USB_PRODUCT)`" \
+		     USB_PRODUCT_LENGTH=`../../tools/vusb-config-string-length.sh $(USB_PRODUCT)` && \
+		echo -e "\nFIRMWARE SERIAL NUMBER: $(USB_SERIAL)")
 
-atmega-clean:
+atmega8-clean:
 	(cd driver/atmega8 && make clean)
 
-atmega-install: at90usb
+atmega8-install: atmega8
 	(cd driver/atmega8 && make install)
 
 install: xlink c64
@@ -148,7 +166,7 @@ uninstall:
 	rm -v $(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
 	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
-clean: at90usb-clean atmega-clean
+clean: at90usb162-clean atmega8-clean
 	[ -f testsuite ] && rm -v testsuite || true
 	[ -f libxlink.so ] && rm -v libxlink.so || true
 	[ -f xlink.dll ] && rm -v xlink.dll || true

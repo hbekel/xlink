@@ -99,9 +99,9 @@ const USB_Descriptor_String_t PROGMEM XLink_LanguageString =
  */
 const USB_Descriptor_String_t PROGMEM XLink_ManufacturerString =
 {
-  .Header        = {.Size = USB_STRING_LEN(8), .Type = DTYPE_String},
+  .Header        = {.Size = USB_STRING_LEN(STRLEN(STR(USB_MANUFACTURER))), .Type = DTYPE_String},
 
-  .UnicodeString = L"XLink"
+  .UnicodeString = LSTR(USB_MANUFACTURER)
 };
 
 /** Product descriptor string. This is a Unicode string containing the product's details in human readable form,
@@ -110,9 +110,9 @@ const USB_Descriptor_String_t PROGMEM XLink_ManufacturerString =
  */
 const USB_Descriptor_String_t PROGMEM XLink_ProductString =
 {
-  .Header        = {.Size = USB_STRING_LEN(7), .Type = DTYPE_String},
+  .Header        = {.Size = USB_STRING_LEN(STRLEN(STR(USB_PRODUCT))), .Type = DTYPE_String},
 
-  .UnicodeString = L"USB Adapter"
+  .UnicodeString = LSTR(USB_PRODUCT)
 };
 
 /** Serial number string. This is a Unicode string containing the device's unique serial number, expressed as a
