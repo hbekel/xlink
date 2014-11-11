@@ -485,42 +485,51 @@ eof:
 .pc = $10000
 
 //------------------------------------------------------------------------------		
-
+	
 .function patch(start, end) {
 	
 	.var offset = start - $e000
 	.var count = end-start
 
+        .return " " + toIntString(offset) + " " + toIntString(count)
+	
+/*
         .return "dd conv=notrunc if=kernal.bin of=xlink-kernal.rom bs=1 " +
 	        "skip=" + toIntString(offset) + " " +
 	        "seek=" + toIntString(offset) + " " +
 	        "count=" + toIntString(count)
+*/
 }
 
+
+	
 //------------------------------------------------------------------------------		
 
-.print patch(wedge, wedge.eof)	
-.print patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
-.print patch(powerUpMessage, powerUpMessage.eof)
-.print patch(disableTapeLoad, disableTapeLoad.eof)
-.print patch(fastMemoryCheck, fastMemoryCheck.eof)
-.print patch(irq, irq.eof)
-.print patch(ack, ack.eof)
-.print patch(wait, wait.eof)
-.print patch(read, read.eof)
-.print patch(write, write.eof)
-.print patch(ram, ram.eof)
-.print patch(readHeader, readHeader.eof)
-.print patch(load, load.eof)
-.print patch(save, save.eof)
-.print patch(poke, poke.eof)
-.print patch(peek, peek.eof)	
-.print patch(jump, jump.eof)
-.print patch(run, run.eof)
-.print patch(extend, extend.eof)
-.print patch(identify, identify.eof)
-.print patch(memoryCheck, memoryCheck.eof)
+.var command = "tools/make-kernal kernal.bin"
+.eval command = command +  patch(wedge, wedge.eof)	
+.eval command = command + patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
+.eval command = command + patch(powerUpMessage, powerUpMessage.eof)
+.eval command = command + patch(disableTapeLoad, disableTapeLoad.eof)
+.eval command = command + patch(fastMemoryCheck, fastMemoryCheck.eof)
+.eval command = command + patch(irq, irq.eof)
+.eval command = command + patch(ack, ack.eof)
+.eval command = command + patch(wait, wait.eof)
+.eval command = command + patch(read, read.eof)
+.eval command = command + patch(write, write.eof)
+.eval command = command + patch(ram, ram.eof)
+.eval command = command + patch(readHeader, readHeader.eof)
+.eval command = command + patch(load, load.eof)
+.eval command = command + patch(save, save.eof)
+.eval command = command + patch(poke, poke.eof)
+.eval command = command + patch(peek, peek.eof)	
+.eval command = command + patch(jump, jump.eof)
+.eval command = command + patch(run, run.eof)
+.eval command = command + patch(extend, extend.eof)
+.eval command = command + patch(identify, identify.eof)
+.eval command = command + patch(memoryCheck, memoryCheck.eof)
 
+.print command
 //------------------------------------------------------------------------------			
+.print ""
 .print "free: 0x" + toHexString(irq.eof) + "-0xf5ab" + ": " + toIntString($f5ab-irq.eof) + " bytes"
 .print "free: 0x" + toHexString(memoryCheck.eof) + "-0xfc92" + " " + toIntString($fc92-memoryCheck.eof) + " bytes"

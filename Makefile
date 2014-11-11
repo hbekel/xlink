@@ -35,6 +35,7 @@ LIBSOURCES=\
 	extension.c \
 	extensions.c \
 	server.c \
+	kernal.c \
 	driver/driver.c \
 	driver/usb.c \
 	driver/parport.c
@@ -43,10 +44,9 @@ LIBFLAGS=-DXLINK_LIBRARY_BUILD
 
 #all: linux c64
 all: win32 c64
-c64: kernal bootstrap
+c64: bootstrap
 linux: xlink udev
 win32: xlink.exe
-kernal: commodore/kernal-901227-03.rom xlink-kernal.rom
 bootstrap: bootstrap.txt
 
 testsuite: testsuite.c range.c
@@ -81,12 +81,21 @@ tools/make-server: tools/make-server.c
 	$(GCC) $(CFLAGS) -o tools/make-server tools/make-server.c
 
 server.c: tools/make-server server.h server.asm loader.asm 
-	$(KASM) :pc=257 -o base server.asm  # 257 = $0101
-	$(KASM) :pc=513 -o high server.asm  # 513 = $0201
-	$(KASM) :pc=258 -o low  server.asm  # 258 = $0102
+	$(KASM) :pc=257 -o base server.asm  # 257 = 0101
+	$(KASM) :pc=513 -o high server.asm  # 513 = 0201
+	$(KASM) :pc=258 -o low  server.asm  # 258 = 0102
 	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" -o loader loader.asm)
 	tools/make-server base low high loader > server.c
 	rm -v base low high loader
+
+tools/make-kernal: tools/make-kernal.c
+	$(GCC) $(CFLAGS) -o tools/make-kernal tools/make-kernal.c
+
+kernal.c: tools/make-kernal tools/make-kernal.c kernal.asm
+	$(KASM) -binfile -o kernal.bin kernal.asm | \
+	grep make-kernal | \
+	sh -x > kernal.c && \
+	rm kernal.bin
 
 tools/make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
@@ -95,10 +104,6 @@ bootstrap.txt: tools/make-bootstrap bootstrap.asm
 	$(KASM) -o bootstrap.prg bootstrap.asm && \
 	tools/make-bootstrap bootstrap.prg > bootstrap.txt && \
 	rm -v bootstrap.prg
-
-xlink-kernal.rom: server.h kernal.asm
-	cp commodore/kernal-901227-03.rom xlink-kernal.rom && \
-	$(KASM) -binfile kernal.asm | grep dd | sh -x >& /dev/null && rm -v kernal.bin
 
 udev: etc/udev/rules.d/10-xlink.rules
 
@@ -146,8 +151,7 @@ install: xlink c64
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
 	install -m644 -D libxlink.so $(DESTDIR)$(PREFIX)/lib/libxlink.so
 	install -m644 -D xlink.h $(DESTDIR)$(PREFIX)/include/xlink.h
-	install -m644 -D xlink-kernal.rom $(DESTDIR)$(PREFIX)/share/xlink/xlink-kernal.rom
-	install -m644 -D bootstrap.txt $(DESTDIR)$(PREFIX)/share/xlink/xlink-bootstrap.txt
+	install -m644 -D bootstrap.txt $(DESTDIR)$(PREFIX)/share/xlink/bootstrap.txt
 
 	install -m644 -D etc/udev/rules.d/10-xlink.rules \
 			$(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
@@ -174,11 +178,12 @@ clean: at90usb162-clean atmega8-clean
 	[ -f xlink.exe ] && rm -v xlink.exe || true
 	[ -f extensions.c ] && rm -v extensions.c || true
 	[ -f server.c ] && rm -v server.c || true
-	[ -f xlink-kernal.rom ] && rm -v xlink-kernal.rom || true
+	[ -f kernal.c ] && rm -v kernal.c || true
 	[ -f bootstrap.txt ] && rm -v bootstrap.txt || true
 	[ -f tools/make-extension ] && rm -v tools/make-extension || true
 	[ -f tools/make-bootstrap ] && rm -v tools/make-bootstrap || true
 	[ -f tools/make-server ] && rm -v tools/make-server || true
+	[ -f tools/make-kernal ] && rm -v tools/make-kernal || true
 	[ -f etc/udev/rules.d/10-xlink.rules ] && rm -v etc/udev/rules.d/10-xlink.rules || true
 	[ -f log ] && rm -v log || true
 

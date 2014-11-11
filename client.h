@@ -74,6 +74,7 @@ int command_benchmark(Command *self);
 int command_identify(Command *self);
 int command_server(Command *self);
 int command_relocate(Command *self);
+int command_kernal(Command *self);
 void command_free(Command* self);
 
 #if windows

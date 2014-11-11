@@ -41,6 +41,7 @@
 #define COMMAND_IDENTIFY   0x12
 #define COMMAND_SERVER     0x13
 #define COMMAND_RELOCATE   0x14
+#define COMMAND_KERNAL     0x15
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -79,7 +80,8 @@ char str2id(const char* arg) {
   if (strcmp(arg, "benchmark" ) == 0) return COMMAND_BENCHMARK;  
   if (strcmp(arg, "identify"  ) == 0) return COMMAND_IDENTIFY;
   if (strcmp(arg, "server"    ) == 0) return COMMAND_SERVER;
-  if (strcmp(arg, "relocate"  ) == 0) return COMMAND_RELOCATE;    
+  if (strcmp(arg, "relocate"  ) == 0) return COMMAND_RELOCATE;
+  if (strcmp(arg, "kernal"    ) == 0) return COMMAND_KERNAL;      
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -115,7 +117,8 @@ char* id2str(const char id) {
   if (id == COMMAND_BENCHMARK)  return (char*) "benchmark";  
   if (id == COMMAND_IDENTIFY)   return (char*) "identify";
   if (id == COMMAND_SERVER)     return (char*) "server";
-  if (id == COMMAND_RELOCATE)   return (char*) "relocate";    
+  if (id == COMMAND_RELOCATE)   return (char*) "relocate";
+  if (id == COMMAND_KERNAL)     return (char*) "kernal";      
   return (char*) "unknown";
 }
 
@@ -296,7 +299,8 @@ int command_arity(Command* self) {
   if (self->id == COMMAND_BENCHMARK)  return 0;
   if (self->id == COMMAND_IDENTIFY)   return 0;
   if (self->id == COMMAND_SERVER)     return 1;
-  if (self->id == COMMAND_RELOCATE)   return 1;  
+  if (self->id == COMMAND_RELOCATE)   return 1;
+  if (self->id == COMMAND_KERNAL)     return 2;    
   return 0;
 
 }
@@ -1239,6 +1243,62 @@ int command_server(Command *self) {
 
 //------------------------------------------------------------------------------
 
+int command_kernal(Command *self) {
+
+  bool result = false;
+  struct stat st;
+  FILE *file;
+  
+  if(self->argc < 1) {
+    logger->error("no input file specified");
+    goto done;
+  }
+
+  if(self->argc < 2) {
+    logger->error("no output file specified");
+    goto done;
+  }
+
+  char *inputfile = self->argv[0];
+  char *outputfile = self->argv[1];
+
+  if(stat(inputfile, &st) == -1) {
+    logger->error("%s: %s", inputfile, strerror(errno));
+    goto done;
+  }
+
+  if(st.st_size != 0x2000) {
+    logger->error("input file: size must be exactly %d bytes (%s: %d bytes)",
+		  0x2000, inputfile, st.st_size);
+    goto done;
+  }
+
+  if((file = fopen(inputfile, "rb")) == NULL) {
+    logger->error("%s: %s\n", inputfile, strerror(errno));
+    goto done;
+  }
+
+  unsigned char image[0x2000];  
+  fread(image, sizeof(unsigned char), 0x2000, file);
+  fclose(file);
+
+  xlink_kernal(image);
+
+  if((file = fopen(outputfile, "wb")) == NULL) {
+    logger->error("%s: %s\n", outputfile, strerror(errno));
+    goto done;
+  }
+  fwrite(image, sizeof(unsigned char), 0x2000, file);
+  fclose(file);
+
+  result = true;
+    
+ done:
+  return result;
+}
+
+//------------------------------------------------------------------------------
+
 int command_help(Command *self) {
 
   if (self->argc > 0) {
@@ -1516,7 +1576,8 @@ int command_execute(Command* self) {
   case COMMAND_BENCHMARK  : result = command_benchmark(self);  break;
   case COMMAND_IDENTIFY   : result = command_identify(self);   break;
   case COMMAND_SERVER     : result = command_server(self);     break;
-  case COMMAND_RELOCATE   : result = command_relocate(self);   break;        
+  case COMMAND_RELOCATE   : result = command_relocate(self);   break;
+  case COMMAND_KERNAL     : result = command_kernal(self);     break;            
   }
   
   logger->leave();
@@ -1570,7 +1631,7 @@ int main(int argc, char **argv) {
 
 #if linux
 
-static char* known_commands[21] = { 
+static char* known_commands[22] = { 
   "help",
   "load", 
   "save",
@@ -1591,6 +1652,7 @@ static char* known_commands[21] = {
   "identify",
   "server",
   "relocate",
+  "kernal",
   NULL 
 };
 
@@ -1726,10 +1788,11 @@ void usage(void) {
   printf("          shell                        : enter interactive command shell\n");
 #endif
   printf("\n");
+  printf("          kernal <infile> <outfile>    : patch kernal to include server\n");
   printf("          server [-a<addr>] <file>     : create server and save to file\n");
   printf("          relocate <addr>              : relocate running server\n");
   printf("\n");  
-  printf("          reset                        : reset C64 (only if using reset circuit)\n");
+  printf("          reset                        : reset C64 (if supported by hardware)\n");
   printf("          ready                        : try to make sure the server is ready\n");
   printf("          ping                         : check if the server is available\n");
   printf("          identify                     : identify remote server and machine\n");
@@ -1748,7 +1811,7 @@ void usage(void) {
   printf("          verify <file>                : verify disk against d64 file\n");
   printf("\n");
   printf("          benchmark                    : test/measure transfer speed\n");
-  printf("          bootloader                   : enter dfu-bootloader (USB devices only)\n");  
+  printf("          bootloader                   : enter dfu-bootloader (at90usb162)\n");  
   printf("\n");
 }
 
@@ -1946,6 +2009,15 @@ int help(int id) {
     printf("\n");
     printf("Relocate the currently running ram-based server to the specified address.\n");
     printf("Note that the server cannot be relocated to areas occupied by ROM or IO.\n");
+    printf("\n");
+    break;
+
+  case COMMAND_KERNAL:
+    printf("Usage: kernal <infile> <outfile>\n");
+    printf("\n");
+    printf("Patch the kernal image supplied via <infile> to include an xlink server and\n");
+    printf("write the results to <outfile>. Note that the resulting kernal will no longer\n");
+    printf("support tape IO.\n");
     printf("\n");
     break;
     
