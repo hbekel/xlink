@@ -1,6 +1,6 @@
 (export (version D)
   (design
-    (source C:\cygwin\home\hb\workspace\xlink\hardware\usb\adapter.sch)
+    (source C:\cygwin\home\hb\workspace\xlink\hardware\usb\at90usb162\at90usb162.sch)
     (date "23.09.2014 09:01:08")
     (tool "eeschema (2013-07-07 BZR 4022)-stable"))
   (components

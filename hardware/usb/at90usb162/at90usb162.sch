@@ -31,7 +31,7 @@ LIBS:contrib
 LIBS:valves
 LIBS:userport
 LIBS:dipswitch
-LIBS:adapter-cache
+LIBS:at90usb162-cache
 EELAYER 27 0
 EELAYER END
 $Descr A4 11693 8268
