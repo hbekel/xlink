@@ -110,7 +110,7 @@ udev: etc/udev/rules.d/10-xlink.rules
 etc/udev/rules.d/10-xlink.rules: tools/make-udev-rules.sh
 	 tools/make-udev-rules.sh > etc/udev/rules.d/10-xlink.rules
 
-at90usb162: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
+firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && \
 		make USB_PID=$(USB_PID) \
 		     USB_VID=$(USB_VID) \
@@ -119,33 +119,11 @@ at90usb162: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 		     USB_PRODUCT=$(USB_PRODUCT) && \
 		echo -e "\nFIRMWARE SERIAL NUMBER: $(USB_SERIAL)")
 
-at90usb162-clean:
+firmware-clean:
 	(cd driver/at90usb162 && make clean)
 
-at90usb162-install: xlink at90usb162
-	LD_LIBRARY_PATH=. ./xlink bootloader && \
-	sleep 5 && \
+firmware-install: firmware
 	(cd driver/at90usb162 && make dfu)
-
-atmega8: driver/atmega8/xlink.c driver/atmega8/xlink.h
-	(cd driver/atmega8 && \
-		make USB_VID=`../../tools/vusb-config-word.sh $(USB_VID)` \
-		     USB_VID_LENGTH=`../../tools/vusb-config-string-length.sh $(USB_VID)` \
-		     USB_PID=`../../tools/vusb-config-word.sh $(USB_PID)` \
-		     USB_PID_LENGTH=`../../tools/vusb-config-string-length.sh $(USB_PID)` \
-		     USB_SERIAL=`../../tools/vusb-config-string.sh $(USB_SERIAL)` \
-		     USB_SERIAL_LENGTH="`../../tools/vusb-config-string-length.sh $(USB_SERIAL)`" \
-		     USB_MANUFACTURER="`../../tools/vusb-config-string.sh $(USB_MANUFACTURER)`" \
-		     USB_MANUFACTURER_LENGTH=`../../tools/vusb-config-string-length.sh $(USB_MANUFACTURER)` \
-		     USB_PRODUCT="`../../tools/vusb-config-string.sh $(USB_PRODUCT)`" \
-		     USB_PRODUCT_LENGTH=`../../tools/vusb-config-string-length.sh $(USB_PRODUCT)` && \
-		echo -e "\nFIRMWARE SERIAL NUMBER: $(USB_SERIAL)")
-
-atmega8-clean:
-	(cd driver/atmega8 && make clean)
-
-atmega8-install: atmega8
-	(cd driver/atmega8 && make install)
 
 install: xlink c64
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
@@ -170,7 +148,7 @@ uninstall:
 	rm -v $(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
 	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
-clean: at90usb162-clean atmega8-clean
+clean: firmware-clean
 	[ -f testsuite ] && rm -v testsuite || true
 	[ -f libxlink.so ] && rm -v libxlink.so || true
 	[ -f xlink.dll ] && rm -v xlink.dll || true
