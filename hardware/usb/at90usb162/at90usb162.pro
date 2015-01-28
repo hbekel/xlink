@@ -1,12 +1,19 @@
-update=23.09.2014 09:03:01
+update=28.01.2015 11:49:25
 version=1
-last_client=cvpcb
+last_client=eeschema
+[general]
+version=1
+[cvpcb]
+version=1
+NetIExt=net
+[cvpcb/libraries]
+EquName1=devcms
 [pcbnew]
 version=1
-LastNetListRead=
+LastNetListRead=at90usb162.net
 UseCmpFile=1
-PadDrill=0.600000000000
-PadDrillOvalY=0.600000000000
+PadDrill=0.800000000000
+PadDrillOvalY=0.800000000000
 PadSizeH=1.500000000000
 PadSizeV=1.500000000000
 PcbTextSizeV=1.500000000000
@@ -21,6 +28,7 @@ DrawSegmentWidth=0.200000000000
 BoardOutlineThickness=0.100000000000
 ModuleOutlineThickness=0.150000000000
 [pcbnew/libraries]
+LibDir=
 LibName1=sockets
 LibName2=connect
 LibName3=discret
@@ -37,15 +45,11 @@ LibName13=led
 LibName14=dip_sockets
 LibName15=pga_sockets
 LibName16=valves
-LibName17=mod/dipswitch
-LibName18=mod/userport
-LibDir=
-[general]
-version=1
+LibName17=mod/userport
 [eeschema]
 version=1
 LibDir=
-NetFmtName=
+NetFmtName=PcbnewAdvanced
 RptD_X=0
 RptD_Y=100
 RptLab=1
@@ -82,9 +86,3 @@ LibName28=atmel
 LibName29=contrib
 LibName30=valves
 LibName31=lib/userport
-LibName32=lib/dipswitch
-[cvpcb]
-version=1
-NetIExt=net
-[cvpcb/libraries]
-EquName1=devcms
