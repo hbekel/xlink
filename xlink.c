@@ -188,6 +188,7 @@ bool xlink_ping() {
     driver->close();
   }
 
+  CLEAR_ERROR_IF(result);
   return result;
 }
 
