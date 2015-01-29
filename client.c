@@ -1756,7 +1756,7 @@ void shell(void) {
 //------------------------------------------------------------------------------
 
 void version(void) {
-  printf("xlink 1.0 Copyright (C) 2014 Henning Bekel <h.bekel@googlemail.com>\n");
+  printf("xlink %.1f Copyright (C) 2015 Henning Bekel <h.bekel@googlemail.com>\n", CLIENT_VERSION);
 }
 
 //------------------------------------------------------------------------------
@@ -1788,7 +1788,7 @@ void usage(void) {
   printf("          shell                        : enter interactive command shell\n");
 #endif
   printf("\n");
-  printf("          kernal <infile> <outfile>    : patch kernal to include server\n");
+  printf("          kernal <infile> <outfile>    : patch kernal image to include server\n");
   printf("          server [-a<addr>] <file>     : create server and save to file\n");
   printf("          relocate <addr>              : relocate running server\n");
   printf("\n");  
@@ -1852,6 +1852,10 @@ int help(int id) {
     printf("possible damage to either the PC's parallel port or the C64's CIA2.\n");
     printf("In order to load data directly into the io area the memory config\n");
     printf("needs to be set to 0x37 explicitly.\n");
+    printf("\n");
+    printf("If the server on the C64 is running from RAM and is located\n");
+    printf("in the same memory area as the data to be loaded then an attempt\n");
+    printf("be made to relocate the server to a different location beforehand\n");
     printf("\n"); 
     break;
 
