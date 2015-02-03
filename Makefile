@@ -40,7 +40,7 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c
 
-LIBFLAGS=-DXLINK_LIBRARY_BUILD
+LIBFLAGS=-DXLINK_LIBRARY_BUILD -L.
 
 #all: linux c64
 all: win32 c64
@@ -63,11 +63,19 @@ libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 xlink: libxlink.so client.c client.h disk.c disk.h range.c range.h
 	$(GCC) $(CFLAGS) -o xlink client.c disk.c range.c -L. -lxlink -lreadline
 
-xlink.dll: $(LIBHEADERS) $(LIBSOURCES)
-	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -static-libgcc -shared -o xlink.dll $(LIBSOURCES) -lusb-1.0
+xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32
+	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
+		-o xlink.dll $(LIBSOURCES) -lusb-1.0 -linpout32
 
 xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h
 	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c range.c -L. -lxlink
+
+inpout32:
+	wget -O inpout32.zip http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries && \
+	unzip -d inpout32 inpout32.zip && \
+	cp inpout32/Win32/inpout32.h . && \
+	cp inpout32/Win32/inpout32.dll . && \
+	chmod +x inpout32.dll
 
 tools/make-extension: tools/make-extension.c
 	$(GCC) $(CFLAGS) -o tools/make-extension tools/make-extension.c
@@ -165,8 +173,11 @@ clean: firmware-clean
 	[ -f etc/udev/rules.d/10-xlink.rules ] && rm -v etc/udev/rules.d/10-xlink.rules || true
 	[ -f log ] && rm -v log || true
 
-release: clean
+distclean: clean
+	(yes | rm -r inpout32*) || true
+
+release: distclean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD
 
-haste: clean
+haste: distclean
 	(cd .. && tar vczf /cygdrive/f/xlink.tar.gz xlink)

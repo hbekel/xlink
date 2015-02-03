@@ -18,6 +18,7 @@
   #include <linux/ppdev.h>
 #elif windows
   #include <windows.h>
+  #include "../inpout32.h"
 #endif
 
 #define HIGH 1
@@ -25,17 +26,6 @@
 
 extern Driver* driver;
 static unsigned char _driver_parport_last_status;
-
-#if windows
-  typedef BOOL (__stdcall *lpDriverOpened)(void);
-  typedef void (__stdcall *lpOutb)(short, short);
-  typedef short (__stdcall *lpInb)(short);
- 
-  static HINSTANCE inpout32 = NULL;
-  static lpOutb outb;
-  static lpInb inb;
-  static lpDriverOpened driverOpened;
-#endif
 
 //------------------------------------------------------------------------------
 
@@ -45,7 +35,7 @@ static unsigned char _driver_parport_read_status() {
 #if linux
   ioctl(driver->device, PPRSTATUS, &status);
 #elif windows
-  status = inb(driver->device+1);
+  status = Inp32(driver->device+1);
 #endif
 
   return status;
@@ -57,7 +47,7 @@ static void _driver_parport_set_control(unsigned char control) {
 #if linux
   ioctl(driver->device, PPWCONTROL, &control);
 #elif windows
-  outb(driver->device+2, control);
+  Out32(driver->device+2, control);
 #endif
 }
 
@@ -71,9 +61,9 @@ static void _driver_parport_frob_control(unsigned char mask, unsigned char state
 
   ioctl(driver->device, PPFCONTROL, &frob);
 #elif windows
-  unsigned char previous = inb(driver->device+2);
+  unsigned char previous = Inp32(driver->device+2);
   unsigned char frobbed = (previous & ~mask) | (state == HIGH ? mask : 0);
-  outb(driver->device+2, frobbed);
+  Out32(driver->device+2, frobbed);
 #endif
 }
 
@@ -111,41 +101,24 @@ bool driver_parport_open() {
   
   if(ioctl(driver->device, PPCLAIM) == 0) {
     _driver_parport_init();
+    CLEAR_ERROR;
     return true;
   }
   SET_ERROR(XLINK_ERROR_PARPORT, "Couldn't claim %s", driver->path);
   return false;
 
 #elif windows
-  if(inpout32 == NULL) {
-    
-    inpout32 = LoadLibrary( "inpout32.dll" ) ;	
-    
-    if (inpout32 != NULL) {
-      
-      driverOpened = (lpDriverOpened) GetProcAddress(inpout32, "IsInpOutDriverOpen");
-      outb = (lpOutb) GetProcAddress(inpout32, "Out32");
-      inb = (lpInb) GetProcAddress(inpout32, "Inp32");		
-      
-      if (driverOpened()) {
-        _driver_parport_init();
-        return true;
-      }
-      else {
-        SET_ERROR(XLINK_ERROR_PARPORT, "failed to open inpout32 parallel port driver\n");
-      }		
-    }
-    else {
-      SET_ERROR(XLINK_ERROR_PARPORT, "xlink: error: failed to load inpout32.dll\n\n"
-		                     "Inpout32 is required for parallel port access:\n\n"    
-		                     "    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");	
-    }
-    return false;
-  }  
-  _driver_parport_init();
-
-  CLEAR_ERROR;
-  return true;
+  if(IsInpOutDriverOpen()) {
+    _driver_parport_init();
+    CLEAR_ERROR;
+    return true;
+  }
+  printf("\nTo enable parallel port access on windows xp and later\n");
+  printf("xlink.exe needs to be run as Administrator once. This will\n");
+  printf("automatically install the necessary drivers. For details see\n\n");
+  printf("    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");
+  
+  return false;
 #endif
 }
 
@@ -206,7 +179,7 @@ char driver_parport_read(void) {
 #if linux
   ioctl(driver->device, PPRDATA, &value);
 #elif windows
-  value = inb(driver->device);
+  value = Inp32(driver->device);
 #endif
 
   return value;
@@ -218,7 +191,7 @@ void driver_parport_write(char value) {
 #if linux
   ioctl(driver->device, PPWDATA, &value);
 #elif windows
-  outb(driver->device, value);
+  Out32(driver->device, value);
 #endif
 }
 
