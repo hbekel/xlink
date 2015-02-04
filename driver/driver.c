@@ -22,7 +22,7 @@ extern Driver* driver;
 bool _driver_setup_and_open(void) {
 
   bool result = false;
-  bool quiet = logger->level <= XLINK_LOG_LEVEL_INFO;
+  bool autodetect = logger->level <= XLINK_LOG_LEVEL_INFO;
   
 #if linux
   char default_usb_device[] = "/dev/xlink";
@@ -38,9 +38,9 @@ bool _driver_setup_and_open(void) {
   }
   else {
 
-    if(!(result = driver_setup(default_usb_device, quiet))) {
+    if(!(result = driver_setup(default_usb_device, autodetect))) {
 
-      result = driver_setup(default_parport_device, quiet);
+      result = driver_setup(default_parport_device, autodetect);
 
       if(result) {
         logger->info("using default parallel port device %s",
@@ -62,12 +62,12 @@ bool _driver_setup_and_open(void) {
 
 //------------------------------------------------------------------------------
 
-bool driver_setup(char* path, bool quiet) {
+bool driver_setup(char* path, bool autodetect) {
 
   bool result = false;
   int type;
 
-  if(quiet) {
+  if(autodetect) {
     logger->suspend();
   }
 
@@ -112,7 +112,7 @@ bool driver_setup(char* path, bool quiet) {
     
   } else if(device_is_usb(type)) {
     
-    logger->debug("trying to use usb device \"%s\"...", driver->path);
+    logger->debug("trying to use susb device \"%s\"...",  driver->path);
 
     driver->_open    = &driver_usb_open;
     driver->_close   = &driver_usb_close;    
@@ -135,13 +135,16 @@ bool driver_setup(char* path, bool quiet) {
       logger->debug("using usb device \"%s\"", driver->path);
     }
     else {
-      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize usb device \"%s\"", driver->path);
+      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize %susb device \"%s\"%s",
+		autodetect ? "default " :  "",
+		driver->path,
+		autodetect ? "\n  -> trying default parallel port device...\n" : "");
     }
   }
 
  done:
 
-  if(quiet) {
+  if(autodetect) {
     logger->resume();
   }
 

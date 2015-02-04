@@ -92,34 +92,43 @@ static void _driver_parport_init() {
 
 bool driver_parport_open() {
 
+  bool result = false;
+  
 #if linux
   if((driver->device = open(driver->path, O_RDWR)) == -1) {
-
     SET_ERROR(XLINK_ERROR_PARPORT, "Couldn't open %s", driver->path);
-    return false;
+    goto done;
   }  
   
-  if(ioctl(driver->device, PPCLAIM) == 0) {
-    _driver_parport_init();
-    CLEAR_ERROR;
-    return true;
+  if(!ioctl(driver->device, PPCLAIM) == 0) {
+    SET_ERROR(XLINK_ERROR_PARPORT, "Couldn't claim %s", driver->path);
+    goto done;
   }
-  SET_ERROR(XLINK_ERROR_PARPORT, "Couldn't claim %s", driver->path);
-  return false;
 
 #elif windows
-  if(IsInpOutDriverOpen()) {
-    _driver_parport_init();
-    CLEAR_ERROR;
-    return true;
+  if(!IsInpOutDriverOpen()) {
+
+    logger->resume();
+    
+    SET_ERROR(XLINK_ERROR_PARPORT, "InpOut32 driver is required for parallel port access");
+    
+    printf("\nTo enable parallel port access on windows xp and later\n");
+    printf("xlink.exe needs to be run as Administrator once. This will\n");
+    printf("automatically install the necessary drivers. For details see\n\n");
+    printf("    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");
+    goto done;
   }
-  printf("\nTo enable parallel port access on windows xp and later\n");
-  printf("xlink.exe needs to be run as Administrator once. This will\n");
-  printf("automatically install the necessary drivers. For details see\n\n");
-  printf("    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");
-  
-  return false;
 #endif
+  
+ result = true;
+  
+ done:
+  if(result) {
+    _driver_parport_init();
+  }
+
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
