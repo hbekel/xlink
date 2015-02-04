@@ -19,6 +19,8 @@ GCC-MINGW32=i686-pc-mingw32-gcc
 #KASM=java -jar /usr/share/kickassembler/KickAss.jar
 KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
+INPOUT32=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries
+
 LIBHEADERS=\
 	xlink.h \
 	util.h \
@@ -71,7 +73,7 @@ xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h
 	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c range.c -L. -lxlink
 
 inpout32:
-	wget -O inpout32.zip http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries && \
+	wget -O inpout32.zip $(INPOUT32) && \
 	unzip -d inpout32 inpout32.zip && \
 	cp inpout32/Win32/inpout32.h . && \
 	cp inpout32/Win32/inpout32.dll . && \
@@ -180,4 +182,4 @@ release: distclean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD
 
 haste: distclean
-	(cd .. && tar vczf /cygdrive/f/xlink.tar.gz xlink)
+	(git gc && cd .. && tar vczf /cygdrive/f/xlink.tar.gz xlink)
