@@ -181,9 +181,9 @@ bool driver_parport_wait(int timeout) {
 
 //------------------------------------------------------------------------------
 
-char driver_parport_read(void) {
+unsigned char driver_parport_read(void) {
   
-  char value = 0xff;
+  unsigned char value = 0xff;
 
 #if linux
   ioctl(driver->device, PPRDATA, &value);
@@ -196,7 +196,7 @@ char driver_parport_read(void) {
 
 //------------------------------------------------------------------------------
 
-void driver_parport_write(char value) { 
+void driver_parport_write(unsigned char value) { 
 #if linux
   ioctl(driver->device, PPWDATA, &value);
 #elif windows
@@ -206,7 +206,7 @@ void driver_parport_write(char value) {
 
 //------------------------------------------------------------------------------
 
-void driver_parport_send(char* data, int size) {
+void driver_parport_send(unsigned char* data, int size) {
 
   for(int i=0; i<size; i++) {
     driver->write(data[i]);
@@ -217,7 +217,7 @@ void driver_parport_send(char* data, int size) {
 
 //------------------------------------------------------------------------------
 
-void driver_parport_receive(char* data, int size) { 
+void driver_parport_receive(unsigned char* data, int size) { 
 
   for(int i=0; i<size; i++) {
     driver->wait(0);

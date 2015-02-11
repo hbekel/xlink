@@ -29,7 +29,7 @@
 extern Driver* driver;
 
 static libusb_device_handle *handle = NULL;
-static char response[1];
+static unsigned char response[1];
 
 //------------------------------------------------------------------------------
 // USB device discovery
@@ -241,20 +241,20 @@ bool driver_usb_wait(int timeout) {
 
 //------------------------------------------------------------------------------
 
-void driver_usb_write(char value) {
+void driver_usb_write(unsigned char value) {
   controlEndpointOutWithValue(USB_WRITE, value);
 } 
 
 //------------------------------------------------------------------------------
 
-char driver_usb_read() {
+unsigned char driver_usb_read() {
   controlEndpointIn(USB_READ, response, sizeof(response));
   return response[0];
 } 
 
 //------------------------------------------------------------------------------
 
-void driver_usb_send(char* data, int size) {
+void driver_usb_send(unsigned char* data, int size) {
 
   while(size > DRIVER_USB_MAX_PAYLOAD_SIZE) {
 
@@ -268,7 +268,7 @@ void driver_usb_send(char* data, int size) {
 
 //------------------------------------------------------------------------------
 
-void driver_usb_receive(char* data, int size) {
+void driver_usb_receive(unsigned char* data, int size) {
 
   while(size > DRIVER_USB_MAX_PAYLOAD_SIZE) {
 
@@ -336,11 +336,11 @@ int control(int message) {
   return controlEndpointOut(message, NULL, 0);
 }
 
-int controlEndpointIn(int message, char *buffer, int size) {
+int controlEndpointIn(int message, unsigned char *buffer, int size) {
   return controlEndpoint(message, buffer, size, LIBUSB_ENDPOINT_IN);
 }
 
-int controlEndpointOut(int message, char *buffer, int size) {
+int controlEndpointOut(int message, unsigned char *buffer, int size) {
   return controlEndpoint(message, buffer, size, LIBUSB_ENDPOINT_OUT);
 }
 
@@ -353,13 +353,13 @@ int controlEndpointOutWithValue(int message, int value) {
   
 }
 
-int controlEndpoint(int message, char *buffer, int size, int direction) {
+int controlEndpoint(int message, unsigned char *buffer, int size, int direction) {
   return libusb_control_transfer(handle,
 				 LIBUSB_REQUEST_TYPE_VENDOR |
 				 LIBUSB_RECIPIENT_DEVICE |
 				 direction, 
 				 message, 0, 0,
-				 (unsigned char *)buffer, size, MESSAGE_TIMEOUT);
+				 buffer, size, MESSAGE_TIMEOUT);
 }
 
 //------------------------------------------------------------------------------

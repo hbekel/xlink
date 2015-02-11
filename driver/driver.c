@@ -235,19 +235,19 @@ bool _driver_ready() {
 
 //------------------------------------------------------------------------------
 
-bool _driver_open()                        { return driver->_open(); }
-void _driver_close()                       { driver->_close(); }
-void _driver_strobe()                      { driver->_strobe(); }
-char _driver_read(void)                    { return driver->_read(); }
-void _driver_write(char value)             { driver->_write(value); }
-void _driver_send(char* data, int size)    { driver->_send(data, size); }
-void _driver_receive(char* data, int size) { driver->_receive(data, size); }
-bool _driver_wait(int timeout)             { return driver->_wait(timeout); }
-void _driver_input()                       { driver->_input(); }
-void _driver_output()                      { driver->_output(); }
-bool _driver_ping(void)                    { return driver->_ping(); }
-void _driver_boot()                        { driver->_boot(); }
-void _driver_reset()                       { driver->_reset(); }
+bool _driver_open()                                 { return driver->_open(); }
+void _driver_close()                                { driver->_close(); }
+void _driver_strobe()                               { driver->_strobe(); }
+unsigned char _driver_read(void)                    { return driver->_read(); }
+void _driver_write(unsigned char value)             { driver->_write(value); }
+void _driver_send(unsigned char* data, int size)    { driver->_send(data, size); }
+void _driver_receive(unsigned char* data, int size) { driver->_receive(data, size); }
+bool _driver_wait(int timeout)                      { return driver->_wait(timeout); }
+void _driver_input()                                { driver->_input(); }
+void _driver_output()                               { driver->_output(); }
+bool _driver_ping(void)                             { return driver->_ping(); }
+void _driver_boot()                                 { driver->_boot(); }
+void _driver_reset()                                { driver->_reset(); }
 
 //------------------------------------------------------------------------------
 

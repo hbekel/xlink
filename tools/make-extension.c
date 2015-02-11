@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  printf("#define EXTENSION_%s extension_new(%d, %ld, (char[]) { ", varname, address, size);
+  printf("#define EXTENSION_%s extension_new(%d, %ld, (unsigned char[]) { ", varname, address, size);
   fseek(f, offset, SEEK_SET);
   
   int i;

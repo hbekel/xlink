@@ -18,10 +18,10 @@ bool driver_usb_open(void);
 void driver_usb_close(void);
 void driver_usb_strobe (void);
 bool driver_usb_wait(int);
-char driver_usb_read(void);
-void driver_usb_write(char);
-void driver_usb_send(char*, int);
-void driver_usb_receive(char*, int);
+unsigned char driver_usb_read(void);
+void driver_usb_write(unsigned char);
+void driver_usb_send(unsigned char*, int);
+void driver_usb_receive(unsigned char*, int);
 void driver_usb_input(void);
 void driver_usb_output(void);
 bool driver_usb_ping(void);
@@ -30,9 +30,9 @@ void driver_usb_boot(void);
 void driver_usb_free(void);
 
 int control(int message);
-int controlEndpointIn(int message, char *buffer, int size);
-int controlEndpointOut(int message, char *buffer, int size);
+int controlEndpointIn(int message, unsigned char *buffer, int size);
+int controlEndpointOut(int message, unsigned char *buffer, int size);
 int controlEndpointOutWithValue(int message, int value);
-int controlEndpoint(int message, char *buffer, int size, int direction);
+int controlEndpoint(int message, unsigned char *buffer, int size, int direction);
 
 #endif // USB_H

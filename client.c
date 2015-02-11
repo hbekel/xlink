@@ -206,8 +206,8 @@ Command* commands_add(Commands* self, Command* command) {
 
 //------------------------------------------------------------------------------
 
-int commands_each(Commands* self, int (*func) (Command* command)) {
-  int result = true;
+bool commands_each(Commands* self, bool (*func) (Command* command)) {
+  bool result = true;
 
   for(int i=0; i<self->count; i++) {
     if(!(result = func(self->items[i]))) {
@@ -219,7 +219,7 @@ int commands_each(Commands* self, int (*func) (Command* command)) {
 
 //------------------------------------------------------------------------------
 
-int commands_execute(Commands* self) {
+bool commands_execute(Commands* self) {
   return commands_each(self, &command_execute);
 }
 
@@ -383,7 +383,7 @@ void command_append_argument(Command* self, char* arg) {
 
 //------------------------------------------------------------------------------
 
-int command_parse_options(Command *self) {
+bool command_parse_options(Command *self) {
   
   int option, index;
   char *end;
@@ -475,7 +475,7 @@ char* command_get_name(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_print(Command* self) {
+bool command_print(Command* self) {
 
   char result[1024] = "";;
   bool print = false;
@@ -525,7 +525,7 @@ int command_print(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_find_basic_program(Command* self) {
+bool command_find_basic_program(Command* self) {
 
   int bstart = 0x0000;
   int bend   = 0x0000;
@@ -564,11 +564,11 @@ int command_find_basic_program(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_none(Command* self) {
+bool command_none(Command* self) {
 
   StringList *arguments = stringlist_new();
   Commands *commands;
-  int result = true;
+  bool result = true;
 
   if (self->argc > 0) {
 
@@ -601,13 +601,13 @@ int command_none(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_load(Command* self) {
+bool command_load(Command* self) {
   
   FILE *file;
   struct stat st;
   long size;
   int loadAddress;
-  char *data;
+  unsigned char *data;
   
   if (self->argc == 0) {
     logger->error("no file specified");
@@ -661,10 +661,10 @@ int command_load(Command* self) {
     self->bank = 0x00;
   }
 
-  data = (char*) calloc(size, sizeof(char));
+  data = (unsigned char*) calloc(size, sizeof(unsigned char));
   
   fseek(file, self->skip, SEEK_SET);
-  fread(data, sizeof(char), size, file);
+  fread(data, sizeof(unsigned char), size, file);
   fclose(file);  
 
   command_print(self);
@@ -685,12 +685,12 @@ int command_load(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_save(Command* self) {
+bool command_save(Command* self) {
   
   FILE *file;
   char *suffix;
   int size;
-  char *data;
+  unsigned char *data;
 
   if (self->argc == 0) {
     logger->error("no file specified");
@@ -727,7 +727,7 @@ int command_save(Command* self) {
   if (self->bank == 0xff)
     self->bank = 0x00;
 
-  data = (char*) calloc(size, sizeof(char));
+  data = (unsigned char*) calloc(size, sizeof(unsigned char));
 
   file = fopen(filename, "wb");
 
@@ -746,9 +746,9 @@ int command_save(Command* self) {
   }
 
   if (strncasecmp(suffix, ".prg", 4) == 0)
-    fwrite(&self->start, sizeof(char), 2, file);
+    fwrite(&self->start, sizeof(unsigned char), 2, file);
   
-  fwrite(data, sizeof(char), size, file);
+  fwrite(data, sizeof(unsigned char), size, file);
   fclose(file);
 
   free(data);    
@@ -757,7 +757,7 @@ int command_save(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_poke(Command* self) {
+bool command_poke(Command* self) {
   char *argument;
   unsigned char value;
   
@@ -799,7 +799,7 @@ int command_poke(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_peek(Command* self) {
+bool command_peek(Command* self) {
   
   if (self->argc == 0) {
     logger->error("no address specified");
@@ -827,7 +827,7 @@ int command_peek(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_jump(Command* self) {
+bool command_jump(Command* self) {
 
   if (self->argc == 0) {
     logger->error("no address specified");
@@ -859,8 +859,8 @@ int command_jump(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_run(Command* self) {
-  int result;
+bool command_run(Command* self) {
+  bool result = false;
 
   if(self->argc == 1) {
 
@@ -889,7 +889,7 @@ int command_run(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_server_usable_after_possible_relocation(Command* self) {
+bool command_server_usable_after_possible_relocation(Command* self) {
 
   unsigned short newServerAddress;  
   xlink_server_info server;
@@ -916,7 +916,7 @@ int command_server_usable_after_possible_relocation(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_requires_server_relocation(Command* self, xlink_server_info* server) {
+bool command_requires_server_relocation(Command* self, xlink_server_info* server) {
 
   bool result = false;
 
@@ -941,7 +941,7 @@ int command_requires_server_relocation(Command* self, xlink_server_info* server)
 
 //------------------------------------------------------------------------------
 
-int command_server_relocation_possible(Command* self, xlink_server_info* server, unsigned short* address) {
+bool command_server_relocation_possible(Command* self, xlink_server_info* server, unsigned short* address) {
 
   bool result = true;
   
@@ -994,7 +994,7 @@ int command_server_relocation_possible(Command* self, xlink_server_info* server,
     }
   }
 
-  // ...the end of the default screen memory area ($0801-$a000)
+  // ...the end of the default screen memory area ($0400-$07e7)
 
   code->start = screen->end - server->length;
   code->end = screen->end;
@@ -1024,7 +1024,7 @@ int command_server_relocation_possible(Command* self, xlink_server_info* server,
 
 //------------------------------------------------------------------------------
 
-int command_relocate(Command *self) {
+bool command_relocate(Command *self) {
 
   bool result = false;
   
@@ -1095,7 +1095,7 @@ int command_relocate(Command *self) {
 
 //------------------------------------------------------------------------------
 
-int command_reset(Command* self) {
+bool command_reset(Command* self) {
   command_print(self);
   return xlink_reset();
 }
@@ -1111,15 +1111,15 @@ int command_bootloader(Command *self) {
 
 //------------------------------------------------------------------------------
 
-int command_benchmark(Command* self) {
+bool command_benchmark(Command* self) {
 
   Watch* watch = watch_new();
   bool result = false;
 
   xlink_server_info server;
   
-  char payload[0x8000];
-  char roundtrip[sizeof(payload)];
+  unsigned char payload[0x8000];
+  unsigned char roundtrip[sizeof(payload)];
     
   int start = 0x1000;
   int end = start + sizeof(payload);
@@ -1177,7 +1177,7 @@ int command_benchmark(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_identify(Command *self) {
+bool command_identify(Command *self) {
 
   xlink_server_info server;
   
@@ -1195,7 +1195,7 @@ int command_identify(Command *self) {
 
 //------------------------------------------------------------------------------
 
-int command_server(Command *self) {
+bool command_server(Command *self) {
 
   bool result = false;
 
@@ -1243,7 +1243,7 @@ int command_server(Command *self) {
 
 //------------------------------------------------------------------------------
 
-int command_kernal(Command *self) {
+bool command_kernal(Command *self) {
 
   bool result = false;
   struct stat st;
@@ -1299,7 +1299,7 @@ int command_kernal(Command *self) {
 
 //------------------------------------------------------------------------------
 
-int command_help(Command *self) {
+bool command_help(Command *self) {
 
   if (self->argc > 0) {
     logger->error("unknown command: %s", self->argv[0]);
@@ -1312,7 +1312,7 @@ int command_help(Command *self) {
 
 //------------------------------------------------------------------------------
 
-int command_status(Command* self) {
+bool command_status(Command* self) {
 
   char *status = (char*) calloc(sizeof(unsigned char), 256);
   int result = false;
@@ -1330,7 +1330,7 @@ int command_status(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_dos(Command *self) {
+bool command_dos(Command *self) {
 
   command_print(self);
 
@@ -1350,9 +1350,9 @@ static bool read_sector(Sector *sector) {
 
 //------------------------------------------------------------------------------
 
-int command_backup(Command *self) {
+bool command_backup(Command *self) {
     
-  int result = true;
+  bool result = true;
   Disk* disk;
 
   if (self->argc == 0) {
@@ -1390,9 +1390,9 @@ static bool write_sector(Sector *sector) {
 
 //------------------------------------------------------------------------------
 
-int command_restore(Command *self) {
+bool command_restore(Command *self) {
 
-  int result = true;
+  bool result = true;
   
   if (self->argc == 0) {
     logger->error("no file specified");
@@ -1474,10 +1474,10 @@ static bool verify_sector_skipping_track_18(Sector* expected) {
 
 //------------------------------------------------------------------------------
 
-int command_verify(Command *self) {
+bool command_verify(Command *self) {
 
   Disk* disk;
-  int result = true;
+  bool result = true;
 
   if (self->argc == 0) {
     logger->error("no file specified");
@@ -1507,7 +1507,7 @@ int command_verify(Command *self) {
 
 //------------------------------------------------------------------------------
 
-int command_ready(Command* self) {
+bool command_ready(Command* self) {
 
   command_print(self);
 
@@ -1520,12 +1520,12 @@ int command_ready(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_ping(Command* self) {
+bool command_ping(Command* self) {
   command_print(self);
   
   Watch *watch = watch_new();
 
-  int response = xlink_ping();
+  bool response = xlink_ping();
 
   if (response) {
     logger->info("received reply after %.0fms", watch_elapsed(watch));
@@ -1539,9 +1539,9 @@ int command_ping(Command* self) {
 
 //------------------------------------------------------------------------------
 
-int command_execute(Command* self) {
+bool command_execute(Command* self) {
 
-  int result = false;
+  bool result = false;
 
   if(mode == MODE_HELP) {
     return help(self->id);
@@ -1817,7 +1817,7 @@ void usage(void) {
 
 //------------------------------------------------------------------------------
 
-int help(int id) {
+bool help(int id) {
 
   switch(id) {
   case COMMAND_NONE:

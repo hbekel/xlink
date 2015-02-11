@@ -120,7 +120,7 @@ bool xlink_has_device(void) {
 bool xlink_identify(xlink_server_info* server) {
 
   bool result = false;
-  char data[9];
+  unsigned char data[9];
   
   if(driver->open()) {
     
@@ -131,7 +131,7 @@ bool xlink_identify(xlink_server_info* server) {
     }
 
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_IDENTIFY}, 1);
+    driver->send((unsigned char []) {XLINK_COMMAND_IDENTIFY}, 1);
     
     driver->input();
     driver->strobe();
@@ -155,16 +155,16 @@ bool xlink_identify(xlink_server_info* server) {
     server->type = data[2];
     
     server->start = 0;
-    server->start |= (unsigned char) data[3];
-    server->start |= (((unsigned char) data[4]) << 8);
+    server->start |= data[3];
+    server->start |= data[4] << 8;
 
     server->end = 0;
-    server->end |= (unsigned char) data[5];
-    server->end |= (((unsigned char) data[6]) << 8);
+    server->end |= data[5];
+    server->end |= data[6] << 8;
 
     server->memtop = 0;
-    server->memtop |= (unsigned char) data[7];
-    server->memtop |= (((unsigned char) data[8]) << 8);
+    server->memtop |= data[7];
+    server->memtop |= data[8] << 8;
     
     server->length = server->end - server->start;   
     
@@ -251,9 +251,9 @@ bool xlink_bootloader(void) {
 
 bool xlink_load(unsigned char memory, 
 		unsigned char bank, 
-		int start, 
-		int end, 
-		char* data, 
+		unsigned short start, 
+		unsigned short end, 
+		unsigned char* data, 
 		int size) {
 
   bool result = false;
@@ -266,7 +266,7 @@ bool xlink_load(unsigned char memory,
     }
 
     driver->output();    
-    driver->send((char []) {XLINK_COMMAND_LOAD, memory, bank, 
+    driver->send((unsigned char []) {XLINK_COMMAND_LOAD, memory, bank, 
           lo(start), hi(start), lo(end), hi(end)}, 7);
 
     driver->send(data, size);
@@ -284,9 +284,9 @@ bool xlink_load(unsigned char memory,
 
 bool xlink_save(unsigned char memory, 
 		unsigned char bank, 
-		int start, 
-		int end, 
-		char* data, 
+		unsigned short start, 
+		unsigned short end, 
+		unsigned char* data, 
 		int size) {
 
   bool result = false;
@@ -299,7 +299,7 @@ bool xlink_save(unsigned char memory,
     }
 
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_SAVE, memory, bank, 
+    driver->send((unsigned char []) {XLINK_COMMAND_SAVE, memory, bank, 
           lo(start), hi(start), lo(end), hi(end)}, 7);
 
     driver->input();
@@ -320,7 +320,7 @@ bool xlink_save(unsigned char memory,
 
 bool xlink_peek(unsigned char memory, 
 		unsigned char bank, 
-		int address, 
+		unsigned short address, 
 		unsigned char* value) {
 
   bool result = false;
@@ -333,12 +333,12 @@ bool xlink_peek(unsigned char memory,
     }
 
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_PEEK, memory, bank, lo(address), hi(address)}, 5);
+    driver->send((unsigned char []) {XLINK_COMMAND_PEEK, memory, bank, lo(address), hi(address)}, 5);
     
     driver->input();
     driver->strobe();
 
-    driver->receive((char *)value, 1);
+    driver->receive(value, 1);
 
     driver->close();
     result = true;
@@ -353,7 +353,7 @@ bool xlink_peek(unsigned char memory,
 
 bool xlink_poke(unsigned char memory, 
 		unsigned char bank, 
-		int address, 
+		unsigned short address, 
 		unsigned char value) {
 
   bool result = false;
@@ -366,7 +366,7 @@ bool xlink_poke(unsigned char memory,
     }
     
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_POKE, memory, bank, 
+    driver->send((unsigned char []) {XLINK_COMMAND_POKE, memory, bank, 
           lo(address), hi(address), value}, 6);    
 
     driver->close();
@@ -382,7 +382,7 @@ bool xlink_poke(unsigned char memory,
 
 bool xlink_jump(unsigned char memory, 
 		unsigned char bank, 
-		int address) {
+		unsigned short address) {
 
   bool result = false;
 
@@ -396,7 +396,7 @@ bool xlink_jump(unsigned char memory,
     }
     
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_JUMP, memory, bank, 
+    driver->send((unsigned char []) {XLINK_COMMAND_JUMP, memory, bank, 
           hi(address), lo(address)}, 5);    
 
     driver->close();    
@@ -422,7 +422,7 @@ bool xlink_run(void) {
     }
 
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_RUN}, 1);
+    driver->send((unsigned char []) {XLINK_COMMAND_RUN}, 1);
 
     driver->close();
     result = true;
@@ -452,7 +452,7 @@ bool xlink_extend(int address) {
     address--;
 
     driver->output();
-    driver->send((char []) {XLINK_COMMAND_EXTEND, hi(address), lo(address)}, 3);
+    driver->send((unsigned char []) {XLINK_COMMAND_EXTEND, hi(address), lo(address)}, 3);
 
     driver->close();
     result = true;
@@ -476,7 +476,7 @@ bool xlink_relocate(unsigned short address) {
 
   if(extension_load(relocate) && extension_init(relocate)) {
 
-    result = xlink_load(0x37|0x80, 0x00, address, address+size-2, (char*) (server+2), size-2);
+    result = xlink_load(0x37|0x80, 0x00, address, address+size-2, (server+2), size-2);
 
     extension_unload(relocate);
   }
@@ -511,7 +511,7 @@ bool xlink_drive_status(char* status) {
 
       while(true) {
 
-        driver->receive((char *) &byte, 1);
+        driver->receive(&byte, 1);
 
         if(byte == 0xff) break;
 
@@ -555,8 +555,8 @@ bool xlink_dos(char* cmd) {
     if(driver->open()) {   
 
       driver->output();
-      driver->send((char []) {strlen(command)}, 1);
-      driver->send(command, strlen(command));
+      driver->send((unsigned char []) {strlen(command)}, 1);
+      driver->send((unsigned char*) command, strlen(command));
 
       driver->wait(0);
 
@@ -594,12 +594,12 @@ bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char*
       sprintf(U1, "U1 2 0 %02d %02d", track, sector);
 
       driver->output();
-      driver->send(U1, strlen(U1));
+      driver->send((unsigned char*)U1, strlen(U1));
 
       driver->input();
       driver->strobe();
 
-      driver->receive((char *) data, 256);
+      driver->receive(data, 256);
       driver->wait(0);
       
       driver->close();      
@@ -634,8 +634,8 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
       sprintf(U2, "U2 2 0 %02d %02d", track, sector);
 
       driver->output();
-      driver->send((char *) data, 256);
-      driver->send(U2, strlen(U2));
+      driver->send(data, 256);
+      driver->send((unsigned char*)U2, strlen(U2));
 
       driver->wait(0);
       

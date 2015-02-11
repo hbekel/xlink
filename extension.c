@@ -8,13 +8,13 @@
 
 extern int xlink_extend(int address);
 
-Extension *extension_new(short address, short size, char* code) {
+Extension *extension_new(unsigned short address, unsigned short size, unsigned char* code) {
   
   Extension *extension = (Extension*) calloc(1, sizeof(Extension));
   extension->address = address;
   extension->size = size;
   extension->code = code;
-  extension->cache = (char*) calloc(size, sizeof(char));
+  extension->cache = (unsigned char*) calloc(size, sizeof(unsigned char));
   extension->loaded = false;
   return extension;
 }

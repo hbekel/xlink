@@ -4,14 +4,14 @@
 #include <stdbool.h>
 
 typedef struct {
-  short address;
-  short size;
-  char *code;
-  char *cache;
+  unsigned short address;
+  unsigned short size;
+  unsigned char *code;
+  unsigned char *cache;
   bool loaded;
 } Extension;
 
-Extension *extension_new(short address, short size, char* code);
+Extension *extension_new(unsigned short address, unsigned short size, unsigned char* code);
 int extension_load(Extension *self);
 int extension_init(Extension *self);
 int extension_unload(Extension *self);

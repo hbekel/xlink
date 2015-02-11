@@ -1,7 +1,9 @@
 #ifndef XLINK_H
 #define XLINK_H
 
-#if windows
+#include <stdbool.h>
+
+#if defined(WIN32) || defined(__CYGWIN__)
   #if defined(XLINK_LIBRARY_BUILD)
     #define IMPORT
   #else
@@ -10,8 +12,6 @@
 #else
   #define IMPORT
 #endif
-
-#include <stdbool.h>
 
 #define XLINK_VERSION          0x10
 
@@ -82,19 +82,21 @@ extern "C" {
   bool xlink_reset(void);
   bool xlink_ready(void);
 
-  bool xlink_save(unsigned char memory, unsigned char bank, 
-                  int start, int end, char* data, int size);
-
   bool xlink_load(unsigned char memory, unsigned char bank, 
-                  int start, int end, char* data, int size);
+                  unsigned short start, unsigned short end,
+		  unsigned char* data, int size);  
+
+  bool xlink_save(unsigned char memory, unsigned char bank, 
+                  unsigned short start, unsigned short end,
+		  unsigned char* data, int size);
 
   bool xlink_peek(unsigned char memory, unsigned char bank, 
-                  int address, unsigned char* value);
+                  unsigned short address, unsigned char* value);
 
   bool xlink_poke(unsigned char memory, unsigned char bank, 
-                  int address, unsigned char value);
+                  unsigned short address, unsigned char value);
   
-  bool xlink_jump(unsigned char memory, unsigned char bank, int address);
+  bool xlink_jump(unsigned char memory, unsigned char bank, unsigned short address);
   bool xlink_run(void);
   
   bool xlink_drive_status(char* status);
