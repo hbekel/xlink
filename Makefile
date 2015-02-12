@@ -1,8 +1,10 @@
-VERSION=0.9
 PREFIX=/usr
 SYSCONFDIR=/etc
-DESTDIR=
 
+KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
+GCC-MINGW32=i686-pc-mingw32-gcc
+
+VERSION=0.9
 USB_MANUFACTURER="Henning Bekel <h.bekel@googlemail.com>"
 USB_PRODUCT="XLink USB Adapter"
 
@@ -12,12 +14,6 @@ USB_SERIAL:=$(USB_SERIAL)
 
 GCC=gcc
 CFLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -O3 -I.
-
-#GCC-MINGW32=i686-w64-mingw32-gcc
-GCC-MINGW32=i686-pc-mingw32-gcc
-
-#KASM=java -jar /usr/share/kickassembler/KickAss.jar
-KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
 
 INPOUT32=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries
 
@@ -139,16 +135,12 @@ install: xlink c64
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
 	install -m644 -D libxlink.so $(DESTDIR)$(PREFIX)/lib/libxlink.so
 	install -m644 -D xlink.h $(DESTDIR)$(PREFIX)/include/xlink.h
-	install -m644 -D bootstrap.txt $(DESTDIR)$(PREFIX)/share/xlink/bootstrap.txt
 
 	install -m644 -D etc/udev/rules.d/10-xlink.rules \
 			$(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
 
 	install -m644 -D etc/bash_completion.d/xlink \
 			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
-
-	udevadm control --reload-rules || true
-	udevadm trigger || true
 
 uninstall:
 	rm -v $(DESTDIR)$(PREFIX)/bin/xlink || true
