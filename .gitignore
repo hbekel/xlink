@@ -16,6 +16,7 @@ kernal.c
 make-extension
 make-bootstrap
 make-server
+make-kernal
 bootstrap.txt
 log
 TODO
