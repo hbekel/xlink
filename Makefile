@@ -1,8 +1,7 @@
 PREFIX=/usr
 SYSCONFDIR=/etc
-
-KASM=java -jar c:/cygwin/usr/share/kickassembler/KickAss.jar
-GCC-MINGW32=i686-pc-mingw32-gcc
+KASM=java -jar /usr/share/kickassembler/KickAss.jar
+GCC-MINGW32=i686-w64-mingw32-gcc
 
 VERSION=0.9
 USB_MANUFACTURER="Henning Bekel <h.bekel@googlemail.com>"
@@ -40,8 +39,7 @@ LIBSOURCES=\
 
 LIBFLAGS=-DXLINK_LIBRARY_BUILD -L.
 
-#all: linux c64
-all: win32 c64
+all: linux c64
 c64: bootstrap
 linux: xlink udev
 win32: xlink.exe
