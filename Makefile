@@ -171,7 +171,8 @@ distclean: clean
 	(yes | rm -r inpout32*) || true
 
 release: distclean
-	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD
+	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD && \
+	md5sum ../xlink-$(VERSION).tar.gz > ../xlink-$(VERSION).tar.gz.md5
 
 haste: distclean
 	(git gc && cd .. && tar vczf /cygdrive/f/xlink.tar.gz xlink)
