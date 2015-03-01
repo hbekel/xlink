@@ -298,7 +298,7 @@ bool driver_usb_ping() {
   driver->output();
   driver->write(0xff);
   driver->strobe();
-  return driver->wait(XLINK_PING_TIMEOUT);
+  return driver->wait(250);
 }
 
 //------------------------------------------------------------------------------

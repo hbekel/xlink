@@ -5,12 +5,12 @@
 
 #if defined(WIN32) || defined(__CYGWIN__)
   #if defined(XLINK_LIBRARY_BUILD)
-    #define IMPORT
+    #define IMPORTED
   #else
-    #define IMPORT __declspec(dllimport)
+    #define IMPORTED __declspec(dllimport)
   #endif
 #else
-  #define IMPORT
+  #define IMPORTED
 #endif
 
 #define XLINK_VERSION          0x10
@@ -28,17 +28,6 @@
 #define XLINK_LOG_LEVEL_DEBUG  0x04
 #define XLINK_LOG_LEVEL_TRACE  0x05
 #define XLINK_LOG_LEVEL_ALL    0x06
-
-#define XLINK_COMMAND_LOAD     0x01
-#define XLINK_COMMAND_SAVE     0x02
-#define XLINK_COMMAND_POKE     0x03
-#define XLINK_COMMAND_PEEK     0x04
-#define XLINK_COMMAND_JUMP     0x05
-#define XLINK_COMMAND_RUN      0x06
-#define XLINK_COMMAND_EXTEND   0x07
-#define XLINK_COMMAND_IDENTIFY 0xfe 
-
-#define XLINK_PING_TIMEOUT     250
 
 #define XLINK_SERVER_TYPE_RAM  0x00
 #define XLINK_SERVER_TYPE_ROM  0x01
@@ -63,7 +52,7 @@ extern "C" {
     char message[512];
   } xlink_error_t;
 
-  IMPORT xlink_error_t* xlink_error;
+  IMPORTED xlink_error_t* xlink_error;
   
   unsigned char xlink_version(void);
   void xlink_set_debug(int level);  
@@ -84,11 +73,11 @@ extern "C" {
 
   bool xlink_load(unsigned char memory, unsigned char bank, 
                   unsigned short start, unsigned short end,
-		  unsigned char* data, int size);  
+                  unsigned char* data, int size);  
 
   bool xlink_save(unsigned char memory, unsigned char bank, 
                   unsigned short start, unsigned short end,
-		  unsigned char* data, int size);
+                  unsigned char* data, int size);
 
   bool xlink_peek(unsigned char memory, unsigned char bank, 
                   unsigned short address, unsigned char* value);
@@ -96,7 +85,9 @@ extern "C" {
   bool xlink_poke(unsigned char memory, unsigned char bank, 
                   unsigned short address, unsigned char value);
   
-  bool xlink_jump(unsigned char memory, unsigned char bank, unsigned short address);
+  bool xlink_jump(unsigned char memory, unsigned char bank,
+                  unsigned short address);
+
   bool xlink_run(void);
   
   bool xlink_drive_status(char* status);

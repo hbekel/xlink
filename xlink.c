@@ -17,6 +17,15 @@
 
 Driver* driver;
 
+#define XLINK_COMMAND_LOAD     0x01
+#define XLINK_COMMAND_SAVE     0x02
+#define XLINK_COMMAND_POKE     0x03
+#define XLINK_COMMAND_PEEK     0x04
+#define XLINK_COMMAND_JUMP     0x05
+#define XLINK_COMMAND_RUN      0x06
+#define XLINK_COMMAND_EXTEND   0x07
+#define XLINK_COMMAND_IDENTIFY 0xfe 
+
 //------------------------------------------------------------------------------
 
 unsigned char xlink_version(void) {
@@ -221,7 +230,7 @@ bool xlink_ready(void) {
         usleep(250*1000); // wait until basic is ready
         goto done;
       }
-      timeout-=XLINK_PING_TIMEOUT;
+      timeout-=250;
     }
     result = false;
     goto done;

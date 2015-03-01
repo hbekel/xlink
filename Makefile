@@ -5,7 +5,7 @@ GCC-MINGW32=i686-w64-mingw32-gcc
 
 VERSION=0.9
 USB_MANUFACTURER="Henning Bekel <h.bekel@googlemail.com>"
-USB_PRODUCT="XLink USB Adapter"
+USB_PRODUCT="xlink usb adapter"
 
 USB_VID:=$(USB_VID)
 USB_PID:=$(USB_PID)
