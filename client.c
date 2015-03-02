@@ -889,6 +889,8 @@ bool command_run(Command* self) {
 
 //------------------------------------------------------------------------------
 
+extern bool xlink_relocate(unsigned short address);
+
 bool command_server_usable_after_possible_relocation(Command* self) {
 
   unsigned short newServerAddress;  
@@ -1196,6 +1198,9 @@ bool command_identify(Command *self) {
 
 //------------------------------------------------------------------------------
 
+extern unsigned char* xlink_server(unsigned short address, int *size);
+extern unsigned char* xlink_server_basic(int *size);
+
 bool command_server(Command *self) {
 
   bool result = false;
@@ -1243,6 +1248,8 @@ bool command_server(Command *self) {
 }
 
 //------------------------------------------------------------------------------
+
+extern void xlink_kernal(unsigned char* image);
 
 bool command_kernal(Command *self) {
 
@@ -1312,6 +1319,11 @@ bool command_help(Command *self) {
 }
 
 //------------------------------------------------------------------------------
+
+extern bool xlink_drive_status(char* status);
+extern bool xlink_dos(char* cmd);
+extern bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char* data);
+extern bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char* data);
 
 bool command_status(Command* self) {
 

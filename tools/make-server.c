@@ -116,6 +116,8 @@ int main(int argc, char **argv) {
   printf("#include <stdlib.h>\n");
   printf("#include \"xlink.h\"\n");
   printf("#include \"error.h\"\n");  
+  printf("unsigned char* xlink_server(unsigned short address, int *size);\n");
+  printf("unsigned char* xlink_server_basic(int *size);\n");
 
   printf("unsigned char* xlink_server_basic(int *size) {\n");
   

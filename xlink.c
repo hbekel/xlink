@@ -477,6 +477,8 @@ bool xlink_extend(int address) {
 
 //------------------------------------------------------------------------------
 
+extern unsigned char* xlink_server(unsigned short address, int *size);
+
 bool xlink_relocate(unsigned short address) {
 
   bool result = false;
