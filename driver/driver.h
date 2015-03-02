@@ -42,7 +42,7 @@ typedef struct {
   void (*free) (void);
 } Driver;
 
-bool driver_setup(char*, bool);
+bool driver_setup(char*);
 bool device_identify(char*, int*); 
 bool device_is_supported(char*, int);
 bool device_is_parport(int);

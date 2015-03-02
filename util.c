@@ -91,7 +91,7 @@ static void _logger_log(int level, char *fmt, va_list ap) {
   char *s;
   void *v;
 
-  if(level > logger->level || !logger->enabled) return;
+  if(level >= logger->level || !logger->enabled) return;
 
   _logger_print_context();
   _logger_print_level(level);
@@ -165,11 +165,13 @@ static void _logger_set(char* level) {
   
   int current_level = logger->level;
 
+  if(strncasecmp(level, "NONE", 4) == 0) logger->level = LOGLEVEL_NONE; else  
   if(strncasecmp(level, "ERROR", 5) == 0) logger->level = LOGLEVEL_ERROR; else
   if(strncasecmp(level, "WARN", 4) == 0) logger->level = LOGLEVEL_WARN; else
   if(strncasecmp(level, "INFO", 4) == 0) logger->level = LOGLEVEL_INFO; else
   if(strncasecmp(level, "DEBUG", 5) == 0) logger->level = LOGLEVEL_DEBUG; else
-  if(strncasecmp(level, "TRACE", 5) == 0) logger->level = LOGLEVEL_TRACE; 
+  if(strncasecmp(level, "TRACE", 5) == 0) logger->level = LOGLEVEL_TRACE; else
+  if(strncasecmp(level, "ALL", 3) == 0) logger->level = LOGLEVEL_ALL; 
   else {  
     logger->level = LOGLEVEL_WARN;
     logger->warn("unkown loglevel \"%s\"", level);

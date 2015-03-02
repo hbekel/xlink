@@ -34,8 +34,8 @@ unsigned char xlink_version(void) {
 
 //------------------------------------------------------------------------------
 
-void xlink_set_debug(int level) {
-  logger->level = level;
+void xlink_set_debug(bool enabled) {
+  logger->level = enabled ? LOGLEVEL_ALL : LOGLEVEL_NONE;
 }
 
 //------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ void libxlink_initialize() {
   xlink_error = (xlink_error_t *) calloc(1, sizeof(xlink_error_t));
   CLEAR_ERROR;
 
-  xlink_set_debug(XLINK_LOG_LEVEL_NONE);
+  xlink_set_debug(false);
 }
 
 //------------------------------------------------------------------------------
@@ -103,7 +103,7 @@ BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
 //------------------------------------------------------------------------------
 
 bool xlink_set_device(char* path) {
-  return driver_setup(path, false);
+  return driver_setup(path);
 }  
 
 //------------------------------------------------------------------------------
@@ -219,8 +219,12 @@ bool xlink_reset(void) {
 
 bool xlink_ready(void) {
 
-  bool result = true;
+  bool result = false;
   int timeout = 3000;
+
+  if(!driver->ready()) {
+    goto done;
+  }
 
   if(!xlink_ping()) {
     xlink_reset();
@@ -228,12 +232,11 @@ bool xlink_ready(void) {
     while(timeout) {
       if(xlink_ping()) {
         usleep(250*1000); // wait until basic is ready
-        goto done;
+	result = true;
+	break;
       }
       timeout-=250;
     }
-    result = false;
-    goto done;
   }
   
  done:

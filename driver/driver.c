@@ -22,8 +22,7 @@ extern Driver* driver;
 bool _driver_setup_and_open(void) {
 
   bool result = false;
-  bool autodetect = logger->level <= XLINK_LOG_LEVEL_INFO;
-  
+
 #if linux
   char default_usb_device[] = "/dev/xlink";
   char default_parport_device[] = "/dev/parport0";
@@ -34,13 +33,13 @@ bool _driver_setup_and_open(void) {
 #endif
 
   if (getenv("XLINK_DEVICE") != NULL) {
-    result = driver_setup(getenv("XLINK_DEVICE"), false);
+    result = driver_setup(getenv("XLINK_DEVICE"));
   }
   else {
 
-    if(!(result = driver_setup(default_usb_device, autodetect))) {
+    if(!(result = driver_setup(default_usb_device))) {
 
-      result = driver_setup(default_parport_device, autodetect);
+      result = driver_setup(default_parport_device);
 
       if(result) {
         logger->info("using default parallel port device %s",
@@ -62,14 +61,10 @@ bool _driver_setup_and_open(void) {
 
 //------------------------------------------------------------------------------
 
-bool driver_setup(char* path, bool autodetect) {
+bool driver_setup(char* path) {
 
   bool result = false;
   int type;
-
-  if(autodetect) {
-    logger->suspend();
-  }
 
   if(!device_identify(path, &type)) {
     goto done;
@@ -135,19 +130,11 @@ bool driver_setup(char* path, bool autodetect) {
       logger->debug("using usb device \"%s\"", driver->path);
     }
     else {
-      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize %susb device \"%s\"%s",
-		autodetect ? "default " :  "",
-		driver->path,
-		autodetect ? "\n  -> trying default parallel port device...\n" : "");
+      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize usb device \"%s\"", driver->path);
     }
   }
 
  done:
-
-  if(autodetect) {
-    logger->resume();
-  }
-
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -219,16 +206,11 @@ bool device_is_usb(int type) {
 
 bool _driver_ready() {
   bool result = false;
-  bool quiet = logger->level <= XLINK_LOG_LEVEL_INFO;
   
-  if(quiet) logger->suspend();
-
   if((result = driver->open())) {
     driver->close();
   }
   
-  if(quiet) logger->resume();
-
   CLEAR_ERROR_IF(result);
   return result;
 }

@@ -14,24 +14,15 @@
 #endif
 
 #define XLINK_VERSION          0x10
+#define XLINK_SERVER_TYPE_RAM  0x00
+#define XLINK_SERVER_TYPE_ROM  0x01
+#define XLINK_MACHINE_C64      0x00
 
 #define XLINK_SUCCESS          0x00
 #define XLINK_ERROR_DEVICE     0x01
 #define XLINK_ERROR_LIBUSB     0x02
 #define XLINK_ERROR_PARPORT    0x03
 #define XLINK_ERROR_SERVER     0x04
-
-#define XLINK_LOG_LEVEL_NONE   0x00
-#define XLINK_LOG_LEVEL_ERROR  0x01
-#define XLINK_LOG_LEVEL_WARN   0x02
-#define XLINK_LOG_LEVEL_INFO   0x03
-#define XLINK_LOG_LEVEL_DEBUG  0x04
-#define XLINK_LOG_LEVEL_TRACE  0x05
-#define XLINK_LOG_LEVEL_ALL    0x06
-
-#define XLINK_SERVER_TYPE_RAM  0x00
-#define XLINK_SERVER_TYPE_ROM  0x01
-#define XLINK_MACHINE_C64      0x00
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,7 +46,7 @@ extern "C" {
   IMPORTED xlink_error_t* xlink_error;
   
   unsigned char xlink_version(void);
-  void xlink_set_debug(int level);  
+  void xlink_set_debug(bool enabled);  
 
   bool xlink_has_device(void);  
   bool xlink_set_device(char* path);
@@ -65,7 +56,7 @@ extern "C" {
   unsigned char* xlink_server_basic(int *size);
   unsigned char* xlink_server(unsigned short address, int *size);
   bool xlink_relocate(unsigned short address);
-  
+
   bool xlink_identify(xlink_server_info* server);
   bool xlink_ping(void);
   bool xlink_reset(void);

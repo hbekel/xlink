@@ -404,11 +404,11 @@ bool command_parse_options(Command *self) {
       break;
 
     case 'q':
-      logger->dec();
+      logger->set("NONE");
       break;
 
     case 'v':
-      logger->inc();
+      logger->set("ALL");
       break;
 
     case 'd':
@@ -910,8 +910,9 @@ bool command_server_usable_after_possible_relocation(Command* self) {
         return false;
       }
     }
+    return true;
   }
-  return true;
+  return false;
 }
 
 //------------------------------------------------------------------------------
