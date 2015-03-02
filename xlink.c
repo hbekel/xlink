@@ -219,10 +219,11 @@ bool xlink_reset(void) {
 
 bool xlink_ready(void) {
 
-  bool result = false;
+  bool result = true;
   int timeout = 3000;
 
   if(!driver->ready()) {
+    result = false;
     goto done;
   }
 
@@ -232,11 +233,11 @@ bool xlink_ready(void) {
     while(timeout) {
       if(xlink_ping()) {
         usleep(250*1000); // wait until basic is ready
-	result = true;
-	break;
+        goto done;
       }
       timeout-=250;
     }
+    result = false;
   }
   
  done:
