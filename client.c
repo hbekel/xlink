@@ -334,18 +334,18 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
   self->name = (char *) calloc(strlen(current())+1, sizeof(char));
   strncpy(self->name, current(), strlen(current()));
 
-  self->id = str2id(current());
+  self->id = str2id(self->name);
 
   if(isCommand(self->name)) {
     next();
   }
 
   int arity = command_arity(self);
-  int consumed = 0;
+  int consumed = -1;
 
   for(;hasNext();next()) {
 
-    if(isCommand(current())) {
+    if(isCommand(current()) && !isOptarg(previous(), current())) {
       break;
     }
 
@@ -866,6 +866,7 @@ bool command_run(Command* self) {
 
     logger->suspend();
     if(!(result = command_load(self))) {
+      logger->resume();
       return result;
     }
     logger->resume();
@@ -1115,6 +1116,8 @@ int command_bootloader(Command *self) {
 //------------------------------------------------------------------------------
 
 bool command_benchmark(Command* self) {
+
+  command_print(self);
 
   Watch* watch = watch_new();
   bool result = false;
