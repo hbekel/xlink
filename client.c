@@ -1130,8 +1130,8 @@ bool command_benchmark(Command* self) {
   int start = 0x1000;
   int end = start + sizeof(payload);
     
-  if (!xlink_ready()) {
-    logger->error("no response from C64");
+  if (!xlink_ping()) {
+    logger->error("no response from server");
     goto done;
   }
 
