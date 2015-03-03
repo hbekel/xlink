@@ -8,17 +8,17 @@
 #include <unistd.h>
 #include <signal.h>
 
-#if linux
-  #include <readline/readline.h>
-  #include <readline/history.h>
-#endif 
-
 #include "target.h"
 #include "client.h"
 #include "range.h"
 #include "disk.h"
 #include "util.h"
 #include "xlink.h"
+
+#if linux
+  #include <readline/readline.h>
+  #include <readline/history.h>
+#endif 
 
 #define COMMAND_NONE       0x00
 #define COMMAND_LOAD       0x01
@@ -133,6 +133,8 @@ int isCommand(const char *str) {
 int isOption(const char *str) {
   return str[0] == '-';
 }
+
+//------------------------------------------------------------------------------
 
 int isOptarg(const char* option, const char* argument) {
 
