@@ -91,7 +91,7 @@ static void _logger_log(int level, char *fmt, va_list ap) {
   char *s;
   void *v;
 
-  if(level >= logger->level || !logger->enabled) return;
+  if(level > logger->level || !logger->enabled) return;
 
   _logger_print_context();
   _logger_print_level(level);
