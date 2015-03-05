@@ -343,7 +343,7 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
   }
 
   int arity = command_arity(self);
-  int consumed = -1;
+  int consumed = 0;
 
   for(;hasNext();next()) {
 
@@ -353,10 +353,10 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
 
     if (consumed == arity) {
       if (hasPrevious() && !isOptarg(previous(), current())) {
-	break;
+        break;
       }
       else if (!isOption(current())) {
-	break;
+        break;
       }
     }
 
@@ -364,10 +364,10 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
 
     if (consumed < arity) {
       if (hasPrevious() && isOptarg(previous(), current())) {
-	continue;
+        continue;
       }
       else if (isOption(current())) {
-	continue;
+        continue;
       }
       consumed+=1;      
     }    
@@ -572,6 +572,8 @@ bool command_none(Command* self) {
   Commands *commands;
   bool result = true;
 
+  command_print(self);
+  
   if (self->argc > 0) {
 
     stringlist_append(arguments, "ready");
