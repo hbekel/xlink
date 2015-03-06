@@ -107,7 +107,7 @@ bool driver_setup(char* path) {
     
   } else if(device_is_usb(type)) {
     
-    logger->debug("trying to use susb device \"%s\"...",  driver->path);
+    logger->debug("trying to use usb device \"%s\"...",  driver->path);
 
     driver->_open    = &driver_usb_open;
     driver->_close   = &driver_usb_close;    

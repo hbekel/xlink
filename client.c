@@ -350,8 +350,8 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
     if(isCommand(current()) && !isOptarg(previous(), current())) {
       break;
     }
-
-    if (consumed == arity) {
+    
+    if (consumed == arity && arity > 0) {
       if (hasPrevious() && !isOptarg(previous(), current())) {
         break;
       }
