@@ -884,7 +884,7 @@ bool command_run(Command* self) {
         self->bank = 0x00;
       
       command_print(self);
-      
+
       return xlink_jump(self->memory, self->bank, self->start);
     }
   }

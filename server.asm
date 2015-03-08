@@ -214,7 +214,10 @@ jump: {
 	jsr read stx bank
 
 	ldx #$ff txs // reset stack pointer
-	
+
+        lda #$a4 pha // make sure the code jumped to can rts to basic
+        lda #$7f pha // ($a480 = BASIC REPL)
+  
 	jsr read txa pha // push high byte of jump address
 	jsr read txa pha // push low byte of jump address
 
