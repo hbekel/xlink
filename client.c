@@ -1875,7 +1875,7 @@ bool help(int id) {
     printf("\n");
     printf("If the server on the C64 is running from RAM and is located\n");
     printf("in the same memory area as the data to be loaded then an attempt\n");
-    printf("be made to relocate the server to a different location beforehand.\n");
+    printf("is made to relocate the server to a different location beforehand.\n");
     printf("\n"); 
     break;
 
