@@ -221,6 +221,7 @@ bool xlink_ready(void) {
 
   bool result = true;
   int timeout = 3000;
+  unsigned char mode;
 
   if(!driver->ready()) {
     result = false;
@@ -238,6 +239,15 @@ bool xlink_ready(void) {
       timeout-=250;
     }
     result = false;
+  }
+  else {
+    if(xlink_peek(0x37, 0x00, 0x9d, &mode)) {
+      if(mode != 0x80) { 
+	// basic program running -> warm start basic
+	xlink_jump(0x37, 0x00, 0xfe66);
+        usleep(250*1000);
+      }
+    }
   }
   
  done:

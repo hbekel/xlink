@@ -12,6 +12,7 @@
 .var restxtpt = $a68e // Reset BASIC text pointer
 .var warmst   = $a7ae // Basic warm start (e.g. RUN)
 .var memtop   = $0283 // Top of lower memory area
+.var errmode  = $9d   // Error mode flag (00 = Program mode, 80 = direct mode)
 
 .namespace Command {
 .label load        = $01

@@ -375,6 +375,10 @@ run: {
 
 	jsr insnewl     // run BASIC program
 	jsr restxtpt
+
+	lda #$00        // flag program mode
+	sta errmode
+
 	jmp warmst
 eof:
 }
