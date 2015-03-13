@@ -57,6 +57,7 @@ bool command_load(Command* self);
 bool command_save(Command* self);
 bool command_poke(Command* self);
 bool command_peek(Command* self);
+bool command_fill(Command* self);
 bool command_jump(Command* self);
 bool command_run(Command* self);
 bool command_status(Command* self);

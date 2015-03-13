@@ -42,6 +42,7 @@
 #define COMMAND_SERVER     0x13
 #define COMMAND_RELOCATE   0x14
 #define COMMAND_KERNAL     0x15
+#define COMMAND_FILL       0x16
 
 #define MODE_EXEC 0x00
 #define MODE_HELP 0x01
@@ -82,6 +83,7 @@ char str2id(const char* arg) {
   if (strcmp(arg, "server"    ) == 0) return COMMAND_SERVER;
   if (strcmp(arg, "relocate"  ) == 0) return COMMAND_RELOCATE;
   if (strcmp(arg, "kernal"    ) == 0) return COMMAND_KERNAL;      
+  if (strcmp(arg, "fill"      ) == 0) return COMMAND_FILL;      
 
   if (strncmp(arg, "@", 1) == 0) {
     if(strlen(arg) == 1) {
@@ -119,6 +121,7 @@ char* id2str(const char id) {
   if (id == COMMAND_SERVER)     return (char*) "server";
   if (id == COMMAND_RELOCATE)   return (char*) "relocate";
   if (id == COMMAND_KERNAL)     return (char*) "kernal";      
+  if (id == COMMAND_FILL)       return (char*) "fill";      
   return (char*) "unknown";
 }
 
@@ -303,6 +306,7 @@ int command_arity(Command* self) {
   if (self->id == COMMAND_SERVER)     return 1;
   if (self->id == COMMAND_RELOCATE)   return 1;
   if (self->id == COMMAND_KERNAL)     return 2;    
+  if (self->id == COMMAND_FILL)       return 1;    
   return 0;
 
 }
@@ -827,6 +831,39 @@ bool command_peek(Command* self) {
   printf("%d\n", value);
   
   return true;
+}
+
+//------------------------------------------------------------------------------
+
+bool command_fill(Command* self) {
+
+  unsigned char value;
+
+  if(self->start == -1 || self->end == -1) {
+    logger->error("no memory range specified");
+    return false;
+  }
+
+  if (self->argc == 0) {
+    logger->error("no value specified");
+    return false;
+  }
+
+  value = (unsigned char) strtol(self->argv[0], NULL, 0);
+
+  if (self->memory == 0xff)
+    self->memory = 0x37;
+
+  if (self->bank == 0xff)
+    self->bank = 0x00;
+
+  command_print(self);
+
+  if(!command_server_usable_after_possible_relocation(self)) {
+    return false;
+  }      
+
+  return xlink_fill(self->memory, self->bank, self->start, self->end, value);  
 }
 
 //------------------------------------------------------------------------------
@@ -1598,6 +1635,7 @@ bool command_execute(Command* self) {
   case COMMAND_SERVER     : result = command_server(self);     break;
   case COMMAND_RELOCATE   : result = command_relocate(self);   break;
   case COMMAND_KERNAL     : result = command_kernal(self);     break;            
+  case COMMAND_FILL       : result = command_fill(self);       break;            
   }
   
   logger->leave();
@@ -1857,6 +1895,7 @@ void usage(void) {
   printf("          save  [<opts>] <file>        : save C64 memory to file\n");
   printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
   printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
+  printf("          fill  -a<addr> <val>         : fill memory area with byte\n");
   printf("          jump  [<opts>] <addr>        : jump to specified address\n");
   printf("          run   [<opts>] [<file>]      : run program, optionally load it before\n");
   printf("          <file>...                    : load file(s) and run last file\n");
@@ -2080,7 +2119,13 @@ bool help(int id) {
     printf("support tape IO.\n");
     printf("\n");
     break;
-    
+
+  case COMMAND_FILL:
+    printf("Usage: fill --address <start>-<end> <value>\n");
+    printf("\n");
+    printf("Fill the specified memory area with <value>. The memory config defaults to 0x37.\n");
+    printf("\n");
+    break;   
   }
   return true;
 }

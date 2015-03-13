@@ -72,6 +72,10 @@ extern "C" {
 
   bool xlink_poke(unsigned char memory, unsigned char bank, 
                   unsigned short address, unsigned char value);
+
+  bool xlink_fill(unsigned char memory, unsigned char bank, 
+                  unsigned short start, unsigned short end,
+		  unsigned char value);
   
   bool xlink_jump(unsigned char memory, unsigned char bank,
                   unsigned short address);
