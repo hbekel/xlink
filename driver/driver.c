@@ -22,6 +22,7 @@ extern Driver* driver;
 bool _driver_setup_and_open(void) {
 
   bool result = false;
+  bool autodetect = false;
 
 #if linux
   char default_usb_device[] = "/dev/xlink";
@@ -33,9 +34,10 @@ bool _driver_setup_and_open(void) {
 #endif
 
   if (getenv("XLINK_DEVICE") != NULL) {
-    result = driver_setup(getenv("XLINK_DEVICE"));
+    result = driver_setup(getenv("XLINK_DEVICE"));    
   }
   else {
+    autodetect = true;
 
     if(!(result = driver_setup(default_usb_device))) {
 
@@ -55,7 +57,13 @@ bool _driver_setup_and_open(void) {
   if(result) {
     result = driver->open();
   }
+  else if(autodetect) {
+    SET_ERROR(XLINK_ERROR_DEVICE, 
+	      "failed to initialize \"%s\" or \"%s\" (autodetect)",
+	      default_usb_device, default_parport_device);    
+  }
 
+  CLEAR_ERROR_IF(result);
   return result;
 }
 
