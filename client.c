@@ -1737,12 +1737,23 @@ static int shell_command(char *line) {
 //------------------------------------------------------------------------------
 
 void shell(void) {
-  
-  char *line;
-  char *prompt = "xlink> ";
 
   Commands* commands;
   StringList *arguments;
+  
+  char *line;
+  const char *prompt = "xlink> ";
+
+  const char *home = getenv("HOME");
+  const char *filename = "/.xlink_history";
+
+  int size = strlen(home)+strlen(filename)+1;
+
+  char *history = (char*) calloc(size, sizeof(char));
+  strncat(history, home, strlen(home));
+  strncat(history, filename, strlen(filename));
+
+  read_history(history);
 
   rl_variable_bind("expand-tilde", "on");  
   rl_attempted_completion_function = (rl_completion_func_t *) shell_completion;
@@ -1769,6 +1780,9 @@ void shell(void) {
     }    
     free(line);
   }
+  write_history(history);
+  history_truncate_file(history, 500);
+
   printf("\n");
 }
 #endif
