@@ -1721,6 +1721,38 @@ static char **shell_completion(char *text, int start, int end) {
 
 //------------------------------------------------------------------------------
 
+void shell_load_history(void) {
+  const char *home = getenv("HOME");
+  const char *filename = "/.xlink_history";
+  int size = strlen(home)+strlen(filename)+1;
+
+  char *history = (char*) calloc(size, sizeof(char));
+  strncat(history, home, strlen(home));
+  strncat(history, filename, strlen(filename));
+
+  read_history(history);
+  free(history);
+}
+
+//------------------------------------------------------------------------------
+
+void shell_save_history(void) {
+  const char *home = getenv("HOME");
+  const char *filename = "/.xlink_history";
+  int size = strlen(home)+strlen(filename)+1;
+
+  char *history = (char*) calloc(size, sizeof(char));
+  strncat(history, home, strlen(home));
+  strncat(history, filename, strlen(filename));
+
+  write_history(history);
+  history_truncate_file(history, 500);
+
+  free(history);
+}
+
+//------------------------------------------------------------------------------
+
 static int shell_command(char *line) {
   if(strcmp(line, "help") == 0) {
     usage();
@@ -1729,6 +1761,7 @@ static int shell_command(char *line) {
   
   if((strcmp(line, "quit") == 0) ||
      (strcmp(line, "exit") == 0)) {
+    shell_save_history();
     exit(EXIT_SUCCESS);
   }
   return false;
@@ -1744,19 +1777,10 @@ void shell(void) {
   char *line;
   const char *prompt = "xlink> ";
 
-  const char *home = getenv("HOME");
-  const char *filename = "/.xlink_history";
-
-  int size = strlen(home)+strlen(filename)+1;
-
-  char *history = (char*) calloc(size, sizeof(char));
-  strncat(history, home, strlen(home));
-  strncat(history, filename, strlen(filename));
-
-  read_history(history);
-
   rl_variable_bind("expand-tilde", "on");  
   rl_attempted_completion_function = (rl_completion_func_t *) shell_completion;
+
+  shell_load_history();
   
   while((line = readline(prompt))) {      
 
@@ -1780,9 +1804,7 @@ void shell(void) {
     }    
     free(line);
   }
-  write_history(history);
-  history_truncate_file(history, 500);
-
+  shell_save_history();
   printf("\n");
 }
 #endif
