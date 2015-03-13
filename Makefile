@@ -1,7 +1,7 @@
 PREFIX=/usr
 SYSCONFDIR=/etc
 KASM=java -jar /usr/share/kickassembler/KickAss.jar
-GCC-MINGW32=i686-w64-mingw32-gcc
+GCC-MINGW32=i686-pc-mingw32-gcc
 
 VERSION=0.9
 USB_MANUFACTURER="Henning Bekel <h.bekel@googlemail.com>"
@@ -44,6 +44,7 @@ c64: bootstrap
 linux: xlink udev
 win32: xlink.exe
 bootstrap: bootstrap.txt
+prepare-msi: clean win32 firmware xlink.lib
 
 testsuite: testsuite.c range.c
 	$(GCC) -o testsuite testsuite.c range.c
@@ -63,8 +64,14 @@ xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32
 	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
 		-o xlink.dll $(LIBSOURCES) -lusb-1.0 -linpout32
 
-xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h
+xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h xlink.lib-clean
 	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c range.c -L. -lxlink
+
+xlink.lib: xlink.dll
+	sh tools/make-msvc-lib.sh
+
+xlink.lib-clean:
+	[ -f xlink.lib ] && rm -v xlink.lib || true
 
 inpout32:
 	wget -O inpout32.zip $(INPOUT32) && \
@@ -148,10 +155,11 @@ uninstall:
 	rm -v $(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
 	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
-clean: firmware-clean
+clean: firmware-clean 
 	[ -f testsuite ] && rm -v testsuite || true
 	[ -f libxlink.so ] && rm -v libxlink.so || true
 	[ -f xlink.dll ] && rm -v xlink.dll || true
+	[ -f xlink.lib ] && rm -v xlink.lib || true
 	[ -f xlink ] && rm -v xlink || true
 	[ -f xlink.exe ] && rm -v xlink.exe || true
 	[ -f extensions.c ] && rm -v extensions.c || true
@@ -171,6 +179,3 @@ distclean: clean
 release: distclean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD && \
 	md5sum ../xlink-$(VERSION).tar.gz > ../xlink-$(VERSION).tar.gz.md5
-
-haste: distclean
-	(git gc && cd .. && tar vczf /cygdrive/f/xlink.tar.gz xlink)
