@@ -702,26 +702,3 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
 }
 
 //------------------------------------------------------------------------------
-
-bool xlink_fill(unsigned char memory, unsigned char bank, 
-		unsigned short start, unsigned short end,
-		unsigned char value) {
-
-  bool result = false;
-  int size;
-
-  if(!get_size(start, end, &size)) {
-    goto done;
-  }
-
-  unsigned char *data = (unsigned char*) calloc(size, sizeof(unsigned char));
-  memset(data, value, size);
-  
-  result = xlink_load(memory, bank, start, end, data);
-
- done:
-  CLEAR_ERROR_IF(result);
-  return result;
-}
-
-//------------------------------------------------------------------------------

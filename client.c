@@ -837,19 +837,30 @@ bool command_peek(Command* self) {
 
 bool command_fill(Command* self) {
 
-  unsigned char value;
-
+  bool result = false;
+  
   if(self->start == -1 || self->end == -1) {
     logger->error("no memory range specified");
-    return false;
+    goto done;
   }
 
+  if(self->end != 0 && self->start > self->end) {
+    logger->error("start address 0x%04X > end address 0x%04X",
+                  self->start, self->end);
+    goto done;
+  }
+    
   if (self->argc == 0) {
     logger->error("no value specified");
-    return false;
+    goto done;
   }
 
-  value = (unsigned char) strtol(self->argv[0], NULL, 0);
+  int size = self->end == 0 ?
+    0x10000-self->start :
+    self->end - self->start;
+
+
+  unsigned char value = (unsigned char) strtol(self->argv[0], NULL, 0);
 
   if (self->memory == 0xff)
     self->memory = 0x37;
@@ -860,10 +871,18 @@ bool command_fill(Command* self) {
   command_print(self);
 
   if(!command_server_usable_after_possible_relocation(self)) {
-    return false;
+    goto done;
   }      
 
-  return xlink_fill(self->memory, self->bank, self->start, self->end, value);  
+  unsigned char *data = (unsigned char*) calloc(size, sizeof(unsigned char));
+  memset(data, value, size);
+
+  result = xlink_load(self->memory, self->bank, self->start, self->end, data);  
+
+  free(data);
+  
+ done:
+  return result;
 }
 
 //------------------------------------------------------------------------------

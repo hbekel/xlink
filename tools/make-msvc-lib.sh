@@ -20,7 +20,6 @@ xlink_load
 xlink_save
 xlink_peek
 xlink_poke
-xlink_fill
 xlink_jump
 xlink_run
 EOF
