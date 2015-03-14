@@ -43,7 +43,8 @@ extern "C" {
     char message[512];
   } xlink_error_t;
 
-  IMPORTED xlink_error_t* xlink_error;
+  
+  IMPORTED extern xlink_error_t* xlink_error;
   
   unsigned char xlink_version(void);
   void xlink_set_debug(bool enabled);  

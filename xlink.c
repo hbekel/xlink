@@ -15,8 +15,6 @@
   #include <windows.h>
 #endif
 
-Driver* driver;
-
 #define XLINK_COMMAND_LOAD     0x01
 #define XLINK_COMMAND_SAVE     0x02
 #define XLINK_COMMAND_POKE     0x03
@@ -25,6 +23,9 @@ Driver* driver;
 #define XLINK_COMMAND_RUN      0x06
 #define XLINK_COMMAND_EXTEND   0x07
 #define XLINK_COMMAND_IDENTIFY 0xfe 
+
+Driver* driver;
+xlink_error_t* xlink_error;
 
 //------------------------------------------------------------------------------
 
