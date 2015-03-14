@@ -23,11 +23,11 @@ int extension_load(Extension *self) {
   
   bool result = false;
   
-  if (!xlink_save(0x37|0x80, 0x00, self->address, self->address+self->size, self->cache, self->size)) {
+  if (!xlink_save(0x37|0x80, 0x00, self->address, self->address+self->size, self->cache)) {
     goto done;
   }
   
-  if (xlink_load(0x37|0x80, 0x00, self->address, self->address+self->size, self->code, self->size)) {
+  if (xlink_load(0x37|0x80, 0x00, self->address, self->address+self->size, self->code)) {
     result = true;
   }
   
@@ -41,7 +41,7 @@ int extension_unload(Extension *self) {
   bool result = false;
 
   if(self->loaded) {
-    result = xlink_load(0x37|0x80, 0x00, self->address, self->address+self->size, self->cache, self->size);
+    result = xlink_load(0x37|0x80, 0x00, self->address, self->address+self->size, self->cache);
     self->loaded = !result;
   }  
   return result;  

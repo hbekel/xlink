@@ -682,7 +682,7 @@ bool command_load(Command* self) {
     return false;
   }      
 
-  if (!xlink_load(self->memory, self->bank, self->start, self->end, data, size)) {
+  if (!xlink_load(self->memory, self->bank, self->start, self->end, data)) {
     free(data);
     return false;
   }
@@ -747,7 +747,7 @@ bool command_save(Command* self) {
 
   command_print(self);
 
-  if(!xlink_save(self->memory, self->bank, self->start, self->end, data, size)) {
+  if(!xlink_save(self->memory, self->bank, self->start, self->end, data)) {
     free(data);
     fclose(file);
     return false;
@@ -1186,7 +1186,7 @@ bool command_benchmark(Command* self) {
     
   watch_start(watch);
   
-  xlink_load(0x37, 0x00, start, end, payload, sizeof(payload));
+  xlink_load(0x37, 0x00, start, end, payload);
   
   float seconds = (watch_elapsed(watch) / 1000.0);
   float kbs = sizeof(payload)/seconds/1024;
@@ -1197,7 +1197,7 @@ bool command_benchmark(Command* self) {
     
   watch_start(watch);
     
-  xlink_save(0x37, 0x00, start, end, roundtrip, sizeof(roundtrip));
+  xlink_save(0x37, 0x00, start, end, roundtrip);
   
   seconds = (watch_elapsed(watch) / 1000.0);
   kbs = sizeof(payload)/seconds/1024;

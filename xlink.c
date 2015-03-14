@@ -243,8 +243,8 @@ bool xlink_ready(void) {
   else {
     if(xlink_peek(0x37, 0x00, 0x9d, &mode)) {
       if(mode != 0x80) { 
-	// basic program running -> warm start basic
-	xlink_jump(0x37, 0x00, 0xfe66);
+        // basic program running -> warm start basic
+        xlink_jump(0x37, 0x00, 0xfe66);
         usleep(250*1000);
       }
     }
@@ -271,15 +271,34 @@ bool xlink_bootloader(void) {
 }
 
 //------------------------------------------------------------------------------
+static bool get_size(unsigned short start,
+                              unsigned short end,
+                              int* size) {
 
+  if(end != 0 && start > end) {
+    SET_ERROR(XLINK_ERROR_SERVER,
+              "start address 0x%04X > end address 0x%04X",
+              start, end);
+    return false;
+  }
+  
+  (*size) = end == 0 ? 0x10000-start : end - start;
+  return true;
+}
+
+//------------------------------------------------------------------------------
 bool xlink_load(unsigned char memory, 
-		unsigned char bank, 
-		unsigned short start, 
-		unsigned short end, 
-		unsigned char* data, 
-		int size) {
+                unsigned char bank, 
+                unsigned short start, 
+                unsigned short end, 
+                unsigned char* data) {
 
   bool result = false;
+  int size;
+
+  if(!get_size(start, end, &size)) {
+    goto done;
+  }
 
   if(driver->open()) {
     
@@ -306,14 +325,18 @@ bool xlink_load(unsigned char memory,
 //------------------------------------------------------------------------------
 
 bool xlink_save(unsigned char memory, 
-		unsigned char bank, 
-		unsigned short start, 
-		unsigned short end, 
-		unsigned char* data, 
-		int size) {
-
-  bool result = false;
+                unsigned char bank, 
+                unsigned short start, 
+                unsigned short end, 
+                unsigned char* data) {
   
+  bool result = false;
+  int size;
+
+  if(!get_size(start, end, &size)) {
+    goto done;
+  }
+
   if(driver->open()) {
 
     if(!driver->ping()) {
@@ -501,7 +524,7 @@ bool xlink_relocate(unsigned short address) {
 
   if(extension_load(relocate) && extension_init(relocate)) {
 
-    result = xlink_load(0x37|0x80, 0x00, address, address+size-2, (server+2), size-2);
+    result = xlink_load(0x37|0x80, 0x00, address, address+size-2, server+2);
 
     extension_unload(relocate);
   }
@@ -684,12 +707,21 @@ bool xlink_fill(unsigned char memory, unsigned char bank,
 		unsigned short start, unsigned short end,
 		unsigned char value) {
 
-  int size = end-start;
-    
+  bool result = false;
+  int size;
+
+  if(!get_size(start, end, &size)) {
+    goto done;
+  }
+
   unsigned char *data = (unsigned char*) calloc(size, sizeof(unsigned char));
   memset(data, value, size);
   
-  return xlink_load(memory, bank, start, end, data, size);
+  result = xlink_load(memory, bank, start, end, data);
+
+ done:
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------

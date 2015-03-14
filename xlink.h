@@ -61,11 +61,11 @@ extern "C" {
 
   bool xlink_load(unsigned char memory, unsigned char bank, 
                   unsigned short start, unsigned short end,
-                  unsigned char* data, int size);  
+                  unsigned char* data);  
 
   bool xlink_save(unsigned char memory, unsigned char bank, 
                   unsigned short start, unsigned short end,
-                  unsigned char* data, int size);
+                  unsigned char* data);
 
   bool xlink_peek(unsigned char memory, unsigned char bank, 
                   unsigned short address, unsigned char* value);
@@ -75,7 +75,7 @@ extern "C" {
 
   bool xlink_fill(unsigned char memory, unsigned char bank, 
                   unsigned short start, unsigned short end,
-		  unsigned char value);
+                  unsigned char value);
   
   bool xlink_jump(unsigned char memory, unsigned char bank,
                   unsigned short address);
