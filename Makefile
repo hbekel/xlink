@@ -68,6 +68,7 @@ xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h xlink.lib-c
 	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c range.c -L. -lxlink
 
 xlink.lib: xlink.dll
+	dos2unix tools/make-msvc-lib.sh
 	sh tools/make-msvc-lib.sh
 
 xlink.lib-clean:
