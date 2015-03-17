@@ -28,14 +28,18 @@
 extern "C" {
 #endif
 
+  typedef unsigned char uchar;
+  typedef unsigned short ushort;
+  typedef unsigned int uint;
+  
   typedef struct {
-    unsigned char version;  // high byte mayor, low byte minor
-    unsigned char machine;  // XLINK_MACHINE_C64
-    unsigned char type;     // XLINK_SERVER_TYPE_{RAM|ROM}
-    unsigned short start;   // server start address
-    unsigned short end;     // server end address
-    unsigned short length;  // server code length
-    unsigned short memtop;  // current top of (lower) memory (0xa000 or 0x8000)
+    uchar version;  // high byte major, low byte minor
+    uchar machine;  // XLINK_MACHINE_C64
+    uchar type;     // XLINK_SERVER_TYPE_{RAM|ROM}
+    ushort start;   // server start address
+    ushort end;     // server end address
+    ushort length;  // server code length
+    ushort memtop;  // current top of (lower) memory (0xa000 or 0x8000)
   } xlink_server_info;
 
   typedef struct {
@@ -46,37 +50,25 @@ extern "C" {
   
   IMPORTED extern xlink_error_t* xlink_error;
   
-  unsigned char xlink_version(void);
-  void xlink_set_debug(bool enabled);  
+  uchar xlink_version(void);
+  void xlink_set_debug(bool enabled);
 
   bool xlink_has_device(void);  
   bool xlink_set_device(char* path);
   char* xlink_get_device(void);
 
   bool xlink_identify(xlink_server_info* server);
-  bool xlink_relocate(unsigned short address);
+  bool xlink_relocate(ushort address);
 
   bool xlink_ping(void);
   bool xlink_reset(void);
   bool xlink_ready(void);
 
-  bool xlink_load(unsigned char memory, unsigned char bank, 
-                  unsigned short address, unsigned char* data,
-		  unsigned int size);  
-
-  bool xlink_save(unsigned char memory, unsigned char bank, 
-                  unsigned short address, unsigned char* data,
-		  unsigned int size);
-
-  bool xlink_peek(unsigned char memory, unsigned char bank, 
-                  unsigned short address, unsigned char* value);
-
-  bool xlink_poke(unsigned char memory, unsigned char bank, 
-                  unsigned short address, unsigned char value);
-
-  bool xlink_jump(unsigned char memory, unsigned char bank,
-                  unsigned short address);
-
+  bool xlink_load(uchar memory, uchar bank, ushort address, uchar* data, uint size);  
+  bool xlink_save(uchar memory, uchar bank, ushort address, uchar* data, uint size);
+  bool xlink_peek(uchar memory, uchar bank, ushort address, uchar* value);
+  bool xlink_poke(uchar memory, uchar bank, ushort address, uchar value);
+  bool xlink_jump(uchar memory, uchar bank, ushort address);
   bool xlink_run(void);
     
 #ifdef __cplusplus
