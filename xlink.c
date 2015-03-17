@@ -272,34 +272,16 @@ bool xlink_bootloader(void) {
 }
 
 //------------------------------------------------------------------------------
-static bool get_size(unsigned short start,
-                              unsigned short end,
-                              int* size) {
 
-  if(end != 0 && start > end) {
-    SET_ERROR(XLINK_ERROR_SERVER,
-              "start address 0x%04X > end address 0x%04X",
-              start, end);
-    return false;
-  }
-  
-  (*size) = end == 0 ? 0x10000-start : end - start;
-  return true;
-}
-
-//------------------------------------------------------------------------------
 bool xlink_load(unsigned char memory, 
                 unsigned char bank, 
-                unsigned short start, 
-                unsigned short end, 
-                unsigned char* data) {
+                unsigned short address, 
+                unsigned char* data,
+		unsigned int size) {
 
   bool result = false;
-  int size;
-
-  if(!get_size(start, end, &size)) {
-    goto done;
-  }
+  unsigned short start = address;
+  unsigned short end = start + size;
 
   if(driver->open()) {
     
@@ -327,16 +309,13 @@ bool xlink_load(unsigned char memory,
 
 bool xlink_save(unsigned char memory, 
                 unsigned char bank, 
-                unsigned short start, 
-                unsigned short end, 
-                unsigned char* data) {
+                unsigned short address, 
+                unsigned char* data,
+		unsigned int size) {
   
   bool result = false;
-  int size;
-
-  if(!get_size(start, end, &size)) {
-    goto done;
-  }
+  unsigned short start = address;
+  unsigned short end = start + size;
 
   if(driver->open()) {
 
@@ -525,7 +504,7 @@ bool xlink_relocate(unsigned short address) {
 
   if(extension_load(relocate) && extension_init(relocate)) {
 
-    result = xlink_load(0x37|0x80, 0x00, address, address+size-2, server+2);
+    result = xlink_load(0x37|0x80, 0x00, address, server+2, size-2);
 
     extension_unload(relocate);
   }

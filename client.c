@@ -651,6 +651,10 @@ bool command_load(Command* self) {
     self->end = self->start + size;
   }
 
+  if(self->end - self->start < size) {
+    size = self->end - self->start;
+  }
+
   if (self->memory == 0xff) {
 
     Range* io = range_new(0xd000, 0xc000);
@@ -682,7 +686,7 @@ bool command_load(Command* self) {
     return false;
   }      
 
-  if (!xlink_load(self->memory, self->bank, self->start, self->end, data)) {
+  if (!xlink_load(self->memory, self->bank, self->start, data, size)) {
     free(data);
     return false;
   }
@@ -747,7 +751,7 @@ bool command_save(Command* self) {
 
   command_print(self);
 
-  if(!xlink_save(self->memory, self->bank, self->start, self->end, data)) {
+  if(!xlink_save(self->memory, self->bank, self->start, data, size)) {
     free(data);
     fclose(file);
     return false;
@@ -883,7 +887,7 @@ bool command_fill(Command* self) {
   unsigned char *data = (unsigned char*) calloc(size, sizeof(unsigned char));
   memset(data, value, size);
 
-  result = xlink_load(self->memory, self->bank, self->start, self->end, data);  
+  result = xlink_load(self->memory, self->bank, self->start, data, size);  
 
   free(data);
   
@@ -1194,7 +1198,6 @@ bool command_benchmark(Command* self) {
   unsigned char roundtrip[sizeof(payload)];
     
   int start = 0x1000;
-  int end = start + sizeof(payload);
     
   if (!xlink_ping()) {
     logger->error("no response from server");
@@ -1211,7 +1214,7 @@ bool command_benchmark(Command* self) {
     
   watch_start(watch);
   
-  xlink_load(0x37, 0x00, start, end, payload);
+  xlink_load(0x37, 0x00, start, payload, sizeof(payload));
   
   float seconds = (watch_elapsed(watch) / 1000.0);
   float kbs = sizeof(payload)/seconds/1024;
@@ -1222,7 +1225,7 @@ bool command_benchmark(Command* self) {
     
   watch_start(watch);
     
-  xlink_save(0x37, 0x00, start, end, roundtrip);
+  xlink_save(0x37, 0x00, start, roundtrip, sizeof(roundtrip));
   
   seconds = (watch_elapsed(watch) / 1000.0);
   kbs = sizeof(payload)/seconds/1024;
