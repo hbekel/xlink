@@ -68,9 +68,9 @@ irq: {
 	bne !next+
 	jmp run
 
-!next:	cpy #Command.extend
+!next:	cpy #Command.inject
 	bne !next+
-	jmp extend
+	jmp inject
 
 !next:	cpy #Command.identify
 	bne !next+
@@ -248,7 +248,7 @@ run: {
 
 //------------------------------------------------------------------------------
 	
-extend:	{
+inject:	{
 	lda #>return pha
 	lda #<return pha
 	
@@ -258,6 +258,7 @@ extend:	{
 	rts
 	
 return: nop
+	:ack()
 	jmp sysirq
 }
 

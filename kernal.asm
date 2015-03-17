@@ -96,9 +96,9 @@ irq: {
 	bne !next+
 	jmp run
 
-!next:	cpy #Command.extend
+!next:	cpy #Command.inject
 	bne !next+
-	jmp extend
+	jmp inject
 
 !next:	cpy #Command.identify
 	bne !next+
@@ -385,16 +385,17 @@ eof:
 
 //------------------------------------------------------------------------------	
 	
-extend:	{
+inject:	{
 	lda #>return pha
 	lda #<return pha
 	
 	jsr read txa pha 
 	jsr read txa pha
-	
+
 	rts
 	
 return: nop
+	:ack()
 	jmp irq.done
 eof:	
 }
@@ -499,13 +500,6 @@ eof:
 	.var count = end-start
 
         .return " " + toIntString(offset) + " " + toIntString(count)
-	
-/*
-        .return "dd conv=notrunc if=kernal.bin of=xlink-kernal.rom bs=1 " +
-	        "skip=" + toIntString(offset) + " " +
-	        "seek=" + toIntString(offset) + " " +
-	        "count=" + toIntString(count)
-*/
 }
 
 
@@ -531,7 +525,7 @@ eof:
 .eval command = command + patch(peek, peek.eof)	
 .eval command = command + patch(jump, jump.eof)
 .eval command = command + patch(run, run.eof)
-.eval command = command + patch(extend, extend.eof)
+.eval command = command + patch(inject, inject.eof)
 .eval command = command + patch(identify, identify.eof)
 .eval command = command + patch(memoryCheck, memoryCheck.eof)
 

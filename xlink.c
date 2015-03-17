@@ -21,7 +21,7 @@
 #define XLINK_COMMAND_PEEK     0x04
 #define XLINK_COMMAND_JUMP     0x05
 #define XLINK_COMMAND_RUN      0x06
-#define XLINK_COMMAND_EXTEND   0x07
+#define XLINK_COMMAND_INJECT   0x07
 #define XLINK_COMMAND_IDENTIFY 0xfe 
 
 Driver* driver;
@@ -461,9 +461,21 @@ bool xlink_run(void) {
 
 //------------------------------------------------------------------------------
 
-bool xlink_extend(int address) {
+bool xlink_inject(ushort address, uchar* code, uint size) {
 
   bool result = false;
+  uchar memory = 0x80|0x37;
+  uchar bank = 0x00;
+  
+  uchar *cache = (uchar*) calloc(size, sizeof(uchar));
+
+  if(!xlink_save(memory, bank, address, cache, size)) {
+    goto done;
+  }
+  
+  if(!xlink_load(memory, bank, address, code, size)) {
+    goto done;
+  }
   
   if(driver->open()) {
   
@@ -478,16 +490,23 @@ bool xlink_extend(int address) {
     address--;
 
     driver->output();
-    driver->send((unsigned char []) {XLINK_COMMAND_EXTEND, hi(address), lo(address)}, 3);
+    driver->send((unsigned char []) {XLINK_COMMAND_INJECT, hi(address), lo(address)}, 3);
 
+    driver->wait(0);
+    
     driver->close();
     result = true;
   }
+
+  xlink_load(memory, bank, address, cache, size);
   
  done:
+  free(cache);
+  
   CLEAR_ERROR_IF(result);
   return result;
 }
+
 
 //------------------------------------------------------------------------------
 
@@ -502,11 +521,8 @@ bool xlink_relocate(unsigned short address) {
   int size;
   unsigned char* server = xlink_server(address, &size);  
 
-  if(extension_load(relocate) && extension_init(relocate)) {
-
+  if(extension_init(relocate)) {
     result = xlink_load(0x37|0x80, 0x00, address, server+2, size-2);
-
-    extension_unload(relocate);
   }
   
   extension_free(relocate);  
@@ -526,8 +542,7 @@ bool xlink_drive_status(char* status) {
   Extension *lib = EXTENSION_LIB;
   Extension *drive_status = EXTENSION_DRIVE_STATUS;
 
-  if (extension_load(lib) && 
-      extension_load(drive_status) && 
+  if (extension_preload(lib) && 
       extension_init(drive_status)) {
 
     if (driver->open()) {
@@ -551,7 +566,6 @@ bool xlink_drive_status(char* status) {
       result = true;
     }
     extension_unload(lib);
-    extension_unload(drive_status);
   }
 
   extension_free(lib);
@@ -576,8 +590,7 @@ bool xlink_dos(char* cmd) {
     command[i] = toupper(cmd[i]);
   }      
 
-  if(extension_load(lib) && 
-     extension_load(dos_command) && 
+  if(extension_preload(lib) && 
      extension_init(dos_command)) {
     
     if(driver->open()) {   
@@ -592,7 +605,6 @@ bool xlink_dos(char* cmd) {
       result = true;
     }
     extension_unload(lib);
-    extension_unload(dos_command);
   }
   
   free(command);
@@ -613,8 +625,7 @@ bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char*
   Extension *lib = EXTENSION_LIB;
   Extension *sector_read = EXTENSION_SECTOR_READ;
 
-  if (extension_load(lib) && 
-      extension_load(sector_read) && 
+  if (extension_preload(lib) && 
       extension_init(sector_read)) {
 
     if (driver->open()) {
@@ -634,7 +645,6 @@ bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char*
       result = true;
     }
     extension_unload(lib);
-    extension_unload(sector_read);
   }
 
   extension_free(lib);
@@ -654,8 +664,7 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
   Extension *lib = EXTENSION_LIB;
   Extension *sector_write = EXTENSION_SECTOR_WRITE;
 
-  if (extension_load(lib) && 
-      extension_load(sector_write) && 
+  if (extension_preload(lib) && 
       extension_init(sector_write)) {
 
     if (driver->open()) {
@@ -671,7 +680,6 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
       result = true;
     }
     extension_unload(lib);
-    extension_unload(sector_write);
   }
   
   extension_free(lib);

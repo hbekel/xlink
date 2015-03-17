@@ -12,9 +12,9 @@ typedef struct {
 } Extension;
 
 Extension *extension_new(unsigned short address, unsigned short size, unsigned char* code);
-int extension_load(Extension *self);
-int extension_init(Extension *self);
+int extension_preload(Extension *self);
 int extension_unload(Extension *self);
+int extension_init(Extension *self);
 void extension_free(Extension *self);
 
 #endif // EXTENSION_H

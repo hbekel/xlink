@@ -68,6 +68,8 @@ extern "C" {
   bool xlink_save(uchar memory, uchar bank, ushort address, uchar* data, uint size);
   bool xlink_peek(uchar memory, uchar bank, ushort address, uchar* value);
   bool xlink_poke(uchar memory, uchar bank, ushort address, uchar value);
+
+  bool xlink_inject(ushort address, uchar* code, uint size);
   bool xlink_jump(uchar memory, uchar bank, ushort address);
   bool xlink_run(void);
     

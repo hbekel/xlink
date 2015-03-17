@@ -21,7 +21,7 @@
 .label peek        = $04
 .label jump        = $05
 .label run         = $06
-.label extend      = $07
+.label inject      = $07
 .label identify    = $fe
 }
 	

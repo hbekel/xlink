@@ -19,15 +19,17 @@ Extension *extension_new(unsigned short address, unsigned short size, unsigned c
   return extension;
 }
 
-int extension_load(Extension *self) {
+int extension_preload(Extension *self) {
   
   bool result = false;
+  uchar memory = 0x80|0x37;
+  uchar bank = 0x00;
   
-  if (!xlink_save(0x37|0x80, 0x00, self->address, self->cache, self->size)) {
+  if (!xlink_save(memory, bank, self->address, self->cache, self->size)) {
     goto done;
   }
   
-  if (xlink_load(0x37|0x80, 0x00, self->address, self->code, self->size)) {
+  if (xlink_load(memory, bank, self->address, self->code, self->size)) {
     result = true;
   }
   
@@ -39,16 +41,18 @@ int extension_load(Extension *self) {
 int extension_unload(Extension *self) {
 
   bool result = false;
+  uchar memory = 0x80|0x37;
+  uchar bank = 0x00;
 
   if(self->loaded) {
-    result = xlink_load(0x37|0x80, 0x00, self->address, self->cache, self->size);
+    result = xlink_load(memory, bank, self->address, self->cache, self->size);
     self->loaded = !result;
   }  
   return result;  
 }
 
 int extension_init(Extension *self) {
-  return xlink_extend(self->address);  
+  return xlink_inject(self->address, self->code, self->size);  
 }
 
 void extension_free(Extension *self) {
