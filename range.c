@@ -1,6 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
+#include <ctype.h>
+
 #include "range.h"
 
 Range* range_new(int start, int end) {
@@ -13,12 +16,47 @@ Range* range_new(int start, int end) {
   return self;
 }
 
+Range* range_parse(char *str) {
+
+  Range* self = range_new(0, 0x10000);
+
+  if(strlen(str) == 0) {
+    return self;
+  }
+  
+  char *start = str;
+  char *end = strstr(str, "-");
+
+  if(end != NULL) {
+    end++;
+  }
+  
+  while(isspace(start[0])) start++;
+  
+  if(strlen(start) > 0 && start[0] != '-') {
+    self->start = (int) strtol(start, NULL, 0);
+  }
+
+  if(end == NULL) {
+    self->end = -1;
+  }
+  else {
+    while(isspace(end[0])) end++;
+    
+    if(strlen(end) > 0) {
+      self->end = (int) strtol(end, NULL, 0);
+    }
+  }
+  return self;
+}
+
 bool range_valid(Range* self) {
   return
     self->start >= self->min &&
     self->start <= self->max &&
     self->end >= self->min &&
-    self->end <= self->max;
+    self->end <= self->max &&
+    self->end >= self->start;
 }
 
 void range_print(Range* self) {
@@ -31,6 +69,10 @@ int range_size(Range* self) {
 
 bool range_equals(Range* self, Range* range) {
   return self->start == range->start && self->end == range->end;
+}
+
+bool range_ends(Range* self) {
+  return self->end != -1;
 }
 
 void range_move(Range* self, int amount) {

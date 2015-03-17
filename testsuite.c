@@ -12,6 +12,23 @@ void check(bool condition, const char* message) {
   }
 }
 
+void test_parse(char *str, int start, int end) {
+
+  Range* range = range_new(start, end);
+  Range* parsed = range_parse(str);
+
+  printf("Parsing \"%s\", expecting ", str);
+  range_print(range);
+  
+  printf(range_equals(range, parsed) ? "OK: " : "FAIL: ");
+  range_print(parsed);
+
+  check(range_equals(range, parsed), "Parsing failed...");
+	 
+  free(range);
+  free(parsed);
+}
+
 void test_range() {
   
   Range* range = range_new(0x0801, 0x3000);
@@ -84,6 +101,16 @@ void test_range() {
   free(range);
   free(other);
 
+  test_parse("1-5", 1, 5);
+  test_parse(" 1 - 5", 1, 5);
+  test_parse("", 0, 0x10000);
+  test_parse("5-", 5, 0x10000);
+  test_parse("5 -  ", 5, 0x10000);
+  test_parse("-200", 0, 200);
+  test_parse(" -  200", 0, 200);
+  test_parse("0xd000-0x10000", 0xd000, 0x10000);
+  test_parse("0xa000", 0xa000, -1);
+  
   printf("passed range tests\n");
 }
 

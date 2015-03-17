@@ -306,7 +306,7 @@ int command_arity(Command* self) {
   if (self->id == COMMAND_SERVER)     return 1;
   if (self->id == COMMAND_RELOCATE)   return 1;
   if (self->id == COMMAND_KERNAL)     return 2;    
-  if (self->id == COMMAND_FILL)       return 1;    
+  if (self->id == COMMAND_FILL)       return 2;    
   return 0;
 
 }
@@ -838,28 +838,29 @@ bool command_peek(Command* self) {
 bool command_fill(Command* self) {
 
   bool result = false;
-  
-  if(self->start == -1 || self->end == -1) {
-    logger->error("no memory range specified");
+
+  if (self->argc == 0) {
+    logger->error("no arguments given");
     goto done;
   }
 
-  if(self->end != 0 && self->start > self->end) {
-    logger->error("start address 0x%04X > end address 0x%04X",
-                  self->start, self->end);
-    goto done;
-  }
-    
-  if (self->argc == 0) {
+  if(self->argc == 1) {
     logger->error("no value specified");
     goto done;
   }
 
-  int size = self->end == 0 ?
-    0x10000-self->start :
-    self->end - self->start;
+  Range *range = range_parse(self->argv[0]);
 
+  if(!range_ends(range)) {
+    range->end = 0x10000;
+  }
 
+  if(!range_valid(range)) {
+    logger->error("Invalid memory range: $%04X-$%04X", range->start, range->end);
+    free(range);
+    goto done;
+  }
+  
   unsigned char value = (unsigned char) strtol(self->argv[0], NULL, 0);
 
   if (self->memory == 0xff)
@@ -868,12 +869,17 @@ bool command_fill(Command* self) {
   if (self->bank == 0xff)
     self->bank = 0x00;
 
+  self->start = range->start;
+  self->end = range->end;
+  free(range);
+  
   command_print(self);
 
   if(!command_server_usable_after_possible_relocation(self)) {
     goto done;
   }      
 
+  int size = range_size(range);
   unsigned char *data = (unsigned char*) calloc(size, sizeof(unsigned char));
   memset(data, value, size);
 
@@ -1914,7 +1920,7 @@ void usage(void) {
   printf("          save  [<opts>] <file>        : save C64 memory to file\n");
   printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
   printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
-  printf("          fill  -a<addr> <val>         : fill memory area with byte\n");
+  printf("          fill  <range>  <val>         : fill memory range with value\n");
   printf("          jump  [<opts>] <addr>        : jump to specified address\n");
   printf("          run   [<opts>] [<file>]      : run program, optionally load it before\n");
   printf("          <file>...                    : load file(s) and run last file\n");
