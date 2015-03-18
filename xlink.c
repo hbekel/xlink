@@ -507,6 +507,41 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
   return result;
 }
 
+//------------------------------------------------------------------------------
+
+bool xlink_send(uchar* data, uint size) {
+
+  bool result = false;
+
+  if(driver->open()) {
+
+    driver->output();
+    driver->send(data, size);
+    driver->close();
+    result = true;
+  }
+
+  CLEAR_ERROR_IF(result);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+
+bool xlink_receive(uchar *data, uint size) {
+  bool result = false;
+
+  if(driver->open()) {
+
+    driver->input();
+    driver->strobe();
+    driver->receive(data, size);
+    driver->close();
+    result = true;
+  }
+
+  CLEAR_ERROR_IF(result);
+  return result;
+}
 
 //------------------------------------------------------------------------------
 
