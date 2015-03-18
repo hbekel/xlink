@@ -277,7 +277,7 @@ bool xlink_load(unsigned char memory,
                 unsigned char bank, 
                 unsigned short address, 
                 unsigned char* data,
-		unsigned int size) {
+                unsigned int size) {
 
   bool result = false;
   unsigned short start = address;

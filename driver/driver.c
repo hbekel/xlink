@@ -226,7 +226,7 @@ bool _driver_ready() {
 //------------------------------------------------------------------------------
 
 bool _driver_open()                                 { return driver->_open(); }
-void _driver_close()                                { driver->_close(); }
+void _driver_close()                                { driver->input(); driver->_close(); }
 void _driver_strobe()                               { driver->_strobe(); }
 unsigned char _driver_read(void)                    { return driver->_read(); }
 void _driver_write(unsigned char value)             { driver->_write(value); }
