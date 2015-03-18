@@ -468,10 +468,6 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
   uchar bank = 0x00;
   
   uchar *cache = (uchar*) calloc(size, sizeof(uchar));
-
-  if(!xlink_save(memory, bank, address, cache, size)) {
-    goto done;
-  }
   
   if(!xlink_load(memory, bank, address, code, size)) {
     goto done;
@@ -491,14 +487,10 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
 
     driver->output();
     driver->send((unsigned char []) {XLINK_COMMAND_INJECT, hi(address), lo(address)}, 3);
-
-    driver->wait(0);
     
     driver->close();
     result = true;
   }
-
-  xlink_load(memory, bank, address, cache, size);
   
  done:
   free(cache);

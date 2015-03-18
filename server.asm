@@ -258,7 +258,6 @@ inject:	{
 	rts
 	
 return: nop
-	:ack()
 	jmp sysirq
 }
 

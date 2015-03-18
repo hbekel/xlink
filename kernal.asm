@@ -395,7 +395,6 @@ inject:	{
 	rts
 	
 return: nop
-	:ack()
 	jmp irq.done
 eof:	
 }
