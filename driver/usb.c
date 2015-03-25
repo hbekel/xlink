@@ -73,9 +73,6 @@ void driver_usb_lookup(char *path, DeviceInfo *info) {
     info->serial = colon+1;
   }
 #endif
-
-  logger->trace("%s: vid: %04x pid: %04x bus: %d addr: %d serial: %s",
-		path, info->vid, info->pid, info->bus, info->address, info->serial);
 }
 
 //------------------------------------------------------------------------------
@@ -175,7 +172,6 @@ libusb_device_handle* driver_usb_open_device(libusb_context* context, DeviceInfo
 
 bool driver_usb_open() {
 
-  const struct libusb_version* version;
   DeviceInfo info;
   int result;
 
@@ -183,11 +179,7 @@ bool driver_usb_open() {
     SET_ERROR(XLINK_ERROR_LIBUSB, "could not initialize libusb-1.0: %d", result);
     return false;
   }
-  version = libusb_get_version();
   
-  logger->trace("initialized libusb-%d.%d.%d.%d",
-		version->major, version->minor, version->micro, version->nano);
-
   driver_usb_lookup(driver->path, &info);
   
   handle = driver_usb_open_device(NULL, &info);
