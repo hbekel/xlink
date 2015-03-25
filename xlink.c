@@ -406,6 +406,29 @@ bool xlink_poke(unsigned char memory,
 
 //------------------------------------------------------------------------------
 
+bool xlink_fill(unsigned char memory,
+		unsigned char bank,
+		unsigned short address,
+		unsigned char value,
+		unsigned int size) {
+
+  bool result = false;
+
+  uchar* data = (uchar*) calloc(size, sizeof(uchar));
+  memset(data, value, size);
+
+  for(int i=0; i<size; i++) {
+    printf("%02X\n", data[i]);
+  }
+
+  result = xlink_load(memory, bank, address, data, size);
+
+  free(data);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+
 bool xlink_jump(unsigned char memory, 
 		unsigned char bank, 
 		unsigned short address) {

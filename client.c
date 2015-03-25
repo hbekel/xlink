@@ -865,7 +865,7 @@ bool command_fill(Command* self) {
     goto done;
   }
   
-  unsigned char value = (unsigned char) strtol(self->argv[0], NULL, 0);
+  unsigned char value = (unsigned char) strtol(self->argv[1], NULL, 0);
 
   if (self->memory == 0xff)
     self->memory = 0x37;
@@ -873,8 +873,11 @@ bool command_fill(Command* self) {
   if (self->bank == 0xff)
     self->bank = 0x00;
 
+  int size = range_size(range);
+  
   self->start = range->start;
   self->end = range->end;
+  
   free(range);
   
   command_print(self);
@@ -883,13 +886,7 @@ bool command_fill(Command* self) {
     goto done;
   }      
 
-  int size = range_size(range);
-  unsigned char *data = (unsigned char*) calloc(size, sizeof(unsigned char));
-  memset(data, value, size);
-
-  result = xlink_load(self->memory, self->bank, self->start, data, size);  
-
-  free(data);
+  result = xlink_fill(self->memory, self->bank, self->start, value, size);  
   
  done:
   return result;
