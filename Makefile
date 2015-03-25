@@ -1,6 +1,6 @@
 PREFIX=/usr
 SYSCONFDIR=/etc
-KASM=java -jar /usr/share/kickassembler/KickAss.jar
+KASM?=java -jar /usr/share/kickassembler/KickAss.jar
 GCC-MINGW32=i686-pc-mingw32-gcc
 
 VERSION=0.9
