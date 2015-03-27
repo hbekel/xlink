@@ -131,6 +131,7 @@ bool xlink_identify(xlink_server_info* server) {
 
   bool result = false;
   unsigned char data[9];
+  unsigned char size;
   
   if(driver->open()) {
     
@@ -145,7 +146,11 @@ bool xlink_identify(xlink_server_info* server) {
     
     driver->input();
     driver->strobe();
-    
+
+    driver->receive(&size, 1);
+    size &= 0x0f;
+
+    driver->receive((uchar*) (server->id), size);    
     driver->receive(data, 9);
 
     driver->close();
@@ -159,6 +164,8 @@ bool xlink_identify(xlink_server_info* server) {
       SET_ERROR(XLINK_ERROR_SERVER, "unknown server (does not support identification)");
       goto done;
     }
+
+    server->id[size] = '\0';
     
     server->version = data[0];
     server->machine = data[1];

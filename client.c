@@ -1255,11 +1255,13 @@ bool command_identify(Command *self) {
   
   if(xlink_identify(&server)) {
 
-    logger->info("%s %s-based server v%d.%d $%04X-$%04X (%d bytes) (memtop $%04X)",
-                 server.machine == XLINK_MACHINE_C64 ? "C64" : "Unknown",
-                 server.type == XLINK_SERVER_TYPE_RAM ? "RAM" : "ROM",
-                 (server.version & 0xf0) >> 4, server.version & 0x0f,
-                 server.start, server.end, server.length, server.memtop);
+    printf("%s %d.%d %s %s $%04X-$%04X\n",
+           server.id,
+           (server.version & 0xf0) >> 4, server.version & 0x0f,
+           server.machine == XLINK_MACHINE_C64 ? "C64" : "Unknown",
+           server.type == XLINK_SERVER_TYPE_RAM ? "RAM" : "ROM",
+           server.start, server.end);
+
     return true;
   }
   return false;

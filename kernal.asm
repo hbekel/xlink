@@ -406,25 +406,43 @@ identify: {
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 
-        lda #Server.version
+        lda Server.size
         :write()
 
-        lda #Server.machine
+        lda Server.id
         :write()
 
-        lda #Server.type
+        lda Server.id+1
+        :write()
+
+        lda Server.id+2
+        :write()
+
+        lda Server.id+3
+        :write()
+
+        lda Server.id+4
+        :write()        
+        
+        lda Server.version
+        :write()
+
+        lda Server.machine
+        :write()
+
+        lda Server.type
         :write()       
 
-        lda #<Server.start
+        lda Server.start
         :write()
 
-        lda #>Server.start
+        lda Server.start+1
         :write()
 
-        lda #<Server.end
+        lda Server.end
         :write()
 
-        lda #>Server.end
+        lda Server.end+1
         :write()        
 
 	lda memtop
@@ -440,7 +458,8 @@ done:   lda #$00   // reset CIA2 port B to input
 eof:    
 }
 
-//------------------------------------------------------------------------------	                
+//------------------------------------------------------------------------------
+        
 memoryCheck: { // relocated original memory check routine 
 
 high:	inc $c2
@@ -473,15 +492,20 @@ done:  	tya
 eof:	
 }
 
-//------------------------------------------------------------------------------	
-	
-.namespace Server {
-.label start   = irq
-.label version = $10
-.label type    = $01 // 0 = RAM, 1 = ROM
-.label machine = $00 // 0 = C64
-.label end     = *
+//------------------------------------------------------------------------------
+        
+Server: {
+size:    .byte $05
+id:      .byte 'X', 'L', 'I', 'N', 'K'
+start:   .word irq
+version: .byte $10
+type:    .byte $01 // 0 = RAM, 1 = ROM
+machine: .byte $00 // 0 = C64
+end:     .word *
+eof:   
 }
+        
+//------------------------------------------------------------------------------	
 	
 //------------------------------------------------------------------------------	
 	
@@ -527,6 +551,7 @@ eof:
 .eval command = command + patch(inject, inject.eof)
 .eval command = command + patch(identify, identify.eof)
 .eval command = command + patch(memoryCheck, memoryCheck.eof)
+.eval command = command + patch(Server, Server.eof)        
 
 .print command
 //------------------------------------------------------------------------------			

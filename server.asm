@@ -268,6 +268,24 @@ identify: {
 	lda #$ff       // and set CIA2 port B to output
 	sta $dd03
 
+        lda Server.size
+        jsr write
+  
+        lda Server.id
+        jsr write
+
+        lda Server.id+1
+        jsr write
+
+        lda Server.id+2
+        jsr write
+
+        lda Server.id+3
+        jsr write
+
+        lda Server.id+4
+        jsr write
+  
         lda Server.version   
         jsr write
 
@@ -330,6 +348,8 @@ write: {
 //------------------------------------------------------------------------------	
 	
 Server:	{
+size:    .byte $05
+id:      .byte 'X', 'L', 'I', 'N', 'K'
 start:	 .word install
 version: .byte $10
 type:	 .byte $00 // 0 = RAM, 1 = ROM

@@ -33,6 +33,7 @@ extern "C" {
   typedef unsigned int uint;
   
   typedef struct {
+    char id[16];    // server identification
     uchar version;  // high byte major, low byte minor
     uchar machine;  // XLINK_MACHINE_C64
     uchar type;     // XLINK_SERVER_TYPE_{RAM|ROM}
