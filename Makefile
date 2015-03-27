@@ -4,15 +4,10 @@ KASM?=java -jar /usr/share/kickassembler/KickAss.jar
 GCC-MINGW32=i686-pc-mingw32-gcc
 
 VERSION=0.9
-USB_MANUFACTURER="Henning Bekel <h.bekel@googlemail.com>"
-USB_PRODUCT="xlink usb adapter"
-
-USB_VID:=$(USB_VID)
-USB_PID:=$(USB_PID)
-USB_SERIAL:=$(USB_SERIAL)
+XLINK_SERIAL:=$(XLINK_SERIAL)
 
 GCC=gcc
-CFLAGS=-DUSB_VID=$(USB_VID) -DUSB_PID=$(USB_PID) -DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -O3 -I.
+CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -O3 -I.
 
 INPOUT32=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries
 
@@ -124,12 +119,8 @@ etc/udev/rules.d/10-xlink.rules: tools/make-udev-rules.sh
 
 firmware: driver/at90usb162/xlink.c driver/at90usb162/xlink.h
 	(cd driver/at90usb162 && \
-		make USB_PID=$(USB_PID) \
-		     USB_VID=$(USB_VID) \
-		     USB_SERIAL=$(USB_SERIAL) \
-		     USB_MANUFACTURER=$(USB_MANUFACTURER) \
-		     USB_PRODUCT=$(USB_PRODUCT) && \
-		echo -e "\nFIRMWARE SERIAL NUMBER: $(USB_SERIAL)")
+		make XLINK_SERIAL=$(XLINK_SERIAL) && \
+		echo -e "\nFIRMWARE SERIAL NUMBER: $(XLINK_SERIAL)")
 
 firmware-clean:
 	(cd driver/at90usb162 && make clean)

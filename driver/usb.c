@@ -15,14 +15,6 @@
 #include "util.h"
 #include "target.h"
 
-#if !(USB_VID + 0)
-#error "Define an environment variable named USB_VID that contains the usb vendor id"
-#endif
-
-#if !(USB_PID + 0)
-#error "Define an environment variable named USB_PID that contains the usb product id"
-#endif
-
 #define DRIVER_USB_MAX_PAYLOAD_SIZE 4096
 #define MESSAGE_TIMEOUT 60000
 
@@ -37,8 +29,8 @@ static unsigned char response[1];
 
 void driver_usb_lookup(char *path, DeviceInfo *info) {
 
-  info->vid     = USB_VID;
-  info->pid     = USB_PID;
+  info->vid     = 0x1d50;
+  info->pid     = 0x60c8;
   info->bus     = -1;
   info->address = -1;
   info->serial  = NULL;
