@@ -7,6 +7,8 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "target.h"
 #include "client.h"
@@ -14,11 +16,6 @@
 #include "disk.h"
 #include "util.h"
 #include "xlink.h"
-
-#if linux
-  #include <readline/readline.h>
-  #include <readline/history.h>
-#endif 
 
 #define COMMAND_NONE       0x00
 #define COMMAND_LOAD       0x01
@@ -1370,6 +1367,8 @@ bool command_kernal(Command *self) {
   fwrite(image, sizeof(unsigned char), 0x2000, file);
   fclose(file);
 
+  logger->info("patched %s", outputfile);
+  
   result = true;
     
  done:
@@ -1693,12 +1692,10 @@ int main(int argc, char **argv) {
       return EXIT_SUCCESS;
     } 
 
-#if linux
     if (strcmp(argv[0], "shell") == 0) {
       shell();
       return EXIT_SUCCESS;   
     }
-#endif
   }
 
   commands = commands_new(argc, argv);
@@ -1713,8 +1710,6 @@ int main(int argc, char **argv) {
 }
 
 //------------------------------------------------------------------------------
-
-#if linux
 
 static char* known_commands[22] = { 
   "help",
@@ -1872,7 +1867,6 @@ void shell(void) {
   shell_save_history();
   printf("\n");
 }
-#endif
 
 //------------------------------------------------------------------------------
 
@@ -1905,9 +1899,7 @@ void usage(void) {
   printf("\n");
   printf("Commands:\n");
   printf("          help  [<command>]            : show detailed help for command\n");
-#if linux
   printf("          shell                        : enter interactive command shell\n");
-#endif
   printf("\n");
   printf("          kernal <infile> <outfile>    : patch kernal image to include server\n");
   printf("          server [-a<addr>] <file>     : create server and save to file\n");

@@ -9,6 +9,7 @@ xlink
 *.d64
 *.bin
 *.rom
+readline*
 testsuite
 extensions.c
 server.c

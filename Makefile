@@ -1,7 +1,7 @@
 PREFIX=/usr
 SYSCONFDIR=/etc
 KASM?=java -jar /usr/share/kickassembler/KickAss.jar
-GCC-MINGW32=i686-pc-mingw32-gcc
+GCC-MINGW32=i686-w64-mingw32-gcc
 
 VERSION=0.9
 XLINK_SERIAL:=$(XLINK_SERIAL)
@@ -9,7 +9,8 @@ XLINK_SERIAL:=$(XLINK_SERIAL)
 GCC=gcc
 CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -O3 -I.
 
-INPOUT32=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries
+INPOUT32_BINARIES=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries
+READLINE_BINARIES=http://downloads.sourceforge.net/project/gnuwin32/readline/5.0-1/readline-5.0-1-bin.zip
 
 LIBHEADERS=\
 	xlink.h \
@@ -59,8 +60,9 @@ xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32
 	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
 		-o xlink.dll $(LIBSOURCES) -lusb-1.0 -linpout32
 
-xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h xlink.lib-clean
-	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe client.c disk.c range.c -L. -lxlink
+xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h readline xlink.lib-clean 
+	$(GCC-MINGW32) $(CFLAGS) -Ireadline/include -static-libgcc -o xlink.exe \
+		client.c disk.c range.c -L. -lxlink -lhistory5 -lreadline5
 
 xlink.lib: xlink.dll
 	dos2unix tools/make-msvc-lib.sh
@@ -69,8 +71,16 @@ xlink.lib: xlink.dll
 xlink.lib-clean:
 	[ -f xlink.lib ] && rm -v xlink.lib || true
 
+readline-5.0-1-bin.zip:
+	wget $(READLINE_BINARIES)
+
+readline: readline-5.0-1-bin.zip
+	unzip -d readline readline-5.0-1-bin.zip && \
+	cp readline/bin/readline5.dll readline/bin/history5.dll . && \
+	chmod +x readline5.dll history5.dll
+
 inpout32:
-	wget -O inpout32.zip $(INPOUT32) && \
+	wget -O inpout32.zip $(INPOUT32_BINARIES) && \
 	unzip -d inpout32 inpout32.zip && \
 	cp inpout32/Win32/inpout32.h . && \
 	cp inpout32/Win32/inpout32.dll . && \
@@ -166,7 +176,9 @@ clean: firmware-clean
 	[ -f log ] && rm -v log || true
 
 distclean: clean
-	(yes | rm -r inpout32*) || true
+	rm -rf inpout32* || true
+	rm -rf readline* || true
+	rm -rf history* || true
 
 release: distclean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD && \
