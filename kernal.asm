@@ -22,7 +22,7 @@ eof:
 	
 .pc = $e479
 powerUpMessage:	{
-.text "**** COMMODORE 64 BASIC V2 ****"
+.text "**** C64 BASIC V2 XLINK V1 ****"
 eof:
 }
 
@@ -407,49 +407,49 @@ identify: {
 	sta $dd03
 
         lda Server.size
-        :write()
+        jsr write
 
         lda Server.id
-        :write()
+        jsr write
 
         lda Server.id+1
-        :write()
+        jsr write
 
         lda Server.id+2
-        :write()
+        jsr write
 
         lda Server.id+3
-        :write()
+        jsr write
 
         lda Server.id+4
-        :write()        
+        jsr write        
         
         lda Server.version
-        :write()
+        jsr write
 
         lda Server.machine
-        :write()
+        jsr write
 
         lda Server.type
-        :write()       
+        jsr write       
 
         lda Server.start
-        :write()
+        jsr write
 
         lda Server.start+1
-        :write()
+        jsr write
 
         lda Server.end
-        :write()
+        jsr write
 
         lda Server.end+1
-        :write()        
+        jsr write        
 
 	lda memtop
-	:write()
+	jsr write
 
 	lda memtop+1
-	:write()
+	jsr write
 	
 done:   lda #$00   // reset CIA2 port B to input
 	sta $dd03
