@@ -857,7 +857,7 @@ bool command_fill(Command* self) {
   }
 
   if(!range_valid(range)) {
-    logger->error("Invalid memory range: $%04X-$%04X", range->start, range->end);
+    logger->error("invalid memory range: $%04X-$%04X", range->start, range->end);
     free(range);
     goto done;
   }
@@ -966,14 +966,14 @@ bool command_server_usable_after_possible_relocation(Command* self) {
     if(command_requires_server_relocation(self, &server)) {
 
       if(!command_server_relocation_possible(self, &server, &newServerAddress)) {
-        logger->error("Impossible to relocate ram-based server: out of memory");
+        logger->error("impossible to relocate ram-based server: out of memory");
         return false;
       }
 
-      logger->debug("Relocating server to $%04X", newServerAddress);
+      logger->debug("relocating server to $%04X", newServerAddress);
 
       if(!xlink_relocate(newServerAddress)) {
-        logger->error("Failed to relocate ram-based server: %s", xlink_error->message);
+        logger->error("failed to relocate ram-based server: %s", xlink_error->message);
         return false;
       }
     }
@@ -997,7 +997,7 @@ bool command_requires_server_relocation(Command* self, xlink_server_info* server
 
   if(range_overlaps(data, code)) {
     
-    logger->debug("Relocation required: data ($%04X-$%04X) overlaps server ($%04X-$%04X)",
+    logger->debug("relocation required: data ($%04X-$%04X) overlaps server ($%04X-$%04X)",
 		  self->start, self->end, server->start, server->end);
     
     result = true;
