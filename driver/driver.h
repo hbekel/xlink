@@ -7,7 +7,7 @@
 typedef struct {
   char* path;
   int device;
-  bool opened;
+  int timeout;
 
   bool (*_ready) (void);
   bool (*_open) (void);
@@ -16,8 +16,8 @@ typedef struct {
   bool (*_wait) (int);
   unsigned char (*_read) (void);
   void (*_write) (unsigned char);
-  void (*_send) (unsigned char*, int);
-  void (*_receive) (unsigned char*, int);
+  bool (*_send) (unsigned char*, int);
+  bool (*_receive) (unsigned char*, int);
   void (*_input) (void);
   void (*_output) (void);
   bool (*_ping) (void);
@@ -32,8 +32,8 @@ typedef struct {
   bool (*wait) (int);
   unsigned char (*read) (void);
   void (*write) (unsigned char);
-  void (*send) (unsigned char*, int);
-  void (*receive) (unsigned char*, int);
+  bool (*send) (unsigned char*, int);
+  bool (*receive) (unsigned char*, int);
   void (*input) (void);
   void (*output) (void);
   bool (*ping) (void);
@@ -56,8 +56,8 @@ void _driver_strobe(void);
 bool _driver_wait(int);
 unsigned char _driver_read(void);
 void _driver_write(unsigned char);
-void _driver_send(unsigned char*, int);
-void _driver_receive(unsigned char*, int);
+bool _driver_send(unsigned char*, int);
+bool _driver_receive(unsigned char*, int);
 void _driver_input(void);
 void _driver_output(void);
 bool _driver_ping(void);

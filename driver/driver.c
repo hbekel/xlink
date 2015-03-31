@@ -230,8 +230,8 @@ void _driver_close()                                { driver->input(); driver->_
 void _driver_strobe()                               { driver->_strobe(); }
 unsigned char _driver_read(void)                    { return driver->_read(); }
 void _driver_write(unsigned char value)             { driver->_write(value); }
-void _driver_send(unsigned char* data, int size)    { driver->_send(data, size); }
-void _driver_receive(unsigned char* data, int size) { driver->_receive(data, size); }
+bool _driver_send(unsigned char* data, int size)    { return driver->_send(data, size); }
+bool _driver_receive(unsigned char* data, int size) { return driver->_receive(data, size); }
 bool _driver_wait(int timeout)                      { return driver->_wait(timeout); }
 void _driver_input()                                { driver->_input(); }
 void _driver_output()                               { driver->_output(); }

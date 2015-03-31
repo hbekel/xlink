@@ -75,8 +75,12 @@ extern "C" {
   bool xlink_run(void);
 
   bool xlink_inject(ushort address, uchar* code, uint size);
+
   bool xlink_send(uchar* data, uint size);
+  bool xlink_send_with_timeout(uchar* data, uint size, uint timeout);
+
   bool xlink_receive(uchar *data, uint size);
+  bool xlink_receive_with_timeout(uchar* data, uint size, uint timeout);
   
 #ifdef __cplusplus
 }

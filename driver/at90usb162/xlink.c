@@ -1,16 +1,22 @@
+#include <avr/io.h>
+#include <avr/interrupt.h>
+
 #include "xlink.h"
 
 static volatile uint8_t last;
 static uint32_t Boot_Key ATTR_NO_INIT;
 
+static volatile uint32_t hs = 0;
+static volatile uint16_t elapsed = 0;
+
 int main(void)
-{    
+{      
   USB_Init();
 
   SetupHardware();
 
   GlobalInterruptEnable();
-  
+
   for(;;) {
     USB_USBTask();
     wdt_reset();
@@ -22,6 +28,8 @@ void SetupHardware() {
   wdt_enable(WDTO_1S);
   clock_prescale_set(clock_div_1);
 
+  SetupTimer();
+  
   TristateRESET();
 
   SetupSTROBE();
@@ -38,23 +46,55 @@ void EVENT_USB_Device_ControlRequest(void) {
       ((USB_ControlRequest.bmRequestType & CONTROL_REQTYPE_RECIPIENT) == REQREC_DEVICE)) {
 
     uint8_t byte = (uint8_t) (USB_ControlRequest.wValue & 0xff);
+    uint16_t timeout = (uint16_t) (USB_ControlRequest.wIndex);
     uint16_t size = USB_ControlRequest.wLength;    
 
     switch(USB_ControlRequest.bRequest) {
 
-    case USB_INIT:    Init();        break;
-    case USB_RESET:   Reset();       break;
-    case USB_STROBE:  Strobe();      break;
-    case USB_ACKED:   Acked();       break;
-    case USB_INPUT:   Input();       break;
-    case USB_OUTPUT:  Output();      break;
-    case USB_READ:    Read();        break;
-    case USB_WRITE:   Write(byte);   break;
-    case USB_SEND:    Send(size);    break;
-    case USB_RECEIVE: Receive(size); break;
-    case USB_BOOT:    Boot();        break;
+    case USB_INIT:    Init();                 break;
+    case USB_RESET:   Reset();                break;
+    case USB_STROBE:  Strobe();               break;
+    case USB_ACKED:   Acked();                break;
+    case USB_INPUT:   Input();                break;
+    case USB_OUTPUT:  Output();               break;
+    case USB_READ:    Read();                 break;
+    case USB_WRITE:   Write(byte);            break;
+    case USB_SEND:    Send(size, timeout);    break;
+    case USB_RECEIVE: Receive(size, timeout); break;
+    case USB_BOOT:    Boot();                 break;
     }
   }
+}
+
+void SetupTimer() {
+
+  GlobalInterruptDisable();
+  
+  // enable timer overflow for TIMER1
+  TIMSK1 = (1<<TOIE1);
+
+  // set initial value to 0
+  TCNT1 = 0x00;
+  
+  // start with /64 prescaler =~ 0.5secs
+  TCCR1B |= (1 << CS10) | (1 << CS11);
+
+  ResetTimer();
+}
+
+void ResetTimer() {
+  GlobalInterruptDisable();
+
+  TCNT1=0x00;
+  hs=0;
+  elapsed=0;
+
+  GlobalInterruptEnable();
+}
+
+ISR(TIMER1_OVF_vect) {
+  hs++;
+  elapsed = hs/2;
 }
 
 void SetupSTROBE() {
@@ -164,7 +204,7 @@ void Read() {
   Endpoint_ClearStatusStage();
 }
 
-void Send(uint16_t bytesToSend) {
+void Send(uint16_t bytesToSend, uint16_t timeout) {
 
  uint8_t i;
  uint8_t bytesInPacket;
@@ -185,9 +225,17 @@ void Send(uint16_t bytesToSend) {
 
      PORTC &= ~PIN_STROBE;
      PORTC |= PIN_STROBE;
+
+     ResetTimer();
      
      while(current == last) {
        current = PINB & PIN_ACK;
+       wdt_reset();
+       
+       if(timeout > 0 && elapsed >= timeout) {
+         Endpoint_ClearIN(); // send data packet
+         goto done;
+       }
      }
      last = current;
    }
@@ -195,13 +243,13 @@ void Send(uint16_t bytesToSend) {
 
    Endpoint_ClearOUT(); // ACK data packet
  }
-
+ done:
  // Now ack the whole control transfer...
  while(!Endpoint_IsINReady()); // wait for the host to be ready to receive ACK
  Endpoint_ClearIN(); // ack by sending an empty package TO the HOST
 }
 
-void Receive(uint16_t bytesToReceive) {
+void Receive(uint16_t bytesToReceive, uint16_t timeout) {
 
  uint8_t i;
  uint8_t bytesInPacket;
@@ -219,24 +267,34 @@ void Receive(uint16_t bytesToReceive) {
    // Write data...
    for(i=0; i<bytesInPacket; i++) {
 
+     ResetTimer();
+     
      while(current == last) {
        current = PINB & PIN_ACK;
+       wdt_reset();
+       
+       if(timeout > 0 && elapsed >= timeout) {
+         Endpoint_ClearIN(); // send data packet
+         goto done;
+       }
      }
      last = current;
-     
+
      Endpoint_Write_8(PIND);
      
      PORTC &= ~PIN_STROBE;
      PORTC |= PIN_STROBE;     
    }
    bytesToReceive -= bytesInPacket;
-   
+
    Endpoint_ClearIN(); // send data packet
  }
 
+ done:   
  // Now ack the whole control transfer...
  while(!Endpoint_IsOUTReceived()); // wait for host to send STATUS ACK
  Endpoint_ClearOUT(); // clear host STATUS ACK
+
 }
 
 void BootCheck(void) {

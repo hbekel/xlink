@@ -15,8 +15,7 @@
 #include "util.h"
 #include "target.h"
 
-#define DRIVER_USB_MAX_PAYLOAD_SIZE 4096
-#define MESSAGE_TIMEOUT 60000
+#define MAX_PAYLOAD_SIZE 4096
 
 extern Driver* driver;
 
@@ -238,30 +237,97 @@ unsigned char driver_usb_read() {
 
 //------------------------------------------------------------------------------
 
-void driver_usb_send(unsigned char* data, int size) {
+static bool chunked(bool (*callback) (ushort chunk), ushort chunk, int size) {
 
-  while(size > DRIVER_USB_MAX_PAYLOAD_SIZE) {
+  bool result = true;
 
-    controlEndpointOut(USB_SEND, data, DRIVER_USB_MAX_PAYLOAD_SIZE);
+  do {
+    if(size > chunk) {
+      size -= chunk;
+    }
+    else {
+      chunk = size;
+      size = 0;
+    }
     
-    data += DRIVER_USB_MAX_PAYLOAD_SIZE; 
-    size -= DRIVER_USB_MAX_PAYLOAD_SIZE;
-  }
-  controlEndpointOut(USB_SEND, data, size);
+    if(!(result = (*callback)(chunk))) {
+      break;
+    }    
+  } while(size > 0);
+  return result;
 }
 
 //------------------------------------------------------------------------------
 
-void driver_usb_receive(unsigned char* data, int size) {
+bool driver_usb_send(unsigned char* data, int size) {
 
-  while(size > DRIVER_USB_MAX_PAYLOAD_SIZE) {
+  int sent = 0;
+  
+  bool send(ushort chunk) {
 
-    controlEndpointIn(USB_RECEIVE, data, DRIVER_USB_MAX_PAYLOAD_SIZE);
+    int transfered = controlEndpointOut(USB_SEND, data, chunk);
+
+    if(transfered < 0) { 
+      return false;
+    }
+
+    if (transfered < chunk) { 
+      sent += transfered;
+      return false;
+    }
     
-    data += DRIVER_USB_MAX_PAYLOAD_SIZE; 
-    size -= DRIVER_USB_MAX_PAYLOAD_SIZE;
+    data += chunk;
+    sent += chunk;
+    return true;
   }
-  controlEndpointIn(USB_RECEIVE, data, size);
+
+  chunked(send, MAX_PAYLOAD_SIZE, size);
+
+  bool result = sent == size;
+  
+  if(!result) {
+    SET_ERROR(XLINK_ERROR_LIBUSB,
+              "transfer timeout (%d of %d bytes sent)", sent, size);
+  }
+  
+  CLEAR_ERROR_IF(result);
+  return result;
+}
+
+//------------------------------------------------------------------------------
+
+bool driver_usb_receive(unsigned char* data, int size) {
+  int received = 0;
+  
+  bool receive(ushort chunk) {
+
+    int transfered = controlEndpointIn(USB_RECEIVE, data, chunk);
+
+    if(transfered < 0) { 
+      return false;
+    }
+
+    if (transfered < chunk) { 
+      received += transfered;
+      return false;
+    }
+    
+    data += chunk;
+    received += chunk;
+    return true;
+  }
+
+  chunked(receive, MAX_PAYLOAD_SIZE, size);
+
+  bool result = received == size;
+  
+  if(!result) {
+    SET_ERROR(XLINK_ERROR_LIBUSB,
+              "transfer timeout (%d of %d bytes received)", received, size);
+  }
+  
+  CLEAR_ERROR_IF(result);
+  return result;
 }
 
 //------------------------------------------------------------------------------
@@ -330,20 +396,21 @@ int controlEndpointOut(int message, unsigned char *buffer, int size) {
 
 int controlEndpointOutWithValue(int message, int value) {
   return libusb_control_transfer(handle,
-				 LIBUSB_REQUEST_TYPE_VENDOR |
-				 LIBUSB_RECIPIENT_DEVICE |
-				 LIBUSB_ENDPOINT_OUT, 
-				 message, value, 0, NULL, 0, MESSAGE_TIMEOUT);
+                                 LIBUSB_REQUEST_TYPE_VENDOR |
+                                 LIBUSB_RECIPIENT_DEVICE |
+                                 LIBUSB_ENDPOINT_OUT, 
+                                 message, value, driver->timeout,
+                                 NULL, 0, (driver->timeout+1)*1036);
   
 }
 
 int controlEndpoint(int message, unsigned char *buffer, int size, int direction) {
   return libusb_control_transfer(handle,
-				 LIBUSB_REQUEST_TYPE_VENDOR |
-				 LIBUSB_RECIPIENT_DEVICE |
-				 direction, 
-				 message, 0, 0,
-				 buffer, size, MESSAGE_TIMEOUT);
+                                 LIBUSB_REQUEST_TYPE_VENDOR |
+                                 LIBUSB_RECIPIENT_DEVICE |
+                                 direction, 
+                                 message, 0, driver->timeout,
+                                 buffer, size, (driver->timeout+1)*1036);
 }
 
 //------------------------------------------------------------------------------

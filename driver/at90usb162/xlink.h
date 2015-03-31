@@ -22,6 +22,8 @@
 #define BOOTLOADER_START_ADDRESS  0x3000
 
 void SetupHardware(void);
+void SetupTimer(void);
+void ResetTimer(void);
 void SetupSTROBE(void);
 void SetupACK(void);
 void ReadACK(void);
@@ -36,8 +38,8 @@ void Input(void);
 void Output(void);
 void Read(void);
 void Write(uint8_t byte);
-void Send(uint16_t size);
-void Receive(uint16_t size);
+void Send(uint16_t size, uint16_t timeout);
+void Receive(uint16_t size, uint16_t timeout);
 
 void BootCheck(void) ATTR_INIT_SECTION(3);
 void BootCheck(void);

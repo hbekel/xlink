@@ -1208,7 +1208,7 @@ bool command_benchmark(Command* self) {
     
   watch_start(watch);
   
-  xlink_load(0x37, 0x00, start, payload, sizeof(payload));
+  if(!xlink_load(0x37, 0x00, start, payload, sizeof(payload))) goto done;
   
   float seconds = (watch_elapsed(watch) / 1000.0);
   float kbs = sizeof(payload)/seconds/1024;
@@ -1219,7 +1219,7 @@ bool command_benchmark(Command* self) {
     
   watch_start(watch);
     
-  xlink_save(0x37, 0x00, start, roundtrip, sizeof(roundtrip));
+  if(!xlink_save(0x37, 0x00, start, roundtrip, sizeof(roundtrip))) goto done;
   
   seconds = (watch_elapsed(watch) / 1000.0);
   kbs = sizeof(payload)/seconds/1024;

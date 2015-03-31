@@ -206,24 +206,43 @@ void driver_parport_write(unsigned char value) {
 
 //------------------------------------------------------------------------------
 
-void driver_parport_send(unsigned char* data, int size) {
+bool driver_parport_send(unsigned char* data, int size) {
 
+  bool result = false;
+  
   for(int i=0; i<size; i++) {
     driver->write(data[i]);
-    driver->strobe();
-    driver->wait(0);
+    driver->strobe();    
+    result = driver->wait(driver->timeout*1000);
+
+    if(!result) {
+      SET_ERROR(XLINK_ERROR_PARPORT,
+                "transfer timeout (%d of %d bytes sent)", i, size);
+      break;
+    }
   }
+  return result;
 }
 
 //------------------------------------------------------------------------------
 
-void driver_parport_receive(unsigned char* data, int size) { 
+bool driver_parport_receive(unsigned char* data, int size) { 
 
+  bool result = false;
+  
   for(int i=0; i<size; i++) {
-    driver->wait(0);
+    result = driver->wait(driver->timeout*1000);
+
+    if(!result) {
+      SET_ERROR(XLINK_ERROR_PARPORT,
+                "transfer timeout (%d of %d bytes received)", i, size);
+      break;
+    }
+
     data[i] = driver->read();
     driver->strobe();
   }
+  return result;
 }
 
 //------------------------------------------------------------------------------

@@ -23,6 +23,7 @@
 #define XLINK_COMMAND_RUN      0x06
 #define XLINK_COMMAND_INJECT   0x07
 #define XLINK_COMMAND_IDENTIFY 0xfe 
+#define XLINK_DEFAULT_TIMEOUT  0x01
 
 Driver* driver;
 xlink_error_t* xlink_error;
@@ -45,6 +46,7 @@ void libxlink_initialize() {
 
   driver = (Driver*) calloc(1, sizeof(Driver));
   driver->path = (char*) calloc(1, sizeof(char));
+  driver->timeout = XLINK_DEFAULT_TIMEOUT;
 
   driver->ready   = &_driver_ready;
   driver->open    = &_driver_open;
@@ -137,23 +139,20 @@ bool xlink_identify(xlink_server_info* server) {
     
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-      driver->close();
-      goto done;
+      goto error;
     }
 
     driver->output();
-    driver->send((unsigned char []) {XLINK_COMMAND_IDENTIFY}, 1);
+    if(!driver->send((unsigned char []) {XLINK_COMMAND_IDENTIFY}, 1)) goto error;
     
     driver->input();
     driver->strobe();
 
-    driver->receive(&size, 1);
+    if(!driver->receive(&size, 1)) goto error;
     size &= 0x0f;
 
-    driver->receive((uchar*) (server->id), size);    
-    driver->receive(data, 9);
-
-    driver->close();
+    if(!driver->receive((uchar*) (server->id), size)) goto error;    
+    if(!driver->receive(data, 9)) goto error;
 
     unsigned char checksum = 0xff;
     
@@ -162,9 +161,9 @@ bool xlink_identify(xlink_server_info* server) {
     }
     if(checksum == 0xff) {
       SET_ERROR(XLINK_ERROR_SERVER, "unknown server (does not support identification)");
-      goto done;
+      goto error;
     }
-
+    
     server->id[size] = '\0';
     
     server->version = data[0];
@@ -184,13 +183,19 @@ bool xlink_identify(xlink_server_info* server) {
     server->memtop |= data[8] << 8;
     
     server->length = server->end - server->start;   
-    
+
+    driver->close();
     result = true;
   }
   
  done:
   CLEAR_ERROR_IF(result);
   return result;
+
+ error:
+  driver->close();
+  goto done;
+
 }
 
 //------------------------------------------------------------------------------
@@ -294,14 +299,14 @@ bool xlink_load(unsigned char memory,
     
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-      goto done;
+      goto error;
     }
 
     driver->output();    
-    driver->send((unsigned char []) {XLINK_COMMAND_LOAD, memory, bank, 
-          lo(start), hi(start), lo(end), hi(end)}, 7);
+    if(!driver->send((unsigned char []) {XLINK_COMMAND_LOAD, memory, bank, 
+            lo(start), hi(start), lo(end), hi(end)}, 7)) goto error;
 
-    driver->send(data, size);
+    if(!driver->send(data, size)) goto error;
 
     driver->close();
     result = true;
@@ -310,6 +315,10 @@ bool xlink_load(unsigned char memory,
  done:
   CLEAR_ERROR_IF(result);
   return result;
+
+ error:
+  driver->close();
+  goto done;
 }
 
 //------------------------------------------------------------------------------
@@ -328,17 +337,17 @@ bool xlink_save(unsigned char memory,
 
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-      goto done;
+      goto error;
     }
 
     driver->output();
-    driver->send((unsigned char []) {XLINK_COMMAND_SAVE, memory, bank, 
-          lo(start), hi(start), lo(end), hi(end)}, 7);
+    if(!driver->send((unsigned char []) {XLINK_COMMAND_SAVE, memory, bank, 
+            lo(start), hi(start), lo(end), hi(end)}, 7)) goto error;
 
     driver->input();
     driver->strobe();
 
-    driver->receive(data, size);
+    if(!driver->receive(data, size)) goto error;
 
     driver->close();
     result = true;
@@ -347,6 +356,10 @@ bool xlink_save(unsigned char memory,
  done:
   CLEAR_ERROR_IF(result);
   return result;
+
+ error:
+  driver->close();
+  goto done;
 }
 
 //------------------------------------------------------------------------------
@@ -362,16 +375,17 @@ bool xlink_peek(unsigned char memory,
   
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-      goto done;
+      goto error;
     }
 
     driver->output();
-    driver->send((unsigned char []) {XLINK_COMMAND_PEEK, memory, bank, lo(address), hi(address)}, 5);
+    if(!driver->send((unsigned char []) {XLINK_COMMAND_PEEK,
+            memory, bank, lo(address), hi(address)}, 5)) goto error;
     
     driver->input();
     driver->strobe();
 
-    driver->receive(value, 1);
+    if(!driver->receive(value, 1)) goto error;
 
     driver->close();
     result = true;
@@ -380,6 +394,10 @@ bool xlink_peek(unsigned char memory,
  done:
   CLEAR_ERROR_IF(result);
   return result;
+
+ error:
+  driver->close();
+  goto done;
 }
 
 //------------------------------------------------------------------------------
@@ -395,12 +413,12 @@ bool xlink_poke(unsigned char memory,
   
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-      goto done;
+      goto error;
     }
     
     driver->output();
-    driver->send((unsigned char []) {XLINK_COMMAND_POKE, memory, bank, 
-          lo(address), hi(address), value}, 6);    
+    if(!driver->send((unsigned char []) {XLINK_COMMAND_POKE, memory, bank, 
+            lo(address), hi(address), value}, 6)) goto error;    
 
     driver->close();
     result = true;
@@ -409,6 +427,10 @@ bool xlink_poke(unsigned char memory,
  done:
   CLEAR_ERROR_IF(result);
   return result;
+
+ error:
+  driver->close();
+  goto done;
 }
 
 //------------------------------------------------------------------------------
@@ -444,12 +466,12 @@ bool xlink_jump(unsigned char memory,
   
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-      goto done;
+      goto error;
     }
     
     driver->output();
-    driver->send((unsigned char []) {XLINK_COMMAND_JUMP, memory, bank, 
-          hi(address), lo(address)}, 5);    
+    if(!driver->send((unsigned char []) {XLINK_COMMAND_JUMP, memory, bank, 
+          hi(address), lo(address)}, 5)) goto error;
 
     driver->close();    
     result = true;
@@ -458,6 +480,10 @@ bool xlink_jump(unsigned char memory,
  done:
   CLEAR_ERROR_IF(result);
   return result;
+
+ error:
+  driver->close();
+  goto done;
 }
 
 //------------------------------------------------------------------------------
@@ -470,11 +496,11 @@ bool xlink_run(void) {
   
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-      goto done;
+      goto error;
     }
 
     driver->output();
-    driver->send((unsigned char []) {XLINK_COMMAND_RUN}, 1);
+    if(!driver->send((unsigned char []) {XLINK_COMMAND_RUN}, 1)) goto error;
 
     driver->close();
     result = true;
@@ -483,6 +509,10 @@ bool xlink_run(void) {
  done:
   CLEAR_ERROR_IF(result);
   return result;
+
+ error:
+  driver->close();
+  goto done;
 }
 
 //------------------------------------------------------------------------------
@@ -503,7 +533,7 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
   
     if(!driver->ping()) {
       SET_ERROR(XLINK_ERROR_SERVER, "no response from server");
-      goto done;      
+      goto error;      
     }
   
     // send the address-1 high byte first, so the server can 
@@ -512,7 +542,8 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
     address--;
 
     driver->output();
-    driver->send((unsigned char []) {XLINK_COMMAND_INJECT, hi(address), lo(address)}, 3);
+    if(!driver->send((unsigned char []) {XLINK_COMMAND_INJECT,
+            hi(address), lo(address)}, 3)) goto error;
     
     driver->close();
     result = true;
@@ -523,6 +554,10 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
   
   CLEAR_ERROR_IF(result);
   return result;
+
+ error:
+  driver->close();
+  goto done;
 }
 
 //------------------------------------------------------------------------------
@@ -534,12 +569,29 @@ bool xlink_send(uchar* data, uint size) {
   if(driver->open()) {
 
     driver->output();
-    driver->send(data, size);
+    if(!driver->send(data, size)) goto error;
     driver->close();
     result = true;
   }
 
+ done:  
   CLEAR_ERROR_IF(result);
+  return result;
+
+ error:
+  driver->close();
+  goto done;
+}
+
+//------------------------------------------------------------------------------
+
+bool xlink_send_with_timeout(uchar* data, uint size, uint timeout) {
+  bool result = false;
+  
+  driver->timeout = timeout;
+  result = xlink_send(data, size);
+  driver->timeout = XLINK_DEFAULT_TIMEOUT;
+
   return result;
 }
 
@@ -552,12 +604,29 @@ bool xlink_receive(uchar *data, uint size) {
 
     driver->input();
     driver->strobe();
-    driver->receive(data, size);
+    if(!driver->receive(data, size)) goto error;
     driver->close();
     result = true;
   }
 
+ done:
   CLEAR_ERROR_IF(result);
+  return result;
+
+ error:
+  driver->close();
+  goto done;
+}
+
+//------------------------------------------------------------------------------
+
+bool xlink_receive_with_timeout(uchar* data, uint size, uint timeout) {
+  bool result = false;
+  
+  driver->timeout = timeout;
+  result = xlink_receive(data, size);
+  driver->timeout = XLINK_DEFAULT_TIMEOUT;
+
   return result;
 }
 
