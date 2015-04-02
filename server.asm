@@ -345,7 +345,7 @@ start:	 .word install
 version: .byte $10
 type:	 .byte $00 // 0 = RAM, 1 = ROM
 machine: .byte $00 // 0 = C64
-end:	 .word *
+end:	 .word *+2
 }
 
 //------------------------------------------------------------------------------	

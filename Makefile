@@ -158,20 +158,20 @@ uninstall:
 	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
 clean: firmware-clean 
-	[ -f testsuite ] && rm -v testsuite || true
-	[ -f libxlink.so ] && rm -v libxlink.so || true
-	[ -f xlink.dll ] && rm -v xlink.dll || true
-	[ -f xlink.lib ] && rm -v xlink.lib || true
-	[ -f xlink ] && rm -v xlink || true
-	[ -f xlink.exe ] && rm -v xlink.exe || true
-	[ -f extensions.c ] && rm -v extensions.c || true
-	[ -f server.c ] && rm -v server.c || true
-	[ -f kernal.c ] && rm -v kernal.c || true
-	[ -f bootstrap.txt ] && rm -v bootstrap.txt || true
-	[ -f tools/make-extension ] && rm -v tools/make-extension || true
-	[ -f tools/make-bootstrap ] && rm -v tools/make-bootstrap || true
-	[ -f tools/make-server ] && rm -v tools/make-server || true
-	[ -f tools/make-kernal ] && rm -v tools/make-kernal || true
+	[ -f testsuite ] && rm -vf testsuite || true
+	[ -f libxlink.so ] && rm -vf libxlink.so || true
+	[ -f xlink.dll ] && rm -vf xlink.dll || true
+	[ -f xlink.lib ] && rm -vf xlink.lib || true
+	[ -f xlink ] && rm -vf xlink || true
+	[ -f xlink.exe ] && rm -vf xlink.exe || true
+	[ -f extensions.c ] && rm -vf extensions.c || true
+	[ -f server.c ] && rm -vf server.c || true
+	[ -f kernal.c ] && rm -vf kernal.c || true
+	[ -f bootstrap.txt ] && rm -vf bootstrap.txt || true
+	[ -f tools/make-extension ] && rm -vf tools/make-extension || true
+	[ -f tools/make-bootstrap ] && rm -vf tools/make-bootstrap || true
+	[ -f tools/make-server ] && rm -vf tools/make-server || true
+	[ -f tools/make-kernal ] && rm -vf tools/make-kernal || true
 	[ -f etc/udev/rules.d/10-xlink.rules ] && rm -v etc/udev/rules.d/10-xlink.rules || true
 	[ -f log ] && rm -v log || true
 
