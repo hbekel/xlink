@@ -107,15 +107,8 @@ bool driver_parport_open() {
 
 #elif windows
   if(!IsInpOutDriverOpen()) {
-
-    logger->resume();
-    
-    SET_ERROR(XLINK_ERROR_PARPORT, "InpOut32 driver is required for parallel port access");
-    
-    printf("\nTo enable parallel port access on windows xp and later\n");
-    printf("xlink.exe needs to be run as Administrator once. This will\n");
-    printf("automatically install the necessary drivers. For details see\n\n");
-    printf("    http://www.highrez.co.uk/Downloads/InpOut32/\n\n");
+    logger->resume();    
+    SET_ERROR(XLINK_ERROR_PARPORT, "InpOut32 driver is required for parallel port access");    
     goto done;
   }
 #endif
