@@ -7,8 +7,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
-#include <readline/readline.h>
-#include <readline/history.h>
 
 #include "target.h"
 #include "client.h"
@@ -1691,11 +1689,6 @@ int main(int argc, char **argv) {
       usage();
       return EXIT_SUCCESS;
     } 
-
-    if (strcmp(argv[0], "shell") == 0) {
-      shell();
-      return EXIT_SUCCESS;   
-    }
   }
 
   commands = commands_new(argc, argv);
@@ -1707,165 +1700,6 @@ int main(int argc, char **argv) {
   logger->leave();
 
   return result;
-}
-
-//------------------------------------------------------------------------------
-
-static char* known_commands[22] = { 
-  "help",
-  "load", 
-  "save",
-  "peek",
-  "poke",
-  "jump",
-  "run",
-  "backup",
-  "restore",
-  "verify",
-  "reset",
-  "ready",
-  "exit",
-  "quit",
-  "ping",
-  "bootloader",
-  "benchmark",
-  "identify",
-  "server",
-  "relocate",
-  "kernal",
-  NULL 
-};
-
-static char *dupstr(char *s) {
-  char *r = calloc(strlen(s) + 1, sizeof(char));
-  strncpy(r, s, strlen(s));
-  return r;
-}
-
-//------------------------------------------------------------------------------
-
-static void trim(char * const a)
-{
-  char *p = a, *q = a;
-  while (isspace(*q)) ++q;
-  while (*q) *p++ = *q++;
-  *p = '\0';
-  while (p > a && isspace(*--p)) *p = '\0';
-}
-
-//------------------------------------------------------------------------------
-
-static char *command_generator(char *text, int state) {
-  static int list_index, len;
-  char *name;
-  
-  if (!state) {
-    list_index = 0;
-    len = strlen(text);
-  }
-  while ((name = known_commands[list_index])) {
-    list_index++;
-    
-    if (strncmp(name, text, len) == 0)
-      return dupstr(name);
-  }
-  return ((char *)NULL);
-}
-
-//------------------------------------------------------------------------------
-
-static char **shell_completion(char *text, int start, int end) {
-  extern char **completion_matches();
-  return (char **) completion_matches(text, command_generator);
-}
-
-//------------------------------------------------------------------------------
-
-void shell_load_history(void) {
-  const char *home = getenv("HOME");
-  const char *filename = "/.xlink_history";
-  int size = strlen(home)+strlen(filename)+1;
-
-  char *history = (char*) calloc(size, sizeof(char));
-  strncat(history, home, strlen(home));
-  strncat(history, filename, strlen(filename));
-
-  read_history(history);
-  free(history);
-}
-
-//------------------------------------------------------------------------------
-
-void shell_save_history(void) {
-  const char *home = getenv("HOME");
-  const char *filename = "/.xlink_history";
-  int size = strlen(home)+strlen(filename)+1;
-
-  char *history = (char*) calloc(size, sizeof(char));
-  strncat(history, home, strlen(home));
-  strncat(history, filename, strlen(filename));
-
-  write_history(history);
-  history_truncate_file(history, 500);
-
-  free(history);
-}
-
-//------------------------------------------------------------------------------
-
-static int shell_command(char *line) {
-  if(strcmp(line, "help") == 0) {
-    usage();
-    return true;
-  }
-  
-  if((strcmp(line, "quit") == 0) ||
-     (strcmp(line, "exit") == 0)) {
-    shell_save_history();
-    exit(EXIT_SUCCESS);
-  }
-  return false;
-}
-
-//------------------------------------------------------------------------------
-
-void shell(void) {
-
-  Commands* commands;
-  StringList *arguments;
-  
-  char *line;
-  const char *prompt = "xlink> ";
-
-  rl_variable_bind("expand-tilde", "on");  
-  rl_attempted_completion_function = (rl_completion_func_t *) shell_completion;
-
-  shell_load_history();
-  
-  while((line = readline(prompt))) {      
-
-    trim(line);
-
-    if(strlen > 0) {
-      add_history(line);
-
-      if(!shell_command(line)) {
-
-        arguments = stringlist_new();
-        stringlist_append_tokenized(arguments, line, " \t");
-
-        commands = commands_new(arguments->size, arguments->strings);
-        commands_execute(commands);
-        
-        commands_free(commands);
-        stringlist_free(arguments);
-      }
-      mode = MODE_EXEC;
-    }    
-    free(line);
-  }
-  shell_save_history();
-  printf("\n");
 }
 
 //------------------------------------------------------------------------------
@@ -1899,7 +1733,6 @@ void usage(void) {
   printf("\n");
   printf("Commands:\n");
   printf("          help  [<command>]            : show detailed help for command\n");
-  printf("          shell                        : enter interactive command shell\n");
   printf("\n");
   printf("          kernal <infile> <outfile>    : patch kernal image to include server\n");
   printf("          server [-a<addr>] <file>     : create server and save to file\n");
@@ -1938,6 +1771,13 @@ bool help(int id) {
     usage();
     break;
 
+  case COMMAND_HELP:
+    printf("Usage: help <command>\n");
+    printf("\n");
+    printf("Show detailed help for <command>\n");
+    printf("\n");
+    break;
+    
   case COMMAND_LOAD:
     printf("Usage: load [--address <start>[-<end>] [--memory <mem>] [--skip <n>] <file>\n");
     printf("\n");

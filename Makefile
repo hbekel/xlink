@@ -10,7 +10,6 @@ GCC=gcc
 CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -O3 -I.
 
 INPOUT32_BINARIES=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries
-READLINE_BINARIES=http://downloads.sourceforge.net/project/gnuwin32/readline/5.0-1/readline-5.0-1-bin.zip
 
 LIBHEADERS=\
 	xlink.h \
@@ -54,15 +53,15 @@ libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 		-o libxlink.so $(LIBSOURCES) -lusb-1.0
 
 xlink: libxlink.so client.c client.h disk.c disk.h range.c range.h
-	$(GCC) $(CFLAGS) -o xlink client.c disk.c range.c -L. -lxlink -lreadline
+	$(GCC) $(CFLAGS) -o xlink client.c disk.c range.c -L. -lxlink 
 
 xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32
 	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
 		-o xlink.dll $(LIBSOURCES) -lusb-1.0 -linpout32
 
-xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h readline xlink.lib-clean 
-	$(GCC-MINGW32) $(CFLAGS) -Ireadline/include -static-libgcc -o xlink.exe \
-		client.c disk.c range.c -L. -lxlink -lhistory5 -lreadline5
+xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h xlink.lib-clean 
+	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe \
+		client.c disk.c range.c -L. -lxlink 
 
 xlink.lib: xlink.dll
 	dos2unix tools/make-msvc-lib.sh
@@ -70,14 +69,6 @@ xlink.lib: xlink.dll
 
 xlink.lib-clean:
 	[ -f xlink.lib ] && rm -v xlink.lib || true
-
-readline-5.0-1-bin.zip:
-	wget $(READLINE_BINARIES)
-
-readline: readline-5.0-1-bin.zip
-	unzip -d readline readline-5.0-1-bin.zip && \
-	cp readline/bin/readline5.dll readline/bin/history5.dll . && \
-	chmod +x readline5.dll history5.dll
 
 inpout32:
 	wget -O inpout32.zip $(INPOUT32_BINARIES) && \
@@ -177,8 +168,6 @@ clean: firmware-clean
 
 distclean: clean
 	rm -rf inpout32* || true
-	rm -rf readline* || true
-	rm -rf history* || true
 
 release: distclean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD && \
