@@ -1,7 +1,6 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-#define USB_INIT     0x00
 #define USB_RESET    0x01
 #define USB_STROBE   0x02
 #define USB_ACKED    0x03 

@@ -30,7 +30,6 @@ void ReadACK(void);
 void TristateRESET(void);
 void AssertRESET(void);
 
-void Init(void);
 void Reset(void);
 void Strobe(void);
 void Acked(void);

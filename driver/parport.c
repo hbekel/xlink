@@ -261,7 +261,7 @@ void driver_parport_output() {
 
 bool driver_parport_ping() { 
   driver->output();
-  driver->write(0xff);
+  driver->write(XLINK_COMMAND_PING);
   driver->strobe();
   return driver->wait(250);
 }

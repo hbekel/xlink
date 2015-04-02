@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <time.h>
 
 #include "xlink.h"
 #include "error.h"
@@ -15,14 +16,6 @@
   #include <windows.h>
 #endif
 
-#define XLINK_COMMAND_LOAD     0x01
-#define XLINK_COMMAND_SAVE     0x02
-#define XLINK_COMMAND_POKE     0x03
-#define XLINK_COMMAND_PEEK     0x04
-#define XLINK_COMMAND_JUMP     0x05
-#define XLINK_COMMAND_RUN      0x06
-#define XLINK_COMMAND_INJECT   0x07
-#define XLINK_COMMAND_IDENTIFY 0xfe 
 #define XLINK_DEFAULT_TIMEOUT  0x01
 
 Driver* driver;
@@ -47,6 +40,7 @@ void libxlink_initialize() {
   driver = (Driver*) calloc(1, sizeof(Driver));
   driver->path = (char*) calloc(1, sizeof(char));
   driver->timeout = XLINK_DEFAULT_TIMEOUT;
+  driver->state = XLINK_DRIVER_STATE_IDLE;
 
   driver->ready   = &_driver_ready;
   driver->open    = &_driver_open;
@@ -201,14 +195,11 @@ bool xlink_identify(xlink_server_info* server) {
 //------------------------------------------------------------------------------
 
 bool xlink_ping() {
-  
   bool result = false;
-
   if(driver->open()) {
-    result = driver->ping();    
+    result = driver->ping();
     driver->close();
   }
-
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -523,8 +514,6 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
   uchar memory = 0x80|0x37;
   uchar bank = 0x00;
   
-  uchar *cache = (uchar*) calloc(size, sizeof(uchar));
-  
   if(!xlink_load(memory, bank, address, code, size)) {
     goto done;
   }
@@ -550,8 +539,6 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
   }
   
  done:
-  free(cache);
-  
   CLEAR_ERROR_IF(result);
   return result;
 
@@ -562,14 +549,26 @@ bool xlink_inject(ushort address, uchar* code, uint size) {
 
 //------------------------------------------------------------------------------
 
+void xlink_begin() {
+  driver->state = XLINK_DRIVER_STATE_IDLE;
+}
+
+//------------------------------------------------------------------------------
+
 bool xlink_send(uchar* data, uint size) {
 
   bool result = false;
 
   if(driver->open()) {
 
+    if(driver->state == XLINK_DRIVER_STATE_INPUT) {
+      driver->wait(0);
+    }
     driver->output();
+    driver->state = XLINK_DRIVER_STATE_OUTPUT;
+
     if(!driver->send(data, size)) goto error;
+
     driver->close();
     result = true;
   }
@@ -603,8 +602,14 @@ bool xlink_receive(uchar *data, uint size) {
   if(driver->open()) {
 
     driver->input();
-    driver->strobe();
+
+    if(driver->state == XLINK_DRIVER_STATE_OUTPUT) {
+      driver->strobe();
+      driver->state = XLINK_DRIVER_STATE_INPUT;
+    }
+
     if(!driver->receive(data, size)) goto error;
+
     driver->close();
     result = true;
   }
@@ -628,6 +633,12 @@ bool xlink_receive_with_timeout(uchar* data, uint size, uint timeout) {
   driver->timeout = XLINK_DEFAULT_TIMEOUT;
 
   return result;
+}
+
+//------------------------------------------------------------------------------
+
+void xlink_end() {
+  driver->state = XLINK_DRIVER_STATE_IDLE;
 }
 
 //------------------------------------------------------------------------------

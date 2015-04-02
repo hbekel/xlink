@@ -24,6 +24,16 @@
 #define XLINK_ERROR_PARPORT    0x03
 #define XLINK_ERROR_SERVER     0x04
 
+#define XLINK_COMMAND_LOAD     0x01
+#define XLINK_COMMAND_SAVE     0x02
+#define XLINK_COMMAND_POKE     0x03
+#define XLINK_COMMAND_PEEK     0x04
+#define XLINK_COMMAND_JUMP     0x05
+#define XLINK_COMMAND_RUN      0x06
+#define XLINK_COMMAND_INJECT   0x07
+#define XLINK_COMMAND_PING     0xfd
+#define XLINK_COMMAND_IDENTIFY 0xfe
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,9 +57,10 @@ extern "C" {
     int code;
     char message[512];
   } xlink_error_t;
-
   
   IMPORTED extern xlink_error_t* xlink_error;
+
+  /* high level interface */
   
   uchar xlink_version(void);
   void xlink_set_debug(bool enabled);
@@ -74,13 +85,19 @@ extern "C" {
   bool xlink_jump(uchar memory, uchar bank, ushort address);
   bool xlink_run(void);
 
+  /* low level interface */
+  
   bool xlink_inject(ushort address, uchar* code, uint size);
 
+  void xlink_begin();
+  
   bool xlink_send(uchar* data, uint size);
   bool xlink_send_with_timeout(uchar* data, uint size, uint timeout);
 
   bool xlink_receive(uchar *data, uint size);
   bool xlink_receive_with_timeout(uchar* data, uint size, uint timeout);
+
+  void xlink_end();
   
 #ifdef __cplusplus
 }

@@ -4,10 +4,15 @@
 #define XLINK_DRIVER_DEVICE_USB 189
 #define XLINK_DRIVER_DEVICE_PARPORT 99
 
+#define XLINK_DRIVER_STATE_IDLE   0x01
+#define XLINK_DRIVER_STATE_INPUT  0x02
+#define XLINK_DRIVER_STATE_OUTPUT 0x03
+
 typedef struct {
   char* path;
   int device;
   int timeout;
+  int state;
 
   bool (*_ready) (void);
   bool (*_open) (void);

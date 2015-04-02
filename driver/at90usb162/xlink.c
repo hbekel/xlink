@@ -51,7 +51,6 @@ void EVENT_USB_Device_ControlRequest(void) {
 
     switch(USB_ControlRequest.bRequest) {
 
-    case USB_INIT:    Init();                 break;
     case USB_RESET:   Reset();                break;
     case USB_STROBE:  Strobe();               break;
     case USB_ACKED:   Acked();                break;
@@ -119,11 +118,6 @@ void TristateRESET() {
 void AssertRESET() {
   DDRC |= PIN_RESET;   // RESET as output
   PORTC &= ~PIN_RESET; // pull reset low
-}
-
-void Init() {
-  ReadACK(); 
-  Input();
 }
 
 void Reset() {

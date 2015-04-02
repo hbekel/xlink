@@ -124,10 +124,7 @@ save: {
 	jsr readHeader
 	:screenOff()
 	
-	:wait()        // wait until PC has set its port to input
-	lda #$ff       // and set CIA2 port B to output
-	sta $dd03
-
+        :output()
 	ldy #$00
 
 	lda mem        // check if specific memory config was requested
@@ -188,9 +185,7 @@ peek: {
 	jsr read stx start
 	jsr read stx start+1
 
-	:wait()        // wait until PC has set its port to input
-	lda #$ff       // and set CIA2 port B to output
-	sta $dd03
+        :output()
 	
 	ldy #$00
 	ldx mem
@@ -201,8 +196,7 @@ peek: {
 
 	jsr write
 
-done:	lda #$00   // reset CIA2 port B to input
-	sta $dd03
+done:	:input()
 	
 	jmp sysirq
 }
@@ -264,9 +258,7 @@ return: nop
 //------------------------------------------------------------------------------
 
 identify: {
-	:wait()        // wait until PC has set its port to input
-	lda #$ff       // and set CIA2 port B to output
-	sta $dd03
+        :output()
 
         lda Server.size
         jsr write
@@ -313,8 +305,7 @@ identify: {
 	lda memtop+1
 	jsr write
         
-done:   lda #$00   // reset CIA2 port B to input
-	sta $dd03
+done:   :input()
         
         jmp sysirq
 }

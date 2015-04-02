@@ -182,8 +182,8 @@ bool driver_usb_open() {
     return false;
   }
 
-  control(USB_INIT);
-  
+  control(USB_INPUT);
+
   CLEAR_ERROR;
   return true;
 }
@@ -346,7 +346,7 @@ void driver_usb_output() {
 
 bool driver_usb_ping() { 
   driver->output();
-  driver->write(0xff);
+  driver->write(XLINK_COMMAND_PING);
   driver->strobe();
   return driver->wait(250);
 }

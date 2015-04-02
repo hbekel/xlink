@@ -6,7 +6,7 @@
 .var mem   = $fe    // Memory config
 .var bank  = $ff    // bank config
 
-.var sysirq   = $ea31 // System IRQ Routine	
+.var sysirq   = $ea34 // System IRQ Routine	
 .var relink   = $a533 // Relink Basic program
 .var insnewl  = $a659 // Insert new line into BASIC program
 .var restxtpt = $a68e // Reset BASIC text pointer
@@ -47,6 +47,17 @@ loop:	lda $dd0d
 	sta $dd01 :strobe() :wait()
 }
 
+.macro output() {
+	:wait()       
+	lda #$ff      
+	sta $dd03
+}   
+
+.macro input() {
+        lda #$00   
+	sta $dd03
+}
+  
 .macro next() {
 	inc start
 	bne check
