@@ -1,7 +1,9 @@
 PREFIX=/usr
 SYSCONFDIR=/etc
 KASM?=java -jar /usr/share/kickassembler/KickAss.jar
-GCC-MINGW32=i686-w64-mingw32-gcc
+
+MINGW32?=i686-w64-mingw32
+MINGW32-GCC=$(MINGW32)-gcc
 
 VERSION=0.9
 XLINK_SERIAL:=$(XLINK_SERIAL)
@@ -56,11 +58,11 @@ xlink: libxlink.so client.c client.h disk.c disk.h range.c range.h
 	$(GCC) $(CFLAGS) -o xlink client.c disk.c range.c -L. -lxlink 
 
 xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32
-	$(GCC-MINGW32) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
+	$(MINGW32-GCC) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
 		-o xlink.dll $(LIBSOURCES) -lusb-1.0 -linpout32
 
 xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h xlink.lib-clean 
-	$(GCC-MINGW32) $(CFLAGS) -static-libgcc -o xlink.exe \
+	$(MINGW32-GCC) $(CFLAGS) -static-libgcc -o xlink.exe \
 		client.c disk.c range.c -L. -lxlink 
 
 xlink.lib: xlink.dll
