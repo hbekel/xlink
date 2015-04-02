@@ -51,7 +51,7 @@ extern "C" {
     ushort end;     // server end address
     ushort length;  // server code length
     ushort memtop;  // current top of (lower) memory (0xa000 or 0x8000)
-  } xlink_server_info;
+  } xlink_server_info_t;
 
   typedef struct {
     int code;
@@ -69,35 +69,29 @@ extern "C" {
   bool xlink_set_device(char* path);
   char* xlink_get_device(void);
 
-  bool xlink_identify(xlink_server_info* server);
-  bool xlink_relocate(ushort address);
-
   bool xlink_ping(void);
   bool xlink_reset(void);
   bool xlink_ready(void);
+  bool xlink_identify(xlink_server_info_t* server);
+  bool xlink_relocate(ushort address);
 
   bool xlink_load(uchar memory, uchar bank, ushort address, uchar* data, uint size);  
   bool xlink_save(uchar memory, uchar bank, ushort address, uchar* data, uint size);
   bool xlink_peek(uchar memory, uchar bank, ushort address, uchar* value);
   bool xlink_poke(uchar memory, uchar bank, ushort address, uchar value);
   bool xlink_fill(uchar memory, uchar bank, ushort address, uchar value, uint size);
-  
   bool xlink_jump(uchar memory, uchar bank, ushort address);
   bool xlink_run(void);
 
   /* low level interface */
   
   bool xlink_inject(ushort address, uchar* code, uint size);
-
-  void xlink_begin();
-  
+  void xlink_begin(void);
   bool xlink_send(uchar* data, uint size);
   bool xlink_send_with_timeout(uchar* data, uint size, uint timeout);
-
   bool xlink_receive(uchar *data, uint size);
   bool xlink_receive_with_timeout(uchar* data, uint size, uint timeout);
-
-  void xlink_end();
+  void xlink_end(void);
   
 #ifdef __cplusplus
 }

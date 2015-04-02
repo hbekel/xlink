@@ -959,7 +959,7 @@ extern bool xlink_relocate(unsigned short address);
 bool command_server_usable_after_possible_relocation(Command* self) {
 
   unsigned short newServerAddress;  
-  xlink_server_info server;
+  xlink_server_info_t server;
   
   if(xlink_identify(&server)) {
 
@@ -984,7 +984,7 @@ bool command_server_usable_after_possible_relocation(Command* self) {
 
 //------------------------------------------------------------------------------
 
-bool command_requires_server_relocation(Command* self, xlink_server_info* server) {
+bool command_requires_server_relocation(Command* self, xlink_server_info_t* server) {
 
   bool result = false;
 
@@ -1009,7 +1009,7 @@ bool command_requires_server_relocation(Command* self, xlink_server_info* server
 
 //------------------------------------------------------------------------------
 
-bool command_server_relocation_possible(Command* self, xlink_server_info* server, unsigned short* address) {
+bool command_server_relocation_possible(Command* self, xlink_server_info_t* server, unsigned short* address) {
 
   bool result = true;
   
@@ -1096,7 +1096,7 @@ bool command_relocate(Command *self) {
 
   bool result = false;
   
-  xlink_server_info server;
+  xlink_server_info_t server;
 
   if(self->argc != 1) {
     logger->error("no relocation address specified");
@@ -1186,7 +1186,7 @@ bool command_benchmark(Command* self) {
   Watch* watch = watch_new();
   bool result = false;
 
-  xlink_server_info server;
+  xlink_server_info_t server;
   
   unsigned char payload[0x8000];
   unsigned char roundtrip[sizeof(payload)];
@@ -1248,7 +1248,7 @@ bool command_benchmark(Command* self) {
 
 bool command_identify(Command *self) {
 
-  xlink_server_info server;
+  xlink_server_info_t server;
   
   if(xlink_identify(&server)) {
 

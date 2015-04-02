@@ -40,8 +40,8 @@ void commands_print(Commands* self);
 void commands_free(Commands* self);
 
 bool command_server_usable_after_possible_relocation(Command* self);
-bool command_requires_server_relocation(Command* self, xlink_server_info* server);
-bool command_server_relocation_possible(Command* self, xlink_server_info* server, unsigned short* address);
+bool command_requires_server_relocation(Command* self, xlink_server_info_t* server);
+bool command_server_relocation_possible(Command* self, xlink_server_info_t* server, unsigned short* address);
 
 Command* command_new(int *argc, char ***argv);
 int command_arity(Command* self);
