@@ -4,6 +4,7 @@ KASM?=java -jar /usr/share/kickassembler/KickAss.jar
 
 MINGW32?=i686-w64-mingw32
 MINGW32-GCC=$(MINGW32)-gcc
+MINGW32-WINDRES=$(MINGW32)-windres
 
 VERSION=0.9
 XLINK_SERIAL:=$(XLINK_SERIAL)
@@ -57,9 +58,12 @@ libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 xlink: libxlink.so client.c client.h disk.c disk.h range.c range.h
 	$(GCC) $(CFLAGS) -o xlink client.c disk.c range.c -L. -lxlink 
 
-xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32
+xlink.res.o: xlink.rc
+	$(MINGW32-WINDRES) -i xlink.rc -o xlink.res.o
+
+xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32 xlink.res.o
 	$(MINGW32-GCC) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
-		-o xlink.dll $(LIBSOURCES) -lusb-1.0 -linpout32
+		-o xlink.dll $(LIBSOURCES) xlink.res.o -lusb-1.0 -linpout32
 
 xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h xlink.lib-clean 
 	$(MINGW32-GCC) $(CFLAGS) -static-libgcc -o xlink.exe \
@@ -155,6 +159,7 @@ clean: firmware-clean
 	[ -f libxlink.so ] && rm -vf libxlink.so || true
 	[ -f xlink.dll ] && rm -vf xlink.dll || true
 	[ -f xlink.lib ] && rm -vf xlink.lib || true
+	[ -f xlink.res.o ] && rm -vf xlink.res.o || true
 	[ -f xlink ] && rm -vf xlink || true
 	[ -f xlink.exe ] && rm -vf xlink.exe || true
 	[ -f extensions.c ] && rm -vf extensions.c || true
