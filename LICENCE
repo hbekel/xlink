@@ -28,11 +28,11 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-                       LUFA Library
-             Copyright (C) Dean Camera, 2013.
+                           LUFA Library
+                 Copyright (C) Dean Camera, 2013.
 
-          dean [at] fourwalledcubicle [dot] com
-                     www.lufa-lib.org
+              dean [at] fourwalledcubicle [dot] com
+                         www.lufa-lib.org
 
 
 Permission to use, copy, modify, and distribute this software and its
@@ -51,3 +51,16 @@ consequential damages or any damages whatsoever resulting from loss of
 use, data or profits, whether in an action of contract, negligence or
 other tortious action, arising out of or in connection with the use or
 performance of this software.
+
+
+                 InpOut32 Library and Drivers
+
+                       Copyright Logix4U &
+   Phillip Gibbons [Highresolution Enterprises] (for the x64 port)
+
+             http://www.highrez.co.uk/Downloads/InpOut32/
+	     
+The Author makes no guarantee that this software is free from bugs and
+will not harm your system.  However, the author actively runs this
+software and all downloads have been checked for known viruses.  This
+product is released as open source (Freeware).
