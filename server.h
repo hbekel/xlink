@@ -54,7 +54,7 @@ loop:	lda $dd0d
 }   
 
 .macro input() {
-        lda #$00   
+  lda #$00   
 	sta $dd03
 }
   
