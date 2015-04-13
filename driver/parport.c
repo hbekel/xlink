@@ -26,6 +26,7 @@
 
 extern Driver* driver;
 static unsigned char _driver_parport_last_status;
+static bool _driver_parport_initialized = false;
 
 //------------------------------------------------------------------------------
 
@@ -37,7 +38,7 @@ static unsigned char _driver_parport_read_status() {
 #elif windows
   status = Inp32(driver->device+1);
 #endif
-
+  status &= 0x80;
   return status;
 }
 
@@ -77,15 +78,16 @@ static void _driver_parport_init() {
 #elif windows
   driver->device = strtol(driver->path, NULL, 0);
 #endif
-
   _driver_parport_set_control(
-                               DRIVER_PARPORT_CONTROL_SELECT | 
-                               DRIVER_PARPORT_CONTROL_INIT |
-                               DRIVER_PARPORT_CONTROL_INPUT |
-                               DRIVER_PARPORT_CONTROL_IRQ);
-
+                              DRIVER_PARPORT_CONTROL_SELECT | 
+                              DRIVER_PARPORT_CONTROL_INIT |
+                              DRIVER_PARPORT_CONTROL_INPUT |
+                              DRIVER_PARPORT_CONTROL_IRQ);
   
-  _driver_parport_last_status = _driver_parport_read_status();
+  if(!_driver_parport_initialized) {
+    _driver_parport_last_status = _driver_parport_read_status();
+    _driver_parport_initialized = true;
+  }
 }
 
 //------------------------------------------------------------------------------
@@ -157,7 +159,10 @@ bool driver_parport_wait(int timeout) {
     watch_start(watch); 
     
     while (current == _driver_parport_last_status) {
-      current = _driver_parport_read_status();
+            
+      if((current = _driver_parport_read_status()) != _driver_parport_last_status) {
+        break;
+      }
       
       if (watch_elapsed(watch) >= timeout) {
         result = false;
@@ -166,7 +171,7 @@ bool driver_parport_wait(int timeout) {
     }
   }
   _driver_parport_last_status = current;
-
+  
  done:
   watch_free(watch);
   return result;
@@ -206,7 +211,7 @@ bool driver_parport_send(unsigned char* data, int size) {
   for(int i=0; i<size; i++) {
     driver->write(data[i]);
     driver->strobe();    
-    result = driver->wait(driver->timeout*1000);
+    result = driver->wait(driver->timeout*1083);
 
     if(!result) {
       SET_ERROR(XLINK_ERROR_PARPORT,
@@ -224,7 +229,7 @@ bool driver_parport_receive(unsigned char* data, int size) {
   bool result = false;
   
   for(int i=0; i<size; i++) {
-    result = driver->wait(driver->timeout*1000);
+    result = driver->wait(driver->timeout*1083);
 
     if(!result) {
       SET_ERROR(XLINK_ERROR_PARPORT,
