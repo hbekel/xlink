@@ -23,6 +23,7 @@
 #define XLINK_ERROR_LIBUSB     0x02
 #define XLINK_ERROR_PARPORT    0x03
 #define XLINK_ERROR_SERVER     0x04
+#define XLINK_ERROR_FILE       0x05
 
 #define XLINK_COMMAND_LOAD     0x01
 #define XLINK_COMMAND_SAVE     0x02

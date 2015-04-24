@@ -1,0 +1,413 @@
+Index: vice/src/arch/win32/ui.c
+===================================================================
+--- vice/src/arch/win32/ui.c	(revision 29590)
++++ vice/src/arch/win32/ui.c	(working copy)
+@@ -2097,6 +2097,10 @@
+             if (IsFullscreenEnabled() && fullscreen_get_nesting_level() == 0) {
+                 return 0;
+             }
++	    break;
++        case WM_USER_RESET:
++	    machine_trigger_reset(MACHINE_RESET_MODE_HARD);
++	    break;
+     }
+ 
+     return DefWindowProc(window, msg, wparam, lparam);
+Index: vice/src/arch/win32/ui.h
+===================================================================
+--- vice/src/arch/win32/ui.h	(revision 29590)
++++ vice/src/arch/win32/ui.h	(working copy)
+@@ -54,6 +54,7 @@
+ #define APPLICATION_FULLSCREEN_CLASS TEXT("VICE:Fullscreen")
+ #define CONSOLE_CLASS "VICE:Console"
+ #define MONITOR_CLASS "VICE:Monitor"
++#define WM_USER_RESET 0x584c
+ 
+ typedef enum {
+     UI_BUTTON_NONE,
+Index: vice/src/c64/c64.c
+===================================================================
+--- vice/src/c64/c64.c	(revision 29590)
++++ vice/src/c64/c64.c	(working copy)
+@@ -101,6 +101,7 @@
+ #include "types.h"
+ #include "userport_joystick.h"
+ #include "userport_rtc.h"
++#include "userport_xlink.h"
+ #include "vice-event.h"
+ #include "vicii.h"
+ #include "vicii-mem.h"
+@@ -520,6 +521,10 @@
+         init_resource_fail("userport rtc");
+         return -1;
+     }
++    if (userport_xlink_resources_init() < 0) {
++        init_resource_fail("userport xlink");
++        return -1;
++    }
+     if (cartio_resources_init() < 0) {
+         init_resource_fail("cartio");
+         return -1;
+@@ -544,6 +549,7 @@
+     cartridge_resources_shutdown();
+     rombanks_resources_shutdown();
+     userport_rtc_resources_shutdown();
++    userport_xlink_resources_shutdown();
+     cartio_shutdown();
+     fsdevice_resources_shutdown();
+     disk_image_resources_shutdown();
+@@ -688,6 +694,10 @@
+         init_cmdline_options_fail("userport rtc");
+         return -1;
+     }
++    if (userport_xlink_cmdline_options_init() < 0) {
++        init_cmdline_options_fail("userport xlink");
++        return -1;
++    }
+     if (cartio_cmdline_options_init() < 0) {
+         init_cmdline_options_fail("cartio");
+         return -1;
+Index: vice/src/c64/c64cia2.c
+===================================================================
+--- vice/src/c64/c64cia2.c	(revision 29590)
++++ vice/src/c64/c64cia2.c	(working copy)
+@@ -53,6 +53,7 @@
+ #include "userport_digimax.h"
+ #include "userport_joystick.h"
+ #include "userport_rtc.h"
++#include "userport_xlink.h"
+ #include "vicii.h"
+ 
+ #if defined(HAVE_RS232DEV) || defined(HAVE_RS232NET)
+@@ -157,6 +158,7 @@
+         }
+         (*iecbus_callback_write)((BYTE)tmp, maincpu_clk + !(cia_context->write_offset));
+         printer_userport_write_strobe(tmp & 0x04);
++        userport_xlink_store_ciapa(tmp & 0x04);
+     }
+ }
+ 
+@@ -171,6 +173,7 @@
+     c64_glue_undump(vbank);
+ 
+     iecbus_cpu_undump((BYTE)(byte ^ 0xff));
++    userport_xlink_store_ciapa(byte & 0x04);
+ }
+ 
+ 
+@@ -183,6 +186,7 @@
+     /* FIXME: in the upcoming userport system these calls needs to be conditional */
+     userport_joystick_store_pbx(byte);
+     userport_rtc_store(byte);
++    userport_xlink_store_ciapb(byte);
+ }
+ 
+ static void pulse_ciapc(cia_context_t *cia_context, CLOCK rclk)
+@@ -202,6 +206,7 @@
+     /* FIXME: in the upcoming userport system these calls needs to be conditional */
+     userport_joystick_store_pbx(byte);
+     userport_rtc_store(byte);
++    userport_xlink_store_ciapb(byte);
+ }
+ 
+ /* read_* functions must return 0xff if nothing to read!!! */
+@@ -230,6 +235,7 @@
+     /* FIXME: in the upcoming userport system this call needs to be conditional */
+     byte = userport_joystick_read_pbx(byte);
+     byte = userport_rtc_read(byte);
++    byte = userport_xlink_read_ciapb(byte);
+ 
+     byte = (byte & ~(cia_context->c_cia[CIA_DDRB])) | (cia_context->c_cia[CIA_PRB] & cia_context->c_cia[CIA_DDRB]);
+     return byte;
+@@ -241,6 +247,7 @@
+         drive_cpu_execute_all(maincpu_clk);
+     }
+     parallel_cable_cpu_execute(DRIVE_PC_STANDARD);
++    userport_xlink_read_ciaicr();
+ }
+ 
+ static void read_sdr(cia_context_t *cia_context)
+Index: vice/src/userport/Makefile.am
+===================================================================
+--- vice/src/userport/Makefile.am	(revision 29590)
++++ vice/src/userport/Makefile.am	(working copy)
+@@ -16,4 +16,6 @@
+ 	userport_joystick.c \
+ 	userport_joystick.h \
+ 	userport_rtc.c \
+-	userport_rtc.h
++	userport_rtc.h \
++	userport_xlink.c \
++	userport_xlink.h
+Index: vice/src/userport/userport_xlink.c
+===================================================================
+--- vice/src/userport/userport_xlink.c	(revision 0)
++++ vice/src/userport/userport_xlink.c	(working copy)
+@@ -0,0 +1,206 @@
++/*
++ * userport_xlink.c - xlink userport emulation
++ *
++ * Written by
++ *  Henning Bekel <h.bekel@googlemail.com>
++ *
++ * This file is part of VICE, the Versatile Commodore Emulator.
++ * See README for copyright notice.
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++ *  02111-1307  USA.
++ *
++ */
++
++#include "vice.h"
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <unistd.h>
++#include <sys/stat.h>
++#include <sys/time.h>
++
++#ifndef WIN32
++  #include <sys/shm.h>
++  #include <signal.h>
++#else
++  #include <windows.h>
++  #include "arch/win32/ui.h"
++#endif
++
++#include "cmdline.h"
++#include "machine.h"
++#include "resources.h"
++#include "translate.h"
++#include "types.h"
++#include "userport_xlink.h"
++
++int userport_xlink_enable = 0;
++
++static int initialized = 0;
++static xlink_port_t *port;
++static char *shmname = "/tmp/xlink";
++
++#ifndef WIN32
++  static int shmid;
++#else
++  static HANDLE hMapFile;
++#endif
++
++/* ------------------------------------------------------------------------- */
++
++static int set_userport_xlink_enable(int val, void *param)
++{
++  userport_xlink_enable = val;
++
++  if(userport_xlink_enable) {
++    userport_xlink_init();
++  }
++  return 0;
++}
++
++static const resource_int_t resources_int[] = {
++    { "UserportXlink", 0, RES_EVENT_NO, NULL,
++      &userport_xlink_enable, set_userport_xlink_enable, NULL },
++    { NULL }
++};
++
++int userport_xlink_resources_init(void)
++{
++  return resources_register_int(resources_int);
++}
++
++static const cmdline_option_t cmdline_options[] =
++{
++    { "-xlink", SET_RESOURCE, 0,
++      NULL, NULL, "UserportXlink", (resource_value_t)1,
++      USE_PARAM_STRING, USE_DESCRIPTION_ID,
++      IDCLS_UNUSED, IDCLS_ENABLE_USERPORT_JOY,
++      NULL, NULL },
++    { "+xlink", SET_RESOURCE, 0,
++      NULL, NULL, "UserportXlink", (resource_value_t)0,
++      USE_PARAM_STRING, USE_DESCRIPTION_ID,
++      IDCLS_UNUSED, IDCLS_DISABLE_USERPORT_JOY,
++      NULL, NULL },
++    { NULL }
++};
++
++int userport_xlink_cmdline_options_init(void)
++{
++    return cmdline_register_options(cmdline_options);
++}
++
++extern void userport_xlink_resources_shutdown(void) {
++
++  if(userport_xlink_enable) {
++
++    port->id[0] = '\0';
++    
++#ifdef WIN32
++    UnmapViewOfFile(port);
++    CloseHandle(hMapFile);
++#else
++    shmdt(&port);
++    shmctl(shmid, IPC_RMID, NULL);
++#endif
++  }
++}
++
++/* ------------------------------------------------------------------------- */
++
++void userport_xlink_init() {
++
++  if(!initialized) {
++
++#ifndef WIN32
++
++    int fd = open(shmname, O_CREAT | O_RDWR, S_IRWXU);
++    close(fd);
++
++    key_t key = ftok(shmname, 1);
++
++    shmid = shmget(key, sizeof(xlink_port_t), IPC_CREAT | S_IRUSR | S_IWUSR);
++
++    port = (xlink_port_t*) shmat(shmid, NULL, 0);
++
++    if((int)port == -1) goto error;
++
++    sprintf(port->id, "%d", getpid());    
++    signal(SIGUSR1, &userport_xlink_reset);
++    
++#else
++    hMapFile = 
++      CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE,
++			0, sizeof(xlink_port_t), shmname);
++    
++    if(hMapFile == NULL) goto error;
++    
++    port =
++      (xlink_port_t*) MapViewOfFile(hMapFile, FILE_MAP_ALL_ACCESS,
++				    0, 0, sizeof(xlink_port_t));
++    
++    if(port == NULL) goto error;
++    
++    strncpy(port->id, APPLICATION_CLASS, sizeof(port->id));
++#endif
++    
++    port->flag = 0;
++    initialized = 1;
++  }
++  return;
++  
++ error:
++  perror("userport_xlink_init");
++  userport_xlink_enable = 0;
++  return;
++}
++
++void userport_xlink_store_ciapa(BYTE byte) {
++  if(userport_xlink_enable) {
++    port->pa2 = byte;
++  }
++}
++
++BYTE userport_xlink_read_ciapb(BYTE byte) {
++  if(userport_xlink_enable) {
++    byte =port->data;
++  }
++  return byte;
++}
++
++void userport_xlink_store_ciapb(BYTE byte) {
++  if(userport_xlink_enable) {
++    port->data = byte;
++  }
++}
++
++extern void cia2_set_flagx(void);
++
++void userport_xlink_read_ciaicr(void) {
++  if(userport_xlink_enable) {
++    usleep(0);
++    if(port->flag) {
++      cia2_set_flagx();
++      port->flag--;
++    }
++  }
++}
++
++void userport_xlink_reset(int signal) {
++  machine_trigger_reset(MACHINE_RESET_MODE_HARD);
++}
+Index: vice/src/userport/userport_xlink.h
+===================================================================
+--- vice/src/userport/userport_xlink.h	(revision 0)
++++ vice/src/userport/userport_xlink.h	(working copy)
+@@ -0,0 +1,56 @@
++/*
++ * userport_xlink.c - xlink userport emulation
++ *
++ * Written by
++ *  Henning Bekel <h.bekel@googlemail.com>
++ *
++ * This file is part of VICE, the Versatile Commodore Emulator.
++ * See README for copyright notice.
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
++ *  02111-1307  USA.
++ *
++ */
++
++#ifndef VICE_USERPORT_XLINK_H
++#define VICE_USERPORT_XLINK_H
++
++#include "types.h"
++
++typedef struct {
++  BYTE flag;
++  BYTE pa2;
++  BYTE data;
++  char id[256];
++} xlink_port_t;    
++
++extern int userport_xlink_enable;
++
++extern int userport_xlink_resources_init(void);
++extern int userport_xlink_cmdline_options_init(void);
++extern void userport_xlink_resources_shutdown(void);
++
++extern void userport_xlink_init(void);
++
++extern BYTE userport_xlink_cia2_read_dd0d(BYTE value);
++extern void userport_xlink_read_ciaicr(void);
++extern void userport_xlink_store_ciapa(BYTE byte);
++
++extern BYTE userport_xlink_read_ciapb(BYTE byte);
++extern void userport_xlink_store_ciapb(BYTE byte);
++
++extern void userport_xlink_reset(int signal);
++
++#endif

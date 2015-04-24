@@ -1,8 +1,9 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
-#define XLINK_DRIVER_DEVICE_USB 189
+#define XLINK_DRIVER_DEVICE_USB    189
 #define XLINK_DRIVER_DEVICE_PARPORT 99
+#define XLINK_DRIVER_DEVICE_SHM    -1
 
 #define XLINK_DRIVER_STATE_IDLE   0x01
 #define XLINK_DRIVER_STATE_INPUT  0x02
@@ -52,6 +53,7 @@ bool device_identify(char*, int*);
 bool device_is_supported(char*, int);
 bool device_is_parport(int);
 bool device_is_usb(int);
+bool device_is_shm(int);
 
 bool _driver_setup_and_open(void);
 bool _driver_ready(void);

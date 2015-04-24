@@ -21,7 +21,8 @@ LIBHEADERS=\
 	driver/driver.h \
 	driver/protocol.h \
 	driver/usb.h \
-	driver/parport.h
+	driver/parport.h \
+	driver/shm.h
 
 LIBSOURCES=\
 	xlink.c \
@@ -33,7 +34,8 @@ LIBSOURCES=\
 	kernal.c \
 	driver/driver.c \
 	driver/usb.c \
-	driver/parport.c
+	driver/parport.c \
+	driver/shm.c
 
 LIBFLAGS=-DXLINK_LIBRARY_BUILD -L.
 

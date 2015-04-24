@@ -14,6 +14,7 @@
 #include "driver.h"
 #include "parport.h"
 #include "usb.h"
+#include "shm.h"
 
 extern Driver* driver;
 
@@ -74,6 +75,9 @@ bool driver_setup(char* path) {
   bool result = false;
   int type;
 
+  driver->path = (char *) realloc(driver->path, strlen(path)+1);
+  strcpy(driver->path, path);
+  
   if(!device_identify(path, &type)) {
     goto done;
   }
@@ -81,9 +85,6 @@ bool driver_setup(char* path) {
   if(!device_is_supported(path, type)) {
     goto done;
   }
-
-  driver->path = (char *) realloc(driver->path, strlen(path)+1);
-  strcpy(driver->path, path);
 
   if(device_is_parport(type)) {
 
@@ -140,6 +141,34 @@ bool driver_setup(char* path) {
     else {
       SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize usb device \"%s\"", driver->path);
     }
+
+  } else if(device_is_shm(type)) {
+    
+    logger->debug("trying to use shm device \"%s\"...",  driver->path);
+
+    driver->_open    = &driver_shm_open;
+    driver->_close   = &driver_shm_close;    
+    driver->_strobe  = &driver_shm_strobe;    
+    driver->_wait    = &driver_shm_wait;
+    driver->_read    = &driver_shm_read;    
+    driver->_write   = &driver_shm_write;    
+    driver->_send    = &driver_shm_send;    
+    driver->_receive = &driver_shm_receive;    
+    driver->_input   = &driver_shm_input;    
+    driver->_output  = &driver_shm_output;    
+    driver->_ping    = &driver_shm_ping;    
+    driver->_reset   = &driver_shm_reset;    
+    driver->_boot    = &driver_shm_boot;    
+    driver->_free    = &driver_shm_free;
+    
+    result = driver->ready();
+    
+    if(result) {
+      logger->debug("using shm device \"%s\"", driver->path);
+    }
+    else {
+      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize shm device \"%s\"", driver->path);
+    }
   }
 
  done:
@@ -150,6 +179,12 @@ bool driver_setup(char* path) {
 //------------------------------------------------------------------------------
 
 bool device_identify(char* path, int* type) {
+
+  if(strncmp(path, "shm", 3) == 0) {
+    (*type) = XLINK_DRIVER_DEVICE_SHM;
+    return true;
+  }
+
 #if linux
   struct stat device;
 
@@ -173,11 +208,12 @@ bool device_identify(char* path, int* type) {
 #elif windows
 
   (*type) = XLINK_DRIVER_DEVICE_USB;
-
+  
   errno = 0;
   if ((strtol(path, NULL, 0) > 0) && (errno == 0)) {
     (*type) = XLINK_DRIVER_DEVICE_PARPORT;
   }
+
   return true;
 #endif
 }
@@ -187,7 +223,7 @@ bool device_identify(char* path, int* type) {
 bool device_is_supported(char *path, int type) {
 #if linux
 
-  if(!(device_is_parport(type) || device_is_usb(type))) {
+  if(!(device_is_parport(type) || device_is_usb(type) || device_is_shm(type))) {
 
     SET_ERROR(XLINK_ERROR_DEVICE, 
               "%s: unsupported device major number: %d", path, type);
@@ -208,6 +244,12 @@ bool device_is_parport(int type) {
 
 bool device_is_usb(int type) {
   return type == XLINK_DRIVER_DEVICE_USB;
+}
+
+//------------------------------------------------------------------------------
+
+bool device_is_shm(int type) {
+  return type == XLINK_DRIVER_DEVICE_SHM;
 }
 
 //------------------------------------------------------------------------------

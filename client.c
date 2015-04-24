@@ -1186,7 +1186,7 @@ bool command_benchmark(Command* self) {
 
   xlink_server_info_t server;
   
-  unsigned char payload[0x8000];
+  unsigned char payload[0x6000];
   unsigned char roundtrip[sizeof(payload)];
     
   int start = 0x1000;

@@ -267,7 +267,7 @@ bool driver_usb_send(unsigned char* data, int size) {
 
     int transfered = controlEndpointOut(USB_SEND, data, chunk);
 
-    if(transfered < 0) { 
+    if(transfered < 0) {
       return false;
     }
 
