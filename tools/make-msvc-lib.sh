@@ -20,8 +20,16 @@ xlink_load
 xlink_save
 xlink_peek
 xlink_poke
+xlink_fill
 xlink_jump
 xlink_run
+xlink_inject
+xlink_begin
+xlink_send
+xlink_send_with_timeout
+xlink_receive
+xlink_receive_with_timeout
+xlink_end
 EOF
 
 lib /MACHINE:X86 /def:xlink.def /out:xlink.lib && \
