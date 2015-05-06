@@ -67,13 +67,13 @@ bool driver_shm_open(void) {
     if(port == NULL) goto error;    
 
 #endif
-    
-    last = port->pa2;
-    port->flag = 0;
-    
+        
+    port->flag = 0;    
     initialized = true;
   }
+
   driver->input();
+  last = port->pa2;
   result = true;
   
  done:
@@ -125,6 +125,7 @@ bool driver_shm_wait(int timeout) {
     
     while(current == last) {
       if((current = port->pa2) != last) {
+	last = current;
         break;
       }
 
@@ -134,7 +135,6 @@ bool driver_shm_wait(int timeout) {
       }
     }
   }
-  last = current;
  done:
   watch_free(watch);
   return result;
