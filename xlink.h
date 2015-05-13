@@ -17,6 +17,7 @@
 #define XLINK_SERVER_TYPE_RAM  0x00
 #define XLINK_SERVER_TYPE_ROM  0x01
 #define XLINK_MACHINE_C64      0x00
+#define XLINK_MACHINE_C128     0x01
 
 #define XLINK_SUCCESS          0x00
 #define XLINK_ERROR_DEVICE     0x01

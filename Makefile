@@ -39,11 +39,15 @@ LIBSOURCES=\
 
 LIBFLAGS=-DXLINK_LIBRARY_BUILD -L.
 
-all: linux c64
-c64: bootstrap
+all: linux cbm
+cbm: bootstrap
 linux: xlink udev
 win32: xlink.exe
-bootstrap: bootstrap.txt
+bootstrap: bootstrap-c64 bootstrap-c128
+bootstrap-c64: bootstrap-c64.txt
+bootstrap-test-c64: bootstrap-test-c64.prg
+bootstrap-c128: bootstrap-c128.txt
+bootstrap-test-c128: bootstrap-test-c128.prg
 prepare-msi: clean win32 firmware xlink.lib
 
 testsuite: testsuite.c range.c
@@ -116,10 +120,19 @@ kernal.c: tools/make-kernal tools/make-kernal.c kernal.asm
 tools/make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
-bootstrap.txt: tools/make-bootstrap bootstrap.asm
-	$(KASM) -o bootstrap.prg bootstrap.asm && \
-	tools/make-bootstrap bootstrap.prg > bootstrap.txt && \
-	rm -v bootstrap.prg
+bootstrap-c64.txt: tools/make-bootstrap bootstrap.asm server.h
+	$(KASM) :target=c64 -o bootstrap-c64.prg bootstrap.asm && \
+	tools/make-bootstrap bootstrap-c64.prg > bootstrap-c64.txt
+
+bootstrap-test-c64.prg: bootstrap-c64.txt
+	petcat -w2 -o bootstrap-test-c64.prg -- bootstrap-c64.txt
+
+bootstrap-c128.txt: tools/make-bootstrap bootstrap.asm
+	$(KASM) :target=c128 -o bootstrap-c128.prg bootstrap.asm && \
+	tools/make-bootstrap bootstrap-c128.prg > bootstrap-c128.txt
+
+bootstrap-test-c128.prg: bootstrap-c128.txt
+	petcat -w70 -o bootstrap-test-c128.prg -- bootstrap-c128.txt
 
 udev: etc/udev/rules.d/10-xlink.rules
 
@@ -167,7 +180,12 @@ clean: firmware-clean
 	[ -f extensions.c ] && rm -vf extensions.c || true
 	[ -f server.c ] && rm -vf server.c || true
 	[ -f kernal.c ] && rm -vf kernal.c || true
-	[ -f bootstrap.txt ] && rm -vf bootstrap.txt || true
+	[ -f bootstrap-c64.txt ] && rm -vf bootstrap-c64.txt || true
+	[ -f bootstrap-c64.prg ] && rm -vf bootstrap-c64.prg || true
+	[ -f bootstrap-c128.txt ] && rm -vf bootstrap-c128.txt || true
+	[ -f bootstrap-c128.prg ] && rm -vf bootstrap-c128.prg || true
+	[ -f bootstrap-test-c64.prg ] && rm -vf bootstrap-test-c64.prg || true
+	[ -f bootstrap-test-c128.prg ] && rm -vf bootstrap-test-c128.prg || true
 	[ -f tools/make-extension ] && rm -vf tools/make-extension || true
 	[ -f tools/make-bootstrap ] && rm -vf tools/make-bootstrap || true
 	[ -f tools/make-server ] && rm -vf tools/make-server || true

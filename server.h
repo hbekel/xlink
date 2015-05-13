@@ -1,19 +1,40 @@
-.var start  = $c1    // Transfer start address
-.var end    = $c3    // Transfer end address
-.var bstart = $2b    // Start of Basic program text
-.var bend   = $2d    // End of Basic program text
+.import source "target.asm"
 	
-.var mem   = $fe    // Memory config
-.var bank  = $ff    // bank config
+.var start = $c1        // Transfer start address
+.var end   = $c3        // Transfer end address
 
-.var sysirq   = $ea34 // System IRQ
-.var relink   = $a533 // Relink Basic program
-.var insnewl  = $a659 // Insert new line into BASIC program
-.var restxtpt = $a68e // Reset BASIC text pointer
-.var warmst   = $a7ae // Basic warm start (e.g. RUN)
-.var memtop   = $0283 // Top of lower memory area
-.var errmode  = $9d   // Error mode flag (00 = Program mode, 80 = direct mode)
+.var bstart = $2b       // Start of Basic program text
+.var bend   = $2d       // End of Basic program text
+.var mem    = $fe       // Memory config
+.var bank   = $ff       // bank config
+.var mode   = $9d       // Error mode flag (00 = Program mode, 80 = direct mode)
 
+.var sysirq   = $ea34   // System IRQ
+.var relink   = $a533   // Relink Basic program
+.var insnewl  = $a659   // Insert new line into BASIC program
+.var restxtpt = $a68e   // Reset BASIC text pointer
+.var warmst   = $a7ae   // Basic warm start (e.g. RUN)
+.var memtop   = $0283   // Top of lower memory area
+.var repl     = $a480   // BASIC read-eval-print loop
+.var cursor   = $cc     // Cursor blink flag (00=blinking)
+	
+.if(target == "c128") {	
+  .eval start = $c1     // Transfer start address
+  .eval end   = $fd     // Transfer end address
+
+  .eval bstart = $2d    // Start of Basic program text
+  .eval bend   = $1210  // End of Basic program text
+  .eval mem    = $fb    // Memory config
+  .eval bank   = $fc    // bank config
+  .eval mode   = $7f    // Error mode flag (00 = Program mode, 80 = direct mode)	
+
+  .eval sysirq = $fa65  // System IRQ
+  .eval relink = $4f4f  // Relink Basic program
+  .eval memtop = $1212  // Top of lower memory area	
+  .eval repl   = $4dc6  // BASIC read-eval-print loop
+  .eval cursor = $0a27   // Cursor blink flag (00=blinking)	
+}
+	
 .namespace Command {
 .label load        = $01
 .label save        = $02
@@ -54,7 +75,7 @@ loop:	lda $dd0d
 }   
 
 .macro input() {
-  lda #$00   
+	lda #$00   
 	sta $dd03
 }
   
@@ -96,7 +117,6 @@ push:	pha
 	sta bend
 	lda end+1
 	sta bend+1
-	jsr relink
 done:	
 }
 	

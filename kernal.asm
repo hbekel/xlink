@@ -377,7 +377,7 @@ run: {
 	jsr restxtpt
 
 	lda #$00        // flag program mode
-	sta errmode
+	sta mode
 
 	jmp warmst
 eof:

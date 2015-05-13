@@ -1253,7 +1253,7 @@ bool command_identify(Command *self) {
     printf("%s %d.%d %s %s $%04X-$%04X\n",
            server.id,
            (server.version & 0xf0) >> 4, server.version & 0x0f,
-           server.machine == XLINK_MACHINE_C64 ? "C64" : "Unknown",
+           server.machine == XLINK_MACHINE_C64 ? "C64" : (XLINK_MACHINE_C128 ? "C128" : "Unknown"),
            server.type == XLINK_SERVER_TYPE_RAM ? "RAM" : "ROM",
            server.start, server.end);
 

@@ -20,7 +20,7 @@ make-extension
 make-bootstrap
 make-server
 make-kernal
-bootstrap.txt
+bootstrap*.txt
 log
 TODO
 inpout32*
