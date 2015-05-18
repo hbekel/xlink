@@ -27,8 +27,8 @@ install: {
 //------------------------------------------------------------------------------
 	
 uninstall: {
-	lda #$65
-	ldx #$fa
+	lda #<sysirq
+	ldx #>sysirq
 	sta $0314
 	stx $0315
 	rts
@@ -48,10 +48,11 @@ irq: {
 	bne !next+
 	jmp load
 
-/*
+
 !next:	cpy #Command.save
 	bne !next+
 	jmp save
+
 
 !next:	cpy #Command.peek
 	bne !next+
@@ -60,23 +61,20 @@ irq: {
 !next:	cpy #Command.poke
 	bne !next+
 	jmp poke
-	
+
+
 !next:	cpy #Command.jump
 	bne !next+
 	jmp jump
 
-*/
-	
 !next:	cpy #Command.run
 	bne !next+
 	jmp run
 
-/*
 !next:	cpy #Command.inject
 	bne !next+
 	jmp inject
 
-*/
 !next:	cpy #Command.identify
 	bne !next+
 	jmp identify
@@ -110,6 +108,84 @@ done:	:screenOn()
 
 //------------------------------------------------------------------------------
 
+save: {
+	jsr readHeader
+	:screenOff()
+	
+        :output()
+	ldy #$00
+
+!loop:  lda (start),y  // read with normal memory config
+	:write()
+	:next()
+
+done:	lda #$00   // reset CIA2 port B to input
+	sta $dd03
+	
+	:screenOn()
+	jmp sysirq
+}	
+
+//------------------------------------------------------------------------------
+	
+poke: {
+	jsr read stx mem
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
+
+	ldy #$00	
+
+	:wait()
+	lda $dd01
+	tax :ack() txa
+	
+	sta (start),y
+
+	jmp sysirq
+}
+
+//------------------------------------------------------------------------------
+	
+peek: {
+	jsr read stx mem
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
+
+        :output()
+	
+	ldy #$00
+	lda (start),y
+
+	jsr write
+
+done:	:input()
+	
+	jmp sysirq
+}
+	
+//------------------------------------------------------------------------------
+
+jump: {
+	jsr read stx mem
+	jsr read stx bank
+
+	ldx #$ff txs // reset stack pointer
+
+        lda #>repl     pha // make sure the code jumped to can rts to basic
+        lda #[<repl-1] pha   
+  
+	jsr read txa pha // push high byte of jump address
+	jsr read txa pha // push low byte of jump address
+
+	lda #$00 tax tay pha // clear registers & push clean flags 
+	
+	rti // jump via rti
+}
+
+//------------------------------------------------------------------------------
+	
 run: {
 	jsr uninstall
 
@@ -120,6 +196,21 @@ run: {
 	jmp $5aa6   // perform RUN
 }
 	
+//------------------------------------------------------------------------------
+
+inject:	{
+	lda #>return pha
+	lda #<return pha
+	
+	jsr read txa pha 
+	jsr read txa pha
+	
+	rts
+	
+return: nop
+	jmp sysirq
+}
+
 //------------------------------------------------------------------------------
 	
 identify: {
