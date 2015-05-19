@@ -105,8 +105,8 @@ irq: {
 	jmp identify
         
 !next:
-done:	jsr $ffea
-	jmp $ea34
+done:	jsr jiffy
+	jmp sysirq
 eof:
 }
 

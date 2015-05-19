@@ -77,7 +77,8 @@ irq: {
 	jmp identify
         
 !next:	
-done:   jmp sysirq
+done:   jsr jiffy
+	jmp sysirq
 }
 
 //------------------------------------------------------------------------------
@@ -90,7 +91,7 @@ load: {
 	
 	ldy #$00
 	
-	lda mem // check if specific memory config was requested
+	lda mem         // check if specific memory config was requested
 	and #$7f
 	cmp #$37
 	bne slow
@@ -115,7 +116,7 @@ slow:
 
 done:	:relinkBasic()
 	:screenOn()
-	jmp sysirq
+	jmp irq.done
 }
 
 //------------------------------------------------------------------------------
@@ -151,7 +152,7 @@ done:	lda #$00   // reset CIA2 port B to input
 	sta $dd03
 	
 	:screenOn()
-	jmp sysirq
+	jmp irq.done
 }
 
 //------------------------------------------------------------------------------
@@ -174,7 +175,7 @@ poke: {
 	lda #$37
 	sta $01
 
-	jmp sysirq
+	jmp irq.done
 }
 
 //------------------------------------------------------------------------------
@@ -198,7 +199,7 @@ peek: {
 
 done:	:input()
 	
-	jmp sysirq
+	jmp irq.done
 }
 
 //------------------------------------------------------------------------------
@@ -252,7 +253,7 @@ inject:	{
 	rts
 	
 return: nop
-	jmp sysirq
+	jmp irq.done
 }
 
 //------------------------------------------------------------------------------
@@ -307,7 +308,7 @@ identify: {
         
 done:   :input()
         
-        jmp sysirq
+        jmp irq.done
 }
         
 //------------------------------------------------------------------------------	
@@ -336,7 +337,7 @@ write: {
 	rts
 }
 
-//------------------------------------------------------------------------------	
+//------------------------------------------------------------------------------
 	
 Server:	{
 size:    .byte $05
