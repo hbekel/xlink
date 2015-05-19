@@ -1,7 +1,7 @@
 .import source "server.h"
 
-.pc = $2000
-
+.pc = $1800 "Server"
+	
 //------------------------------------------------------------------------------
 
 install: {
@@ -14,13 +14,15 @@ install: {
 
 	lda $dd0d // clear stale handshake
 
-        sei
-        lda #<irq // setup irq
+	// setup irq
+	
+	sei
+        lda #<irq 
         ldx #>irq
         sta $0314
         stx $0315       
         cli
-	
+
 	rts
 }
 
@@ -48,11 +50,9 @@ irq: {
 	bne !next+
 	jmp load
 
-
 !next:	cpy #Command.save
 	bne !next+
 	jmp save
-
 
 !next:	cpy #Command.peek
 	bne !next+
@@ -61,7 +61,6 @@ irq: {
 !next:	cpy #Command.poke
 	bne !next+
 	jmp poke
-
 
 !next:	cpy #Command.jump
 	bne !next+
@@ -88,20 +87,34 @@ done:   jmp sysirq
 	
 load: {
 	jsr readHeader
-	:screenOff()
-	
+	:screenOff()	
 	:checkBasic()
+	:setCPUPort() 
 	
-	ldy #$00
+	:checkBank()
 	
+close:	ldy #$00	
 !loop:  :wait()
-	lda $dd01 
 	sta (start),y 
 	:ack()
 	:next()
 	jmp done
 
-done:	:screenOn()
+far:	ldy #$00
+!loop:  :wait()
+
+	lda #start
+	sta stashptr	
+
+	ldx bank	
+	lda $dd01 
+	jsr stash
+		
+	:ack()
+	:next()
+	
+done:   :resetCPUPort()	
+	:screenOn()
 	:relinkBasic()
 	jmp sysirq
 }
@@ -111,17 +124,30 @@ done:	:screenOn()
 save: {
 	jsr readHeader
 	:screenOff()
+	:setCPUPort()
 	
         :output()
-	ldy #$00
 
-!loop:  lda (start),y  // read with normal memory config
+	:checkBank()
+	
+close:	ldy #$00
+!loop:  lda (start),y  
+	:write()
+	:next()
+	jmp done
+
+far:	ldy #$00
+!loop:  lda #start
+	sta fetchptr	
+
+	ldx bank	
+	jsr fetch
+		
 	:write()
 	:next()
 
-done:	lda #$00   // reset CIA2 port B to input
-	sta $dd03
-	
+done:	:input()
+	:resetCPUPort()
 	:screenOn()
 	jmp sysirq
 }	
@@ -129,19 +155,31 @@ done:	lda #$00   // reset CIA2 port B to input
 //------------------------------------------------------------------------------
 	
 poke: {
-	jsr read stx mem
+	jsr read stx mem 
 	jsr read stx bank
 	jsr read stx start
 	jsr read stx start+1
 
-	ldy #$00	
-
-	:wait()
-	lda $dd01
-	tax :ack() txa
+	:setCPUPort()
 	
-	sta (start),y
+	:wait()
+	lda $dd01 pha
+	:ack()
+	
+	:checkBank()
+	
+close:  ldy #$00
+	pla sta (start),y
+	jmp done
 
+far:    ldy #$00
+	lda #start
+	sta stashptr
+
+	ldx bank
+	pla jsr stash
+	
+done:   :resetCPUPort()
 	jmp sysirq
 }
 
@@ -154,13 +192,25 @@ peek: {
 	jsr read stx start+1
 
         :output()
+	:setCPUPort()
 	
-	ldy #$00
+	:checkBank()
+	
+close:	ldy #$00
 	lda (start),y
+	:write()
+	jmp done
 
-	jsr write
+far:	lda #start
+	sta fetchptr
 
-done:	:input()
+	ldx bank
+	jsr fetch
+	
+	:write()
+
+done:   :resetCPUPort()
+	:input()
 	
 	jmp sysirq
 }
@@ -168,22 +218,30 @@ done:	:input()
 //------------------------------------------------------------------------------
 
 jump: {
-	jsr read stx mem
+ 	jsr read stx mem
 	jsr read stx bank
 
-	ldx #$ff txs // reset stack pointer
+	ldx #$ff txs        // reset stack pointer
 
-        lda #>repl     pha // make sure the code jumped to can rts to basic
-        lda #[<repl-1] pha   
-  
-	jsr read txa pha // push high byte of jump address
-	jsr read txa pha // push low byte of jump address
+        lda #>repl     pha  // make sure the code jumped to can rts to basic
+        lda #[<repl-1] pha  // (only if the bank includes basic rom, of course) 
 
-	lda #$00 tax tay pha // clear registers & push clean flags 
+	// prepare jmpfar...
 	
-	rti // jump via rti
-}
+	lda bank sta $02    // setup requested bank value
 
+	jsr read stx $03    // setup jump address (sent msb first by client)
+	jsr read stx $04
+
+	// set clean registers and flags...
+	
+	lda #$00 sta $05 sta $06 sta $07 sta $08 
+
+	:setCPUPort()
+
+	jmp jmpfar          // implies rti
+}
+	
 //------------------------------------------------------------------------------
 	
 run: {
@@ -302,4 +360,8 @@ machine: .byte $01 // 0 = C64, 1 = C128
 end:	 .word *+2
 }
 
-//------------------------------------------------------------------------------	
+//------------------------------------------------------------------------------
+
+.pc = $1c01 "SYS"
+
+.byte $0b, $1c, $01, $00, $9e, $36, $31, $34, $34

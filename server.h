@@ -18,7 +18,8 @@
 .var memtop   = $0283   // Top of lower memory area
 .var repl     = $a480   // BASIC read-eval-print loop
 .var cursor   = $cc     // Cursor blink flag (00=blinking)
-	
+.var default  = $37     // Default processor port value
+   
 .if(target == "c128") {	
   .eval start = $c1     // Transfer start address
   .eval end   = $fd     // Transfer end address
@@ -29,13 +30,29 @@
   .eval bank   = $fc    // bank config
   .eval mode   = $7f    // Error mode flag (00 = Program mode, 80 = direct mode)	
 
-  .eval sysirq = $fa65  // System IRQ
-  .eval relink = $4f4f  // Relink Basic program
-  .eval basrun = $5aa6  // Perform RUN
-  .eval memtop = $1212  // Top of lower memory area	
-  .eval repl   = $4dc6  // BASIC read-eval-print loop
-  .eval cursor = $0a27   // Cursor blink flag (00=blinking)	
+  .eval sysirq  = $fa65  // System IRQ
+  .eval relink  = $4f4f  // Relink Basic program
+  .eval basrun  = $5aa6  // Perform RUN
+  .eval memtop  = $1212  // Top of lower memory area	
+  .eval repl    = $4dc6  // BASIC read-eval-print loop
+  .eval cursor  = $0a27  // Cursor blink flag (00=blinking)
+  .eval default = $73    // Default processor port value	
 }
+
+// C128 specific:
+	
+.var mmu      = $ff00
+.var bank2mmu = $f7f0
+
+.var fetch    = $02a2
+.var fetchptr = $02aa
+	
+.var stash    = $02af
+.var stashptr = $02b9
+
+.var jmpfar   = $02e3
+
+// Commands:
 	
 .namespace Command {
 .label load        = $01
@@ -48,13 +65,13 @@
 .label identify    = $fe
 }
 	
-.macro wait() { // Wait for handshake from PC (falling edge on FLAG <- Parport STROBE)
+.macro wait() { // Wait for handshake from PC (falling edge on FLAG)
 loop:	lda $dd0d
 	and #$10
 	beq loop
 }
 
-.macro ack() { // Send handshake to PC (flip bit on CIA2 PA2 -> Parport BUSY) 
+.macro ack() { // Send handshake to PC (flip bit on CIA2 PA2) 
 	lda $dd00
 	eor #$04
 	sta $dd00
@@ -94,6 +111,24 @@ check:	lda start+1
 	cmp end
 	bne !loop-
 }
+
+.macro setCPUPort() {
+	lda mem
+	sta $01
+}
+
+.macro resetCPUPort() {
+	lda #default
+	sta $01
+}
+	
+.macro checkBank() {
+	ldx bank
+	lda bank2mmu,x
+	sta bank
+	cmp mmu
+	bne far
+}   
 
 .macro checkBasic() {
 	lda start
