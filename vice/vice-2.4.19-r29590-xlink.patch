@@ -1,7 +1,7 @@
 Index: vice/src/arch/win32/ui.c
 ===================================================================
---- vice/src/arch/win32/ui.c	(revision 29590)
-+++ vice/src/arch/win32/ui.c	(working copy)
+--- vice/src/arch/win32/ui.c	(Revision 29590)
++++ vice/src/arch/win32/ui.c	(Arbeitskopie)
 @@ -2097,6 +2097,10 @@
              if (IsFullscreenEnabled() && fullscreen_get_nesting_level() == 0) {
                  return 0;
@@ -15,8 +15,8 @@ Index: vice/src/arch/win32/ui.c
      return DefWindowProc(window, msg, wparam, lparam);
 Index: vice/src/arch/win32/ui.h
 ===================================================================
---- vice/src/arch/win32/ui.h	(revision 29590)
-+++ vice/src/arch/win32/ui.h	(working copy)
+--- vice/src/arch/win32/ui.h	(Revision 29590)
++++ vice/src/arch/win32/ui.h	(Arbeitskopie)
 @@ -54,6 +54,7 @@
  #define APPLICATION_FULLSCREEN_CLASS TEXT("VICE:Fullscreen")
  #define CONSOLE_CLASS "VICE:Console"
@@ -25,10 +25,52 @@ Index: vice/src/arch/win32/ui.h
  
  typedef enum {
      UI_BUTTON_NONE,
+Index: vice/src/c128/c128.c
+===================================================================
+--- vice/src/c128/c128.c	(Revision 29590)
++++ vice/src/c128/c128.c	(Arbeitskopie)
+@@ -99,6 +99,7 @@
+ #include "types.h"
+ #include "userport_joystick.h"
+ #include "userport_rtc.h"
++#include "userport_xlink.h"
+ #include "vice-event.h"
+ #include "vicii.h"
+ #include "vicii-mem.h"
+@@ -581,6 +582,10 @@
+         init_resource_fail("userport rtc");
+         return -1;
+     }
++    if (userport_xlink_resources_init() < 0) {
++        init_resource_fail("userport xlink");
++        return -1;
++    }
+     if (cartio_resources_init() < 0) {
+         init_resource_fail("cartio");
+         return -1;
+@@ -603,6 +608,7 @@
+     functionrom_resources_shutdown();
+     rombanks_resources_shutdown();
+     userport_rtc_resources_shutdown();
++    userport_xlink_resources_shutdown();
+     cartio_shutdown();
+     fsdevice_resources_shutdown();
+     disk_image_resources_shutdown();
+@@ -743,6 +749,10 @@
+         init_cmdline_options_fail("userport rtc");
+         return -1;
+     }
++    if (userport_xlink_cmdline_options_init() < 0) {
++        init_cmdline_options_fail("userport xlink");
++        return -1;
++    }
+     if (cartio_cmdline_options_init() < 0) {
+         init_cmdline_options_fail("cartio");
+         return -1;
 Index: vice/src/c64/c64.c
 ===================================================================
---- vice/src/c64/c64.c	(revision 29590)
-+++ vice/src/c64/c64.c	(working copy)
+--- vice/src/c64/c64.c	(Revision 29590)
++++ vice/src/c64/c64.c	(Arbeitskopie)
 @@ -101,6 +101,7 @@
  #include "types.h"
  #include "userport_joystick.h"
@@ -69,8 +111,8 @@ Index: vice/src/c64/c64.c
          return -1;
 Index: vice/src/c64/c64cia2.c
 ===================================================================
---- vice/src/c64/c64cia2.c	(revision 29590)
-+++ vice/src/c64/c64cia2.c	(working copy)
+--- vice/src/c64/c64cia2.c	(Revision 29590)
++++ vice/src/c64/c64cia2.c	(Arbeitskopie)
 @@ -53,6 +53,7 @@
  #include "userport_digimax.h"
  #include "userport_joystick.h"
@@ -127,10 +169,72 @@ Index: vice/src/c64/c64cia2.c
  }
  
  static void read_sdr(cia_context_t *cia_context)
+Index: vice/src/translate.txt
+===================================================================
+--- vice/src/translate.txt	(Revision 29590)
++++ vice/src/translate.txt	(Arbeitskopie)
+@@ -2350,6 +2350,12 @@
+ /* userport/userport_rtc.c */
+ IDCLS_DISABLE_USERPORT_RTC_SAVE
+ 
++/* userport/userport_xlink.c */
++IDCLS_ENABLE_USERPORT_XLINK
++
++/* userport/userport_xlink.c */
++IDCLS_DISABLE_USERPORT_XLINK
++
+ /* c64/plus256k.c */
+ IDCLS_SPECIFY_PLUS256K_NAME
+ 
+Index: vice/src/translate_text.c
+===================================================================
+--- vice/src/translate_text.c	(Revision 29590)
++++ vice/src/translate_text.c	(Arbeitskopie)
+@@ -5302,6 +5302,40 @@
+ /* tr */ {IDCLS_DISABLE_USERPORT_RTC_SAVE_TR, ""},  /* fuzzy */
+ #endif
+ 
++/* userport/userport_xlink.c */
++/* en */ {IDCLS_ENABLE_USERPORT_XLINK,    N_("Enable Userport xlink adapter")},
++#ifdef HAS_TRANSLATION
++/* da */ {IDCLS_ENABLE_USERPORT_XLINK_DA, ""},  /* fuzzy */
++/* de */ {IDCLS_ENABLE_USERPORT_XLINK_DE, "Userport Xlink Adapter aktivieren"},
++/* es */ {IDCLS_ENABLE_USERPORT_XLINK_ES, "Permitir adaptador puerto xlink"},
++/* fr */ {IDCLS_ENABLE_USERPORT_XLINK_FR, "Activer l'adaptateur xlink port utilisateur"},
++/* hu */ {IDCLS_ENABLE_USERPORT_XLINK_HU, ""},  /* fuzzy */
++/* it */ {IDCLS_ENABLE_USERPORT_XLINK_IT, "Attiva adattatore xlink su userport"},
++/* ko */ {IDCLS_ENABLE_USERPORT_XLINK_KO, ""},  /* fuzzy */
++/* nl */ {IDCLS_ENABLE_USERPORT_XLINK_NL, "Activeer Userport xlink adapter"},
++/* pl */ {IDCLS_ENABLE_USERPORT_XLINK_PL, "W³±cz z³±cze userportu xlinka"},
++/* ru */ {IDCLS_ENABLE_USERPORT_XLINK_RU, ""},  /* fuzzy */
++/* sv */ {IDCLS_ENABLE_USERPORT_XLINK_SV, "Aktivera adapter för användarportxlinkar"},
++/* tr */ {IDCLS_ENABLE_USERPORT_XLINK_TR, ""},  /* fuzzy */
++#endif
++
++/* userport/userport_xlink.c */
++/* en */ {IDCLS_DISABLE_USERPORT_XLINK,    N_("Disable Userport xlink adapter")},
++#ifdef HAS_TRANSLATION
++/* da */ {IDCLS_DISABLE_USERPORT_XLINK_DA, ""},  /* fuzzy */
++/* de */ {IDCLS_DISABLE_USERPORT_XLINK_DE, "Userport Xlink Adapter deaktivieren"},
++/* es */ {IDCLS_DISABLE_USERPORT_XLINK_ES, "Deshabilitar adaptador puerto xlink"},
++/* fr */ {IDCLS_DISABLE_USERPORT_XLINK_FR, "Désactiver l'adaptateur Xlink port utilisateur"},
++/* hu */ {IDCLS_DISABLE_USERPORT_XLINK_HU, ""},  /* fuzzy */
++/* it */ {IDCLS_DISABLE_USERPORT_XLINK_IT, "Disattiva adattatore xlink su userport"},
++/* ko */ {IDCLS_DISABLE_USERPORT_XLINK_KO, ""},  /* fuzzy */
++/* nl */ {IDCLS_DISABLE_USERPORT_XLINK_NL, "De Userport xlink adapter uitschakelen"},
++/* pl */ {IDCLS_DISABLE_USERPORT_XLINK_PL, "Wy³±cz z³±cze userportu xlinka"},
++/* ru */ {IDCLS_DISABLE_USERPORT_XLINK_RU, ""},  /* fuzzy */
++/* sv */ {IDCLS_DISABLE_USERPORT_XLINK_SV, "Inativera adapter för användarportsxlinka"},
++/* tr */ {IDCLS_DISABLE_USERPORT_XLINK_TR, ""},  /* fuzzy */
++#endif
++
+ /* c64/psid.c */
+ /* en */ {IDCLS_OVERWRITE_PSID_SETTINGS,    N_("Override PSID settings for Video standard and SID model")},
+ #ifdef HAS_TRANSLATION
 Index: vice/src/userport/Makefile.am
 ===================================================================
---- vice/src/userport/Makefile.am	(revision 29590)
-+++ vice/src/userport/Makefile.am	(working copy)
+--- vice/src/userport/Makefile.am	(Revision 29590)
++++ vice/src/userport/Makefile.am	(Arbeitskopie)
 @@ -16,4 +16,6 @@
  	userport_joystick.c \
  	userport_joystick.h \
@@ -141,9 +245,9 @@ Index: vice/src/userport/Makefile.am
 +	userport_xlink.h
 Index: vice/src/userport/userport_xlink.c
 ===================================================================
---- vice/src/userport/userport_xlink.c	(revision 0)
-+++ vice/src/userport/userport_xlink.c	(working copy)
-@@ -0,0 +1,206 @@
+--- vice/src/userport/userport_xlink.c	(Revision 0)
++++ vice/src/userport/userport_xlink.c	(Arbeitskopie)
+@@ -0,0 +1,209 @@
 +/*
 + * userport_xlink.c - xlink userport emulation
 + *
@@ -236,12 +340,12 @@ Index: vice/src/userport/userport_xlink.c
 +    { "-xlink", SET_RESOURCE, 0,
 +      NULL, NULL, "UserportXlink", (resource_value_t)1,
 +      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-+      IDCLS_UNUSED, IDCLS_ENABLE_USERPORT_JOY,
++      IDCLS_UNUSED, IDCLS_ENABLE_USERPORT_XLINK,
 +      NULL, NULL },
 +    { "+xlink", SET_RESOURCE, 0,
 +      NULL, NULL, "UserportXlink", (resource_value_t)0,
 +      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-+      IDCLS_UNUSED, IDCLS_DISABLE_USERPORT_JOY,
++      IDCLS_UNUSED, IDCLS_DISABLE_USERPORT_XLINK,
 +      NULL, NULL },
 +    { NULL }
 +};
@@ -319,12 +423,14 @@ Index: vice/src/userport/userport_xlink.c
 +void userport_xlink_store_ciapa(BYTE byte) {
 +  if(userport_xlink_enable) {
 +    port->pa2 = byte;
++    usleep(0);
 +  }
 +}
 +
 +BYTE userport_xlink_read_ciapb(BYTE byte) {
 +  if(userport_xlink_enable) {
-+    byte =port->data;
++    usleep(0);
++    byte = port->data;
 +  }
 +  return byte;
 +}
@@ -332,6 +438,7 @@ Index: vice/src/userport/userport_xlink.c
 +void userport_xlink_store_ciapb(BYTE byte) {
 +  if(userport_xlink_enable) {
 +    port->data = byte;
++    usleep(0);
 +  }
 +}
 +
@@ -352,8 +459,8 @@ Index: vice/src/userport/userport_xlink.c
 +}
 Index: vice/src/userport/userport_xlink.h
 ===================================================================
---- vice/src/userport/userport_xlink.h	(revision 0)
-+++ vice/src/userport/userport_xlink.h	(working copy)
+--- vice/src/userport/userport_xlink.h	(Revision 0)
++++ vice/src/userport/userport_xlink.h	(Arbeitskopie)
 @@ -0,0 +1,56 @@
 +/*
 + * userport_xlink.c - xlink userport emulation

@@ -762,6 +762,8 @@ bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char*
       extension_init(sector_read)) {
 
     if (driver->open()) {
+
+      driver->timeout = 5;
       
       sprintf(U1, "U1 2 0 %02d %02d", track, sector);
 
@@ -772,12 +774,14 @@ bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char*
       driver->strobe();
 
       driver->receive(data, 256);
+      
       driver->wait(0);
+
+      driver->timeout = XLINK_DEFAULT_TIMEOUT;
       
       driver->close();      
       result = true;
     }
-    extension_unload(lib);
   }
 
   extension_free(lib);
@@ -801,6 +805,9 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
       extension_init(sector_write)) {
 
     if (driver->open()) {
+
+      driver->timeout = 5;
+      
       sprintf(U2, "U2 2 0 %02d %02d", track, sector);
 
       driver->output();
@@ -808,11 +815,12 @@ bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char
       driver->send((unsigned char*)U2, strlen(U2));
 
       driver->wait(0);
+
+      driver->timeout = XLINK_DEFAULT_TIMEOUT;
       
       driver->close();
       result = true;
     }
-    extension_unload(lib);
   }
   
   extension_free(lib);

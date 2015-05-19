@@ -129,16 +129,16 @@ loop:	jsr readst    // send status
 	:write()
 	jmp loop
 
-done:  	lda #$ff   // send 0xff as EOT marker to the client
+done:  	lda #$ff      // send 0xff as EOT marker to the client
 	:write()
 
-	lda #$00   // reset CIA2 port B to input
+	lda #$00      // reset CIA2 port B to input
 	sta $dd03	
 	
 	lda #$0f
 	jsr close
 	jsr clrchn
-	
+
 	:ack()
 
 	jsr lib.enableIrq

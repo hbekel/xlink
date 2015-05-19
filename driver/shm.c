@@ -117,7 +117,11 @@ bool driver_shm_wait(int timeout) {
 
   if (timeout <= 0) {
     while (current == last) {
-      current = port->pa2;
+      if((current = port->pa2) != last) {
+	last = current;
+	break;
+      }
+      usleep(0);
     }
   }
   else {
@@ -128,7 +132,8 @@ bool driver_shm_wait(int timeout) {
 	last = current;
         break;
       }
-
+      usleep(0);
+      
       if(watch_elapsed(watch) >= timeout) {
         result = false;
         goto done;
@@ -136,6 +141,7 @@ bool driver_shm_wait(int timeout) {
     }
   }
  done:
+
   watch_free(watch);
   return result;
 }
