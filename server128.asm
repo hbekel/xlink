@@ -189,11 +189,9 @@ jump: {
 run: {
 	jsr uninstall
 
-	lda #$01    // turn off cursor
-	sta cursor
+	lda #$01 sta cursor // cursor off
 
-	cli         // allow system interrupts
-	jmp $5aa6   // perform RUN
+	cli jmp basrun      // perform RUN
 }
 	
 //------------------------------------------------------------------------------

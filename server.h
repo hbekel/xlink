@@ -14,6 +14,7 @@
 .var insnewl  = $a659   // Insert new line into BASIC program
 .var restxtpt = $a68e   // Reset BASIC text pointer
 .var warmst   = $a7ae   // Basic warm start (e.g. RUN)
+.var basrun   = $a871   // Perform RUN
 .var memtop   = $0283   // Top of lower memory area
 .var repl     = $a480   // BASIC read-eval-print loop
 .var cursor   = $cc     // Cursor blink flag (00=blinking)
@@ -30,6 +31,7 @@
 
   .eval sysirq = $fa65  // System IRQ
   .eval relink = $4f4f  // Relink Basic program
+  .eval basrun = $5aa6  // Perform RUN
   .eval memtop = $1212  // Top of lower memory area	
   .eval repl   = $4dc6  // BASIC read-eval-print loop
   .eval cursor = $0a27   // Cursor blink flag (00=blinking)	
