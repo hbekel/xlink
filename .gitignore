@@ -14,7 +14,7 @@ xlink
 readline*
 testsuite
 extensions.c
-server.c
+server*.c
 kernal.c
 make-extension
 make-bootstrap

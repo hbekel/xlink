@@ -1,27 +1,32 @@
 .import source "server.h"
 
-.pc = $1800 "Server"
+.pc = cmdLineVars.get("pc").asNumber()
 	
 //------------------------------------------------------------------------------
 
 install: {
-        lda #$00  // set CIA2 port B to input
+        lda #$00   // set CIA2 port B to input
 	sta $dd03
   
-	lda $dd02 // set CIA2 PA2 to output
+	lda $dd02  // set CIA2 PA2 to output
         ora #$04
 	sta $dd02
 
-	lda $dd0d // clear stale handshake
+	lda $dd0d  // clear stale handshake
 
-	// setup irq
-	
-	sei
+	sei        // setup irq	
         lda #<irq 
         ldx #>irq
         sta $0314
         stx $0315       
         cli
+
+	lda #$4c   // install re-entry via "SYS6400"
+	sta $1900
+	lda #<install
+	sta $1901
+	lda #>install
+	sta $1902
 
 	rts
 }
@@ -89,32 +94,32 @@ load: {
 	jsr readHeader
 	:screenOff()	
 	:checkBasic()
-	:setCPUPort() 
 	
 	:checkBank()
 	
 close:	ldy #$00	
 !loop:  :wait()
+	lda $dd01
 	sta (start),y 
 	:ack()
 	:next()
 	jmp done
 
-far:	ldy #$00
-!loop:  :wait()
+far:	
+!loop:  ldy #$00
+	:wait()
 
 	lda #start
 	sta stashptr	
 
-	ldx bank	
+	ldx mem	
 	lda $dd01 
 	jsr stash
 		
 	:ack()
 	:next()
 	
-done:   :resetCPUPort()	
-	:screenOn()
+done:   :screenOn()
 	:relinkBasic()
 	jmp sysirq
 }
@@ -124,7 +129,6 @@ done:   :resetCPUPort()
 save: {
 	jsr readHeader
 	:screenOff()
-	:setCPUPort()
 	
         :output()
 
@@ -136,18 +140,18 @@ close:	ldy #$00
 	:next()
 	jmp done
 
-far:	ldy #$00
-!loop:  lda #start
+far:	
+!loop:  ldy #$00
+	lda #start
 	sta fetchptr	
 
-	ldx bank	
+	ldx mem	
 	jsr fetch
 		
 	:write()
 	:next()
 
 done:	:input()
-	:resetCPUPort()
 	:screenOn()
 	jmp sysirq
 }	
@@ -160,8 +164,6 @@ poke: {
 	jsr read stx start
 	jsr read stx start+1
 
-	:setCPUPort()
-	
 	:wait()
 	lda $dd01 pha
 	:ack()
@@ -176,11 +178,10 @@ far:    ldy #$00
 	lda #start
 	sta stashptr
 
-	ldx bank
+	ldx mem
 	pla jsr stash
 	
-done:   :resetCPUPort()
-	jmp sysirq
+done:   jmp sysirq
 }
 
 //------------------------------------------------------------------------------
@@ -192,7 +193,6 @@ peek: {
 	jsr read stx start+1
 
         :output()
-	:setCPUPort()
 	
 	:checkBank()
 	
@@ -204,13 +204,12 @@ close:	ldy #$00
 far:	lda #start
 	sta fetchptr
 
-	ldx bank
+	ldx mem
 	jsr fetch
 	
 	:write()
 
-done:   :resetCPUPort()
-	:input()
+done:   :input()
 	
 	jmp sysirq
 }
@@ -236,8 +235,6 @@ jump: {
 	// set clean registers and flags...
 	
 	lda #$00 sta $05 sta $06 sta $07 sta $08 
-
-	:setCPUPort()
 
 	jmp jmpfar          // implies rti
 }
@@ -361,7 +358,3 @@ end:	 .word *+2
 }
 
 //------------------------------------------------------------------------------
-
-.pc = $1c01 "SYS"
-
-.byte $0b, $1c, $01, $00, $9e, $36, $31, $34, $34

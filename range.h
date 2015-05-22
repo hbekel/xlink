@@ -9,6 +9,7 @@ typedef struct {
 } Range;
 
 Range* range_new(int start, int end);
+Range* range_new_from_int(int range); 
 Range* range_parse(char *str);
 bool range_equals(Range* self, Range* range);
 bool range_valid(Range* self);

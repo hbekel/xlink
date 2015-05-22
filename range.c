@@ -16,6 +16,10 @@ Range* range_new(int start, int end) {
   return self;
 }
 
+Range* range_new_from_int(int range) {
+  return range_new(((unsigned int) range) >> 16, range & 0xffff);
+}
+
 Range* range_parse(char *str) {
 
   Range* self = range_new(0, 0x10000);

@@ -1,7 +1,13 @@
-:BasicUpstart2(main)
+.import source "server.h"
+
+.pc = basic
+
+.byte $0b, >basic, $0a, $00, $9e, $ff, $ff, $ff, $ff
+	
+.pc = basic+$10
 
 .var size = cmdLineVars.get("size").asNumber()
-.var dest = $d000-size
+.var dest = $4000-size
 	
 .var cnt = $22
 .var src = $fc

@@ -14,6 +14,7 @@
 #include "disk.h"
 #include "util.h"
 #include "xlink.h"
+#include "machine.h"
 
 #define COMMAND_NONE       0x00
 #define COMMAND_LOAD       0x01
@@ -49,6 +50,7 @@ static struct option options[] = {
   {"verbose", no_argument,       0, 'v'},
   {"quiet",   no_argument,       0, 'q'},
   {"device",  required_argument, 0, 'd'},
+  {"machine", required_argument, 0, 'M'},
   {"memory",  required_argument, 0, 'm'},
   {"bank",    required_argument, 0, 'b'},
   {"address", required_argument, 0, 'a'},
@@ -171,13 +173,13 @@ int valid(int address) {
 //------------------------------------------------------------------------------
 
 void screenOn(void) {
-  xlink_poke(0x37, 0x00, 0xd011, 0x1b);
+  xlink_poke(machine->memory, machine->bank, 0xd011, 0x1b);
 }
 
 //------------------------------------------------------------------------------
 
 void screenOff(void) {
-  xlink_poke(0x37, 0x00, 0xd011, 0x0b);
+  xlink_poke(machine->memory, machine->bank, 0xd011, 0x0b);
 }
 
 //------------------------------------------------------------------------------
@@ -393,7 +395,7 @@ bool command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "hvqd:m:b:a:s:", options, &index);
+    option = getopt_long(self->argc, self->argv, "hvqd:M:m:b:a:s:", options, &index);
     
     if(option == -1)
       break;
@@ -416,8 +418,21 @@ bool command_parse_options(Command *self) {
       if (!xlink_set_device(optarg)) {
         return false; 
       }
-      break;    
+      break;
 
+    case 'M':
+      if(strncasecmp(optarg, "c64", 3) == 0) {
+	machine = &c64;
+      }
+      else if(strncasecmp(optarg, "c128", 4) == 0) {
+	machine = &c128;
+      }
+      else {
+	logger->error("unknown machine type: %s", optarg);
+	return false;
+      }
+      break;
+      
     case 'm':
       self->memory = strtol(optarg, NULL, 0);
       break;
@@ -478,14 +493,18 @@ char* command_get_name(Command* self) {
 
 bool command_print(Command* self) {
 
-  char result[1024] = "";;
+  char result[1024] = "";
   bool print = false;
 
   if(strlen(xlink_get_device()) > 0) {
     sprintf(result, "-d %s ",  xlink_get_device());
     print = true;
   }
-   
+
+  if(machine != NULL) {
+    sprintf(result + strlen(result), "-M %s ", machine->name);
+  }
+  
   if((unsigned char) self->memory != 0xff) {
     sprintf(result + strlen(result), "-m 0x%02X ", (unsigned char) self->memory);
     print = true;
@@ -528,32 +547,32 @@ bool command_print(Command* self) {
 
 bool command_find_basic_program(Command* self) {
 
-  int bstart = 0x0000;
-  int bend   = 0x0000;
-  unsigned char value;
+  ushort bstart = 0x0000;
+  ushort bend   = 0x0000;
+  uchar value;
 
-  if(xlink_peek(0x37, 0x00, 0x002c, &value)) {
+  if(xlink_peek(machine->memory, machine->bank, machine->basic_start+1, &value)) {
     bstart |= value;
     bstart <<= 8;
   } 
   else return false;
 
-  if(xlink_peek(0x37, 0x00, 0x002b, &value)) {
+  if(xlink_peek(machine->memory, machine->bank, machine->basic_start, &value)) {
     bstart |= value;
   } 
   else return false;
 
-  if(xlink_peek(0x37, 0x00, 0x002e, &value)) {
+  if(xlink_peek(machine->memory, machine->bank, machine->basic_end+1, &value)) {
     bend |= value;
     bend <<= 8;
   } 
   else return false;
 
-  if(xlink_peek(0x37, 0x00, 0x002d, &value)) {
+  if(xlink_peek(machine->memory, machine->bank, machine->basic_end, &value)) {
     bend |= value;
   } 
   else return false;
-
+  
   if(bend != bstart + 2) {
     self->start = bstart;
     self->end = bend;
@@ -561,6 +580,21 @@ bool command_find_basic_program(Command* self) {
   }
 
   return false;
+}
+
+//------------------------------------------------------------------------------
+
+void command_apply_memory_and_bank(Command* self) {
+  if (self->memory == 0xff)
+    self->memory = machine->memory;
+
+  if (self->bank == 0xff)
+    self->bank = machine->bank;
+}
+
+void command_apply_safe_memory_and_bank(Command* self) {
+  self->memory = machine->safe_memory;
+  self->bank   = machine->safe_bank;
 }
 
 //------------------------------------------------------------------------------
@@ -650,22 +684,18 @@ bool command_load(Command* self) {
     size = self->end - self->start;
   }
 
-  if (self->memory == 0xff) {
+  if(self->memory == 0xff || self->bank == 0xff) {
 
-    Range* io = range_new(0xd000, 0xc000);
+    Range* io = range_new_from_int(machine->io);
     Range* data = range_new(self->start, self->end);
-    
+
     if(range_inside(data, io))
-      self->memory = 0x33; // write to ram below io by default
+      command_apply_safe_memory_and_bank(self);
     else 
-      self->memory = 0x37;
+      command_apply_memory_and_bank(self);
 
     free(io);
     free(data);
-  }
-
-  if (self->bank == 0xff) {
-    self->bank = 0x00;
   }
 
   data = (unsigned char*) calloc(size, sizeof(unsigned char));
@@ -728,12 +758,6 @@ bool command_save(Command* self) {
 
   suffix = (filename + strlen(filename)-4);
 
-  if (self->memory == 0xff)
-    self->memory = 0x37;    
-
-  if (self->bank == 0xff)
-    self->bank = 0x00;
-
   data = (unsigned char*) calloc(size, sizeof(unsigned char));
 
   file = fopen(filename, "wb");
@@ -744,6 +768,8 @@ bool command_save(Command* self) {
     return false;
   }
 
+  command_apply_memory_and_bank(self);
+  
   command_print(self);
 
   if(!xlink_save(self->memory, self->bank, self->start, data, size)) {
@@ -787,11 +813,7 @@ bool command_poke(Command* self) {
   self->start = strtol(addr, NULL, 0);
   value = strtol(val, NULL, 0);
 
-  if (self->memory == 0xff)
-    self->memory = 0x37;
-
-  if (self->bank == 0xff)
-    self->bank = 0x00;
+  command_apply_memory_and_bank(self);
 
   self->end = self->start;
   
@@ -816,11 +838,7 @@ bool command_peek(Command* self) {
   int address = strtol(self->argv[0], NULL, 0);
   unsigned char value;
 
-  if (self->memory == 0xff)
-    self->memory = 0x37;
-
-  if (self->bank == 0xff)
-    self->bank = 0x00;
+  command_apply_memory_and_bank(self);
 
   command_print(self);
 
@@ -862,11 +880,6 @@ bool command_fill(Command* self) {
   
   unsigned char value = (unsigned char) strtol(self->argv[1], NULL, 0);
 
-  if (self->memory == 0xff)
-    self->memory = 0x37;
-
-  if (self->bank == 0xff)
-    self->bank = 0x00;
 
   int size = range_size(range);
   
@@ -874,6 +887,8 @@ bool command_fill(Command* self) {
   self->end = range->end;
   
   free(range);
+
+  command_apply_memory_and_bank(self);
   
   command_print(self);
 
@@ -907,12 +922,7 @@ bool command_jump(Command* self) {
       return false;    
     }
   }
-
-  if (self->memory == 0xff)
-    self->memory = 0x37;
-
-  if (self->bank == 0xff)
-    self->bank = 0x00;
+  command_apply_memory_and_bank(self);
 
   command_print(self);
 
@@ -933,13 +943,9 @@ bool command_run(Command* self) {
     }
     logger->resume();
 
-    if (self->start != 0x0801) {
-      
-      if (self->memory == 0xff)
-        self->memory = 0x37;
-      
-      if (self->bank == 0xff)
-        self->bank = 0x00;
+    if (self->start != machine->default_basic_start) {
+
+      command_apply_memory_and_bank(self);
       
       command_print(self);
 
@@ -1009,8 +1015,11 @@ bool command_requires_server_relocation(Command* self, xlink_server_info_t* serv
 
 bool command_server_relocation_possible(Command* self, xlink_server_info_t* server, unsigned short* address) {
 
-  bool result = true;
+  // FIXME: Adjust for C128
   
+  bool result = true;
+
+  // FIXME: hardcoded legal ranges for relocation
   Range* screen = range_new(0x0400, 0x07e7);  
   Range* lower  = range_new(0x0801, server->memtop);
   Range* upper  = range_new(0xc000, 0xd000);
@@ -1092,6 +1101,10 @@ bool command_server_relocation_possible(Command* self, xlink_server_info_t* serv
 
 bool command_relocate(Command *self) {
 
+  // FIXME: Adjust for C128
+  
+  NOT_IMPLEMENTED_FOR_C128
+  
   bool result = false;
   
   xlink_server_info_t server;
@@ -1112,7 +1125,8 @@ bool command_relocate(Command *self) {
   }
 
   unsigned short address = strtol(self->argv[0], NULL, 0);
-  
+
+  // FIXME: hardcoded illegal ranges for relocation
   Range* lorom = range_new(server.memtop, 0xc000); 
   Range* hirom = range_new(0xe000, 0x10000);
   Range* io    = range_new(0xd000, 0xe000);    
@@ -1183,13 +1197,14 @@ bool command_benchmark(Command* self) {
 
   Watch* watch = watch_new();
   bool result = false;
-
   xlink_server_info_t server;
   
-  unsigned char payload[0x6000];
+  Range *benchmark = range_new_from_int(machine->benchmark);
+
+  unsigned char payload[range_size(benchmark)];
   unsigned char roundtrip[sizeof(payload)];
-    
-  int start = 0x1000;
+
+  int start = benchmark->start;
     
   if (!xlink_ping()) {
     logger->error("no response from server");
@@ -1198,15 +1213,16 @@ bool command_benchmark(Command* self) {
 
   if(xlink_identify(&server)) {
     if(server.type == XLINK_SERVER_TYPE_RAM) {
-      xlink_relocate(0xc000);
+      xlink_relocate(machine->free_ram_area);
+      usleep(250*1000);
     }
   }
-
+  
   logger->info("sending %d bytes...", sizeof(payload));
     
   watch_start(watch);
-  
-  if(!xlink_load(0x37, 0x00, start, payload, sizeof(payload))) goto done;
+
+  if(!xlink_load(machine->memory, machine->bank, start, payload, sizeof(payload))) goto done;
   
   float seconds = (watch_elapsed(watch) / 1000.0);
   float kbs = sizeof(payload)/seconds/1024;
@@ -1216,8 +1232,8 @@ bool command_benchmark(Command* self) {
   logger->info("receiving %d bytes...", sizeof(payload));
     
   watch_start(watch);
-    
-  if(!xlink_save(0x37, 0x00, start, roundtrip, sizeof(roundtrip))) goto done;
+
+  if(!xlink_save(machine->memory, machine->bank, start, roundtrip, sizeof(roundtrip))) goto done;
   
   seconds = (watch_elapsed(watch) / 1000.0);
   kbs = sizeof(payload)/seconds/1024;
@@ -1228,7 +1244,7 @@ bool command_benchmark(Command* self) {
   
   for(int i=0; i<sizeof(payload); i++) {
     if(payload[i] != roundtrip[i]) {
-      logger->error("roundtrip error at byte %d: %d != %d", i, payload[i], roundtrip[i]);
+      logger->error("roundtrip error at $%04X: sent %d, received %d", start+i, payload[i], roundtrip[i]);
       result = false;
       goto done;
     }
@@ -1238,6 +1254,7 @@ bool command_benchmark(Command* self) {
   result = true;
   
  done:
+  range_free(benchmark);
   watch_free(watch);
   return result;
 }
@@ -1264,9 +1281,6 @@ bool command_identify(Command *self) {
 
 //------------------------------------------------------------------------------
 
-extern unsigned char* xlink_server(unsigned short address, int *size);
-extern unsigned char* xlink_server_basic(int *size);
-
 bool command_server(Command *self) {
 
   bool result = false;
@@ -1279,17 +1293,16 @@ bool command_server(Command *self) {
     logger->error("no file specified");
     return false;
   }
-
   if (self->start == -1) {
-    self->start = 0x0801;
+    self->start = machine->default_basic_start;
   }
 
   command_print(self);
-
-  if(self->start == 0x0801) {
-    data = xlink_server_basic(&size);
+  
+  if(self->start == machine->default_basic_start) {
+    data = machine->basic_server(&size);
   } else {
-    data = xlink_server(self->start, &size);
+    data = machine->server(self->start, &size);
 
     if(data == NULL) {
       return false;
@@ -1319,6 +1332,10 @@ extern void xlink_kernal(unsigned char* image);
 
 bool command_kernal(Command *self) {
 
+  // FIXME: hardcoded kernal command
+
+  NOT_IMPLEMENTED_FOR_C128
+  
   bool result = false;
   struct stat st;
   FILE *file;
@@ -1341,6 +1358,7 @@ bool command_kernal(Command *self) {
     goto done;
   }
 
+  // FIXME: hardcoded kernal rom size constraint
   if(st.st_size != 0x2000) {
     logger->error("input file: size must be exactly %d bytes (%s: %d bytes)",
 		  0x2000, inputfile, st.st_size);
@@ -1352,6 +1370,7 @@ bool command_kernal(Command *self) {
     goto done;
   }
 
+  // FIXME: hardcoded kernal rom size
   unsigned char image[0x2000];  
   fread(image, sizeof(unsigned char), 0x2000, file);
   fclose(file);
@@ -1362,6 +1381,7 @@ bool command_kernal(Command *self) {
     logger->error("%s: %s\n", outputfile, strerror(errno));
     goto done;
   }
+  // FIXME: hardcoded kernal rom size
   fwrite(image, sizeof(unsigned char), 0x2000, file);
   fclose(file);
 
@@ -1388,6 +1408,8 @@ bool command_help(Command *self) {
 
 //------------------------------------------------------------------------------
 
+// FIXME: hardcoded drive routines for C64
+
 extern bool xlink_drive_status(char* status);
 extern bool xlink_dos(char* cmd);
 extern bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char* data);
@@ -1395,6 +1417,8 @@ extern bool xlink_sector_write(unsigned char track, unsigned char sector, unsign
 
 bool command_status(Command* self) {
 
+  NOT_IMPLEMENTED_FOR_C128
+  
   char *status = (char*) calloc(sizeof(unsigned char), 256);
   int result = false;
   
@@ -1413,6 +1437,8 @@ bool command_status(Command* self) {
 
 bool command_dos(Command *self) {
 
+  NOT_IMPLEMENTED_FOR_C128
+  
   command_print(self);
 
   if (xlink_dos(self->name+1)) {
@@ -1432,7 +1458,9 @@ static bool read_sector(Sector *sector) {
 //------------------------------------------------------------------------------
 
 bool command_backup(Command *self) {
-    
+
+  NOT_IMPLEMENTED_FOR_C128
+  
   bool result = true;
   Disk* disk;
 
@@ -1473,6 +1501,8 @@ static bool write_sector(Sector *sector) {
 
 bool command_restore(Command *self) {
 
+  NOT_IMPLEMENTED_FOR_C128
+  
   bool result = true;
   
   if (self->argc == 0) {
@@ -1557,6 +1587,8 @@ static bool verify_sector_skipping_track_18(Sector* expected) {
 
 bool command_verify(Command *self) {
 
+  NOT_IMPLEMENTED_FOR_C128
+  
   Disk* disk;
   bool result = true;
 
@@ -1726,10 +1758,11 @@ void usage(void) {
   printf("         -d, --device <port or \"usb\">  : ");
   printf("transfer device (default: \"usb\")\n");
 #endif
-  printf("         -a, --address <start>[-<end>] : C64 address/range (default: autodetect)\n");
+  printf("         -M, --machine                 : machine type (default: C64)\n");
+  printf("         -m, --memory                  : C64/C128 memory (default: 0x37/0x00)\n");
+  printf("         -b, --bank                    : C128 bank (default: 15)\n");
+  printf("         -a, --address <start>[-<end>] : address/range (default: autodetect)\n");
   printf("         -s, --skip <n>                : Skip n bytes of file\n");
-  printf("         -m, --memory                  : C64 memory config (default: 0x37)\n");
-  printf("         -b, --bank                    : C64 memory bank (unused)\n");
   printf("\n");
   printf("Commands:\n");
   printf("          help  [<command>]            : show detailed help for command\n");
@@ -1738,15 +1771,15 @@ void usage(void) {
   printf("          server [-a<addr>] <file>     : create server and save to file\n");
   printf("          relocate <addr>              : relocate running server\n");
   printf("\n");  
-  printf("          reset                        : reset C64 (if supported by hardware)\n");
+  printf("          reset                        : reset machine (if supported)\n");
   printf("          ready                        : try to make sure the server is ready\n");
   printf("          ping                         : check if the server is available\n");
   printf("          identify                     : identify remote server and machine\n");
   printf("\n");
-  printf("          load  [<opts>] <file>        : load file into C64 memory\n");
-  printf("          save  [<opts>] <file>        : save C64 memory to file\n");
-  printf("          poke  [<opts>] <addr>,<val>  : poke value into C64 memory\n");
-  printf("          peek  [<opts>] <addr>        : read value from C64 memory\n");
+  printf("          load  [<opts>] <file>        : load file into memory\n");
+  printf("          save  [<opts>] <file>        : save memory to file\n");
+  printf("          poke  [<opts>] <addr>,<val>  : poke value into memory\n");
+  printf("          peek  [<opts>] <addr>        : read value from memory\n");
   printf("          fill  <range>  <val>         : fill memory range with value\n");
   printf("          jump  [<opts>] <addr>        : jump to specified address\n");
   printf("          run   [<opts>] [<file>]      : run program, optionally load it before\n");

@@ -5,6 +5,7 @@
 #include "util.h"
 #include "extension.h"
 #include "xlink.h"
+#include "machine.h"
 
 extern int xlink_extend(int address);
 
@@ -22,8 +23,8 @@ Extension *extension_new(unsigned short address, unsigned short size, unsigned c
 int extension_preload(Extension *self) {
   
   bool result = false;
-  uchar memory = 0x80|0x37;
-  uchar bank = 0x00;
+  uchar memory = machine->memory | 0x80;
+  uchar bank = machine->bank;
   
   if (!xlink_save(memory, bank, self->address, self->cache, self->size)) {
     goto done;
@@ -41,8 +42,8 @@ int extension_preload(Extension *self) {
 int extension_unload(Extension *self) {
 
   bool result = false;
-  uchar memory = 0x80|0x37;
-  uchar bank = 0x00;
+  uchar memory = machine->memory | 0x80;
+  uchar bank = machine->bank;
 
   if(self->loaded) {
     result = xlink_load(memory, bank, self->address, self->cache, self->size);

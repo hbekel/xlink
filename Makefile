@@ -16,6 +16,7 @@ INPOUT32_BINARIES=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBi
 
 LIBHEADERS=\
 	xlink.h \
+	machine.h \
 	util.h \
 	extension.h \
 	driver/driver.h \
@@ -26,11 +27,13 @@ LIBHEADERS=\
 
 LIBSOURCES=\
 	xlink.c \
+	machine.c \
 	error.h \
 	util.c \
 	extension.c \
 	extensions.c \
-	server.c \
+	server64.c \
+	server128.c \
 	kernal.c \
 	driver/driver.c \
 	driver/usb.c \
@@ -100,12 +103,20 @@ extensions.c: tools/make-extension extensions.asm
 tools/make-server: tools/make-server.c
 	$(GCC) $(CFLAGS) -o tools/make-server tools/make-server.c
 
-server.c: tools/make-server server.h server.asm loader.asm 
-	$(KASM) :pc=257 -o base server.asm  # 257 = 0101
-	$(KASM) :pc=513 -o high server.asm  # 513 = 0201
-	$(KASM) :pc=258 -o low  server.asm  # 258 = 0102
-	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" -o loader loader.asm)
-	tools/make-server base low high loader > server.c
+server64.c: tools/make-server server.h server64.asm loader.asm 
+	$(KASM) :target=c64 :pc=257 -o base server64.asm  # 257 = 0101
+	$(KASM) :target=c64 :pc=513 -o high server64.asm  # 513 = 0201
+	$(KASM) :target=c64 :pc=258 -o low  server64.asm  # 258 = 0102
+	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" :target=c64 -o loader loader.asm)
+	tools/make-server c64 base low high loader > server64.c
+	rm -v base low high loader
+
+server128.c: tools/make-server server.h server128.asm loader.asm 
+	$(KASM) :target=c128 :pc=257 -o base server128.asm  # 257 = 0101
+	$(KASM) :target=c128 :pc=513 -o high server128.asm  # 513 = 0201
+	$(KASM) :target=c128 :pc=258 -o low  server128.asm  # 258 = 0102
+	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" :target=c128 -o loader loader.asm)
+	tools/make-server c128 base low high loader > server128.c
 	rm -v base low high loader
 
 tools/make-kernal: tools/make-kernal.c
@@ -178,7 +189,8 @@ clean: firmware-clean
 	[ -f xlink ] && rm -vf xlink || true
 	[ -f xlink.exe ] && rm -vf xlink.exe || true
 	[ -f extensions.c ] && rm -vf extensions.c || true
-	[ -f server.c ] && rm -vf server.c || true
+	[ -f server64.c ] && rm -vf server64.c || true
+	[ -f server128.c ] && rm -vf server128.c || true
 	[ -f kernal.c ] && rm -vf kernal.c || true
 	[ -f bootstrap-c64.txt ] && rm -vf bootstrap-c64.txt || true
 	[ -f bootstrap-c64.prg ] && rm -vf bootstrap-c64.prg || true

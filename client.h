@@ -51,6 +51,8 @@ bool command_parse_options(Command *self);
 char *command_get_name(Command* self);
 bool command_print(Command* self);
 bool command_find_basic_program(Command* self);
+void command_apply_memory_and_bank(Command* self);
+void command_apply_safe_memory_and_bank(Command* self);
 bool command_execute(Command* self);
 bool command_none(Command* self);
 bool command_load(Command* self);
@@ -77,6 +79,8 @@ bool command_server(Command *self);
 bool command_relocate(Command *self);
 bool command_kernal(Command *self);
 void command_free(Command* self);
+
+#define NOT_IMPLEMENTED_FOR_C128 if(machine->type == XLINK_MACHINE_C128) { logger->error("not implemented for the C128 (yet)"); return false; }
 
 #if windows
 void handle(int signal);

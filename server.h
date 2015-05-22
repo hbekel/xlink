@@ -3,6 +3,7 @@
 .var start = $c1        // Transfer start address
 .var end   = $c3        // Transfer end address
 
+.var basic  = $0801     // Default Basic start address
 .var bstart = $2b       // Start of Basic program text
 .var bend   = $2d       // End of Basic program text
 .var mem    = $fe       // Memory config
@@ -24,6 +25,7 @@
   .eval start = $c1     // Transfer start address
   .eval end   = $fd     // Transfer end address
 
+  .eval basic  = $1c01  // Default Basic start address	
   .eval bstart = $2d    // Start of Basic program text
   .eval bend   = $1210  // End of Basic program text
   .eval mem    = $fb    // Memory config
@@ -36,7 +38,7 @@
   .eval memtop  = $1212  // Top of lower memory area	
   .eval repl    = $4dc6  // BASIC read-eval-print loop
   .eval cursor  = $0a27  // Cursor blink flag (00=blinking)
-  .eval default = $73    // Default processor port value	
+  .eval default = $73    // Default processor port value
 }
 
 // C128 specific:
@@ -112,20 +114,14 @@ check:	lda start+1
 	bne !loop-
 }
 
-.macro setCPUPort() {
-	lda mem
-	sta $01
-}
-
-.macro resetCPUPort() {
-	lda #default
-	sta $01
-}
-	
 .macro checkBank() {
-	ldx bank
+        lda mem
+	cmp mmu	
+	bne far
+	  
+        ldx bank
 	lda bank2mmu,x
-	sta bank
+	sta mem
 	cmp mmu
 	bne far
 }   
