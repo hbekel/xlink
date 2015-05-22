@@ -161,7 +161,7 @@ firmware-clean:
 firmware-install: firmware
 	(cd driver/at90usb162 && make dfu)
 
-install: xlink c64
+install: xlink cbm
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
 	install -m644 -D libxlink.so $(DESTDIR)$(PREFIX)/lib/libxlink.so
 	install -m644 -D xlink.h $(DESTDIR)$(PREFIX)/include/xlink.h

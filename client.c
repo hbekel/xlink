@@ -1015,29 +1015,22 @@ bool command_requires_server_relocation(Command* self, xlink_server_info_t* serv
 
 bool command_server_relocation_possible(Command* self, xlink_server_info_t* server, unsigned short* address) {
 
-  // FIXME: Adjust for C128
-  
   bool result = true;
-
-  // FIXME: hardcoded legal ranges for relocation
-  Range* screen = range_new(0x0400, 0x07e7);  
-  Range* lower  = range_new(0x0801, server->memtop);
-  Range* upper  = range_new(0xc000, 0xd000);
-  Range* all    = range_new(screen->start, upper->end);
 
   Range* data = range_new(self->start, self->end);
   Range* code = range_new(server->start, server->end);
   
-  // first check if the data already covers the complete range of possible memory areas
+  Range *screen = range_new_from_int(machine->screenram);
+  Range *upper  = range_new_from_int(machine->loram);
+  Range *lower  = range_new_from_int(machine->hiram);
 
-  if(range_inside(all, data)) {
-    result = false;
-    goto done;
+  if(machine->type == XLINK_MACHINE_C64) {
+    lower->end = server->memtop;
   }
   
-  // else try to relocate server as close as possible to...
+  // try to relocate server as close as possible to...
 
-  // ...the end of the upper memory area ($c000-$d000)
+  // ...the end of the upper memory area
   
   code->start = upper->end - server->length;
   code->end = upper->end;
@@ -1053,7 +1046,7 @@ bool command_server_relocation_possible(Command* self, xlink_server_info_t* serv
     }
   }
 
-  // ...the end of the lower memory area ($0801-$8000 or $0801-$a000)
+  // ...the end of the lower memory area
   
   code->start = lower->end - server->length;
   code->end = lower->end;
@@ -1069,7 +1062,7 @@ bool command_server_relocation_possible(Command* self, xlink_server_info_t* serv
     }
   }
 
-  // ...the end of the default screen memory area ($0400-$07e7)
+  // ...the end of the default screen memory area (last resort)
 
   code->start = screen->end - server->length;
   code->end = screen->end;
@@ -1093,7 +1086,6 @@ bool command_server_relocation_possible(Command* self, xlink_server_info_t* serv
   free(upper);
   free(lower);
   free(screen);
-  free(all);
   return result;  
 }
 
@@ -1101,10 +1093,6 @@ bool command_server_relocation_possible(Command* self, xlink_server_info_t* serv
 
 bool command_relocate(Command *self) {
 
-  // FIXME: Adjust for C128
-  
-  NOT_IMPLEMENTED_FOR_C128
-  
   bool result = false;
   
   xlink_server_info_t server;
@@ -1126,11 +1114,15 @@ bool command_relocate(Command *self) {
 
   unsigned short address = strtol(self->argv[0], NULL, 0);
 
-  // FIXME: hardcoded illegal ranges for relocation
-  Range* lorom = range_new(server.memtop, 0xc000); 
-  Range* hirom = range_new(0xe000, 0x10000);
-  Range* io    = range_new(0xd000, 0xe000);    
   Range* code  = range_new(address, address + server.length);
+
+  Range* io = range_new_from_int(machine->io);    
+  Range* lorom = range_new_from_int(machine->lorom);
+  Range* hirom = range_new_from_int(machine->hirom);
+
+  if(machine->type == XLINK_MACHINE_C64) {
+    lorom->start = server.memtop;
+  }
 
   if(!range_valid(code)) {
     logger->error("cannot relocate server to $%04X-$%04X: invalid memory range",

@@ -17,7 +17,12 @@ Range* range_new(int start, int end) {
 }
 
 Range* range_new_from_int(int range) {
-  return range_new(((unsigned int) range) >> 16, range & 0xffff);
+
+  int start = ((unsigned int) range) >> 16;
+  int end = range & 0xffff;
+  if(end == 0) end = 0x10000;
+
+  return range_new(start, end);
 }
 
 Range* range_parse(char *str) {

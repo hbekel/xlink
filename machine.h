@@ -26,6 +26,11 @@ typedef struct {
   ushort warmstart;
   ushort mode;
   uint io;
+  uint screenram;
+  uint loram;
+  uint hiram;
+  uint lorom;
+  uint hirom;
   uint benchmark;
   ushort free_ram_area;
   uchar* (*server) (ushort address, int *size);
