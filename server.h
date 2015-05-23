@@ -53,7 +53,8 @@
 .var stashptr = $02b9
 
 .var jmpfar   = $02e3
-
+.var jrsirq   = $c024
+        
 // Commands:
 	
 .namespace Command {

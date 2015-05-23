@@ -6,6 +6,9 @@ extern unsigned char* xlink_server_basic_c64(int *size);
 extern unsigned char* xlink_server_c128(unsigned short address, int *size);
 extern unsigned char* xlink_server_basic_c128(int *size);
 
+extern void xlink_kernal_c64(unsigned char* image);
+extern void xlink_kernal_c128(unsigned char* image);
+
 xlink_machine_t c64 = {
   .type                = XLINK_MACHINE_C64,
   .name                = "c64",
@@ -28,6 +31,7 @@ xlink_machine_t c64 = {
   .free_ram_area       = 0xc000,
   .server              = &xlink_server_c64,
   .basic_server        = &xlink_server_basic_c64,
+  .kernal              = &xlink_kernal_c64,
 };
 
 xlink_machine_t c128 = {
@@ -52,6 +56,7 @@ xlink_machine_t c128 = {
   .free_ram_area       = 0x1300,
   .server              = &xlink_server_c128,
   .basic_server        = &xlink_server_basic_c128,
+  .kernal              = &xlink_kernal_c128,
 };
 
 xlink_machine_t *machine = &c64;

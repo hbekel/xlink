@@ -529,7 +529,7 @@ eof:
 	
 //------------------------------------------------------------------------------		
 
-.var command = "tools/make-kernal kernal.bin"
+.var command = "tools/make-kernal c64 kernal64.bin"
 .eval command = command +  patch(wedge, wedge.eof)	
 .eval command = command + patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
 .eval command = command + patch(powerUpMessage, powerUpMessage.eof)

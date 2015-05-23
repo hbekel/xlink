@@ -31,10 +31,15 @@ int main(int argc, char **argv) {
   argv++;
 
   if(argc == 0) {
-    fprintf(stderr, "Usage: make-kernal <kernal.bin> [<offset, size>...]\n");
+    fprintf(stderr, "Usage: make-kernal <name> <kernal.bin> [<offset, size>...]\n");
     return EXIT_FAILURE;
   }
 
+  char *name = argv[0];
+
+  argc--;
+  argv++;
+  
   struct stat st;
   char *filename = argv[0];
 
@@ -60,7 +65,7 @@ int main(int argc, char **argv) {
   int numPatches = argc/2;
   int offset, size;
   
-  printf("void xlink_kernal(unsigned char* image) {\n");
+  printf("void xlink_kernal_%s(unsigned char* image) {\n", name);
 
   printf("typedef struct {\n");
   printf("  unsigned short offset;\n");

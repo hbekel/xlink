@@ -1320,16 +1320,12 @@ bool command_server(Command *self) {
 
 //------------------------------------------------------------------------------
 
-extern void xlink_kernal(unsigned char* image);
-
 bool command_kernal(Command *self) {
 
-  // FIXME: hardcoded kernal command
-
-  NOT_IMPLEMENTED_FOR_C128
-  
   bool result = false;
   struct stat st;
+  int size;
+  int offset;
   FILE *file;
   
   if(self->argc < 1) {
@@ -1350,10 +1346,12 @@ bool command_kernal(Command *self) {
     goto done;
   }
 
-  // FIXME: hardcoded kernal rom size constraint
-  if(st.st_size != 0x2000) {
-    logger->error("input file: size must be exactly %d bytes (%s: %d bytes)",
-		  0x2000, inputfile, st.st_size);
+  size = st.st_size;
+  offset = size - 0x2000;
+  
+  if(offset < 0) {
+    logger->error("input file: size must be larger than %d bytes (%s: %d bytes)",
+		  0x2000, inputfile, size);
     goto done;
   }
 
@@ -1362,26 +1360,28 @@ bool command_kernal(Command *self) {
     goto done;
   }
 
-  // FIXME: hardcoded kernal rom size
-  unsigned char image[0x2000];  
-  fread(image, sizeof(unsigned char), 0x2000, file);
+  unsigned char *image = (unsigned char*) calloc(size, sizeof(unsigned char));  
+  fread(image, sizeof(unsigned char), size, file);
   fclose(file);
 
-  xlink_kernal(image);
+  machine->kernal(image+offset);
 
-  if((file = fopen(outputfile, "wb")) == NULL) {
+  if((file = fopen(outputfile, "wb+")) == NULL) {
     logger->error("%s: %s\n", outputfile, strerror(errno));
+    free(image);
     goto done;
   }
-  // FIXME: hardcoded kernal rom size
-  fwrite(image, sizeof(unsigned char), 0x2000, file);
-  fclose(file);
 
+  fwrite(image, sizeof(unsigned char), size, file);
+  fclose(file);
+  
   logger->info("patched %s", outputfile);
   
   result = true;
-    
- done:
+
+  free(image);
+  
+ done:  
   return result;
 }
 

@@ -34,7 +34,8 @@ LIBSOURCES=\
 	extensions.c \
 	server64.c \
 	server128.c \
-	kernal.c \
+	kernal64.c \
+	kernal128.c \
 	driver/driver.c \
 	driver/usb.c \
 	driver/parport.c \
@@ -122,11 +123,17 @@ server128.c: tools/make-server server.h server128.asm loader.asm
 tools/make-kernal: tools/make-kernal.c
 	$(GCC) $(CFLAGS) -o tools/make-kernal tools/make-kernal.c
 
-kernal.c: tools/make-kernal tools/make-kernal.c kernal.asm
-	$(KASM) -binfile -o kernal.bin kernal.asm | \
+kernal64.c: tools/make-kernal tools/make-kernal.c kernal64.asm
+	$(KASM) -binfile :target=c64 -o kernal64.bin kernal64.asm | \
 	grep make-kernal | \
-	sh -x > kernal.c && \
-	rm kernal.bin
+	sh -x > kernal64.c && \
+	rm kernal64.bin
+
+kernal128.c: tools/make-kernal tools/make-kernal.c kernal128.asm
+	$(KASM) -binfile :target=c128 -o kernal128.bin kernal128.asm | \
+	grep make-kernal | \
+	sh -x > kernal128.c && \
+	rm kernal128.bin
 
 tools/make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
@@ -191,7 +198,7 @@ clean: firmware-clean
 	[ -f extensions.c ] && rm -vf extensions.c || true
 	[ -f server64.c ] && rm -vf server64.c || true
 	[ -f server128.c ] && rm -vf server128.c || true
-	[ -f kernal.c ] && rm -vf kernal.c || true
+	[ -f kernal64.c ] && rm -vf kernal64.c || true
 	[ -f bootstrap-c64.txt ] && rm -vf bootstrap-c64.txt || true
 	[ -f bootstrap-c64.prg ] && rm -vf bootstrap-c64.prg || true
 	[ -f bootstrap-c128.txt ] && rm -vf bootstrap-c128.txt || true

@@ -35,6 +35,7 @@ typedef struct {
   ushort free_ram_area;
   uchar* (*server) (ushort address, int *size);
   uchar* (*basic_server) (int *size);
+  void (*kernal) (uchar *image);
 } xlink_machine_t;
 
 IMPORTED extern xlink_machine_t c64;

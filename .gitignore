@@ -15,7 +15,7 @@ readline*
 testsuite
 extensions.c
 server*.c
-kernal.c
+kernal*.c
 make-extension
 make-bootstrap
 make-server
