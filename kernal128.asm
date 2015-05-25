@@ -49,14 +49,75 @@ irq: {
 
 	ldy $dd01
 	jsr ack
+
+!next:	cpy #Command.identify
+	bne !next+
+	jmp identify
         
+!next:        
 done:   jsr jrsirq
         jmp wedge.resume
 eof:    
 }        
 
 //------------------------------------------------------------------------------
+
+identify: {
+        :output()
+  
+        lda Server.size
+        jsr write
+
+        lda Server.id
+        jsr write
+
+        lda Server.id+1
+        jsr write
+
+        lda Server.id+2
+        jsr write
+
+        lda Server.id+3
+        jsr write
+
+        lda Server.id+4
+        jsr write        
+        
+        lda Server.version
+        jsr write
+
+        lda Server.machine
+        jsr write
+
+        lda Server.type
+        jsr write       
+
+        lda Server.start
+        jsr write
+
+        lda Server.start+1
+        jsr write
+
+        lda Server.end
+        jsr write
+
+        lda Server.end+1
+        jsr write        
+
+	lda memtop
+	jsr write
+
+	lda memtop+1
+	jsr write
 	
+done:   :input()
+        jmp irq.done
+eof:    
+}
+        
+
+//------------------------------------------------------------------------------
+
 wait: {
 loop:   lda $dd0d
 	and #$10
@@ -96,6 +157,17 @@ eof:
 }
         
 //------------------------------------------------------------------------------		
+
+Server: {
+size:    .byte $05
+id:      .byte 'X', 'L', 'I', 'N', 'K'
+start:   .word irq
+version: .byte $10
+type:    .byte $01 // 0 = RAM, 1 = ROM
+machine: .byte $01 // 0 = C64, 1 = C128
+end:     .word *+2
+eof:   
+}
         
 .pc = $10000
 
@@ -119,6 +191,8 @@ eof:
 .eval command = command + patch(ack, ack.eof)
 .eval command = command + patch(read, read.eof)                
 .eval command = command + patch(write, write.eof)
+.eval command = command + patch(identify, identify.eof)
+.eval command = command + patch(Server, Server.eof)                
         
 .eval command = command + patch(disableTapeLoad, disableTapeLoad.eof)
 .eval command = command + patch(disableTapeSave, disableTapeSave.eof)            
