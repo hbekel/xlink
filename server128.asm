@@ -85,7 +85,9 @@ irq: {
 
 
 !next:	
-done:   jmp sysirq
+done:   cld
+	jsr jrsirq
+	jmp sysirq+4
 }
 
 //------------------------------------------------------------------------------
@@ -97,7 +99,7 @@ load: {
 	
 	:checkBank()
 	
-close:	ldy #$00	
+near:	ldy #$00	
 !loop:  :wait()
 	lda $dd01
 	sta (start),y 
@@ -105,23 +107,11 @@ close:	ldy #$00
 	:next()
 	jmp done
 
-far:	
-!loop:  ldy #$00
-	:wait()
-
-	lda #start
-	sta stashptr	
-
-	ldx mem	
-	lda $dd01 
-	jsr stash
-		
-	:ack()
-	:next()
+far:	:jsrcommon(code.receivefar)
 	
 done:   :screenOn()
 	:relinkBasic()
-	jmp sysirq
+	jmp irq.done
 }
 
 //------------------------------------------------------------------------------
@@ -134,26 +124,17 @@ save: {
 
 	:checkBank()
 	
-close:	ldy #$00
+near:	ldy #$00
 !loop:  lda (start),y  
 	:write()
 	:next()
 	jmp done
 
-far:	
-!loop:  ldy #$00
-	lda #start
-	sta fetchptr	
-
-	ldx mem	
-	jsr fetch
-		
-	:write()
-	:next()
+far:	:jsrcommon(code.sendfar)
 
 done:	:input()
 	:screenOn()
-	jmp sysirq
+	jmp irq.done
 }	
 
 //------------------------------------------------------------------------------
@@ -170,7 +151,7 @@ poke: {
 	
 	:checkBank()
 	
-close:  ldy #$00
+near:  ldy #$00
 	pla sta (start),y
 	jmp done
 
@@ -181,7 +162,7 @@ far:    ldy #$00
 	ldx mem
 	pla jsr stash
 	
-done:   jmp sysirq
+done:   jmp irq.done
 }
 
 //------------------------------------------------------------------------------
@@ -196,7 +177,7 @@ peek: {
 	
 	:checkBank()
 	
-close:	ldy #$00
+near:	ldy #$00
 	lda (start),y
 	:write()
 	jmp done
@@ -211,7 +192,7 @@ far:	lda #start
 
 done:   :input()
 	
-	jmp sysirq
+	jmp irq.done
 }
 	
 //------------------------------------------------------------------------------
@@ -261,7 +242,7 @@ inject:	{
 	rts
 	
 return: nop
-	jmp sysirq
+	jmp irq.done
 }
 
 //------------------------------------------------------------------------------
@@ -316,9 +297,53 @@ identify: {
         
 done:   :input()
         
-        jmp sysirq
+        jmp irq.done
 }
 
+//------------------------------------------------------------------------------
+
+code: {
+	
+receivefar: {
+.pseudopc common {
+	lda mmu
+	sta saved
+
+	ldy #$00	
+!loop:  :wait()
+	lda $dd01
+	ldx mem stx mmu
+	sta (start),y 
+	ldx saved stx mmu
+	:ack()
+	:next()
+
+	rts
+}
+eof:
+}
+	
+sendfar: {
+.pseudopc common {
+	lda mmu
+	sta saved
+
+	ldy #$00
+!loop:  ldx mem stx mmu
+	lda (start),y
+	ldx saved stx mmu
+	:write()
+	:next()
+	
+	lda saved
+	sta mmu
+	rts
+}
+eof:	
+}
+eof:	
+}
+	
 //------------------------------------------------------------------------------
 
 readHeader: {

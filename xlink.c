@@ -257,7 +257,8 @@ bool xlink_ready(void) {
   }
   else {
     if(xlink_peek(machine->memory, machine->bank, machine->mode, &mode)) {
-      if(mode != 0x80) { 
+      if(mode == machine->prgmode) {
+	logger->debug("basic program running, performing basic warmstart...");
         xlink_jump(machine->memory, machine->bank, machine->warmstart);
         usleep(250*1000); 
       }

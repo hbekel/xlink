@@ -8,7 +8,7 @@
 .var bend   = $2d       // End of Basic program text
 .var mem    = $fe       // Memory config
 .var bank   = $ff       // bank config
-.var mode   = $9d       // Error mode flag (00 = Program mode, 80 = direct mode)
+.var mode   = $9d       // Error mode flag
 
 .var sysirq   = $ea34   // System IRQ
 .var relink   = $a533   // Relink Basic program
@@ -30,7 +30,7 @@
   .eval bend   = $1210  // End of Basic program text
   .eval mem    = $fb    // Memory config
   .eval bank   = $fc    // bank config
-  .eval mode   = $7f    // Error mode flag (00 = Program mode, 80 = direct mode)	
+  .eval mode   = $7f    // Error mode flag 
 
   .eval sysirq  = $fa65  // System IRQ
   .eval relink  = $4f4f  // Relink Basic program
@@ -54,7 +54,12 @@
 
 .var jmpfar   = $02e3
 .var jrsirq   = $c024
-        
+
+.var common  = $02a2
+.var reinst  = $e0ee
+   
+.var saved = $ff
+   
 // Commands:
 	
 .namespace Command {
@@ -115,6 +120,18 @@ check:	lda start+1
 	bne !loop-
 }
 
+.macro jsrcommon(code) {
+	ldx #[code.eof-code]
+
+!loop:	lda code,x
+	sta common,x
+	dex
+	bpl !loop-
+
+	jsr common
+	jsr reinst
+}     
+   
 .macro checkBank() {
         lda mem
 	cmp mmu	

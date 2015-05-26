@@ -1185,14 +1185,23 @@ int command_bootloader(Command *self) {
 
 bool command_benchmark(Command* self) {
 
-  command_print(self);
-
   Watch* watch = watch_new();
   bool result = false;
   xlink_server_info_t server;
   
-  Range *benchmark = range_new_from_int(machine->benchmark);
+  Range *benchmark;
 
+  if(self->start != -1 && self->end != -1) {
+    benchmark = range_new(self->start, self->end);
+  }
+  else {
+    benchmark = range_new_from_int(machine->benchmark);
+  }
+
+  command_apply_memory_and_bank(self);
+
+  command_print(self);
+  
   unsigned char payload[range_size(benchmark)];
   unsigned char roundtrip[sizeof(payload)];
 
@@ -1214,7 +1223,7 @@ bool command_benchmark(Command* self) {
     
   watch_start(watch);
 
-  if(!xlink_load(machine->memory, machine->bank, start, payload, sizeof(payload))) goto done;
+  if(!xlink_load(self->memory, self->bank, start, payload, sizeof(payload))) goto done;
   
   float seconds = (watch_elapsed(watch) / 1000.0);
   float kbs = sizeof(payload)/seconds/1024;
@@ -1225,7 +1234,7 @@ bool command_benchmark(Command* self) {
     
   watch_start(watch);
 
-  if(!xlink_save(machine->memory, machine->bank, start, roundtrip, sizeof(roundtrip))) goto done;
+  if(!xlink_save(self->memory, self->bank, start, roundtrip, sizeof(roundtrip))) goto done;
   
   seconds = (watch_elapsed(watch) / 1000.0);
   kbs = sizeof(payload)/seconds/1024;

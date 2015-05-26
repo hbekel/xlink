@@ -25,6 +25,7 @@ typedef struct {
   ushort basic_end;
   ushort warmstart;
   ushort mode;
+  uchar prgmode;
   uint io;
   uint screenram;
   uint loram;

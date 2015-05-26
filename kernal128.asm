@@ -21,7 +21,7 @@ eof:
 
 //------------------------------------------------------------------------------
 
-.pc = $f32f
+.pc = $f326
 disableTapeLoad: {
   ldy #27
   jsr $f722
@@ -50,6 +50,34 @@ irq: {
 	ldy $dd01
 	jsr ack
 
+!next:	cpy #Command.load 
+	bne !next+
+	jmp load
+
+!next:	cpy #Command.save
+	bne !next+
+	jmp save
+
+!next:	cpy #Command.peek
+	bne !next+
+	jmp peek
+	
+!next:	cpy #Command.poke
+	bne !next+
+	jmp poke
+
+!next:	cpy #Command.jump
+	bne !next+
+	jmp jump
+
+!next:	cpy #Command.run
+	bne !next+
+	jmp run
+
+!next:	cpy #Command.inject
+	bne !next+
+	jmp inject	
+	
 !next:	cpy #Command.identify
 	bne !next+
 	jmp identify
@@ -59,6 +87,166 @@ done:   jsr jrsirq
         jmp wedge.resume
 eof:    
 }        
+
+//------------------------------------------------------------------------------
+	
+load: {
+	jsr readHeader
+	:screenOff()	
+	:checkBasic()
+	
+	:checkBank()
+	
+near:	ldy #$00	
+!loop:  :wait()
+	lda $dd01
+	sta (start),y 
+	:ack()
+	:next()
+	jmp done
+
+far:    :jsrcommon(code.receivefar)
+	
+done:   :screenOn()
+	:relinkBasic()
+	jmp irq.done
+eof:	
+}
+
+//------------------------------------------------------------------------------
+
+save: {
+	jsr readHeader
+	:screenOff()
+	
+        :output()
+
+	:checkBank()
+	
+near:	ldy #$00
+!loop:  lda (start),y  
+	:write()
+	:next()
+	jmp done
+
+far:    :jsrcommon(code.sendfar)
+	
+done:	:input()
+	:screenOn()
+	jmp irq.done
+eof:	
+}	
+	
+//------------------------------------------------------------------------------
+	
+poke: {
+	jsr read stx mem 
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
+
+	:wait()
+	lda $dd01 pha
+	:ack()
+	
+	:checkBank()
+	
+near:  ldy #$00
+	pla sta (start),y
+	jmp done
+
+far:    ldy #$00
+	lda #start
+	sta stashptr
+
+	ldx mem
+	pla jsr stash
+	
+done:   jmp irq.done
+eof:	
+}
+
+//------------------------------------------------------------------------------
+	
+peek: {
+	jsr read stx mem
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
+
+        :output()
+	
+	:checkBank()
+	
+near:	ldy #$00
+	lda (start),y
+	:write()
+	jmp done
+
+far:	lda #start
+	sta fetchptr
+
+	ldx mem
+	jsr fetch
+	
+	:write()
+
+done:   :input()
+	
+	jmp irq.done
+eof:	
+}
+	
+//------------------------------------------------------------------------------
+
+jump: {
+ 	jsr read stx mem
+	jsr read stx bank
+
+	ldx #$ff txs        // reset stack pointer
+
+        lda #>repl     pha  // make sure the code jumped to can rts to basic
+        lda #[<repl-1] pha  // (only if the bank includes basic rom, of course) 
+
+	// prepare jmpfar...
+	
+	lda bank sta $02    // setup requested bank value
+
+	jsr read stx $03    // setup jump address (sent msb first by client)
+	jsr read stx $04
+
+	// set clean registers and flags...
+	
+	lda #$00 sta $05 sta $06 sta $07 sta $08 
+
+	jmp jmpfar          // implies rti
+eof:	
+}
+	
+//------------------------------------------------------------------------------
+	
+run: {
+	lda #$01 sta cursor // cursor off
+
+	cli jmp basrun      // perform RUN
+eof:	
+}
+	
+//------------------------------------------------------------------------------
+
+inject:	{
+	lda #>return pha
+	lda #<return pha
+	
+	jsr read txa pha 
+	jsr read txa pha
+	
+	rts
+	
+return: nop
+	jmp irq.done
+eof:	
+}
 
 //------------------------------------------------------------------------------
 
@@ -114,7 +302,63 @@ done:   :input()
         jmp irq.done
 eof:    
 }
-        
+
+//------------------------------------------------------------------------------
+
+code: {
+	
+receivefar: {
+.pseudopc common {
+	lda mmu
+	sta saved
+
+	ldy #$00	
+!loop:  :wait()
+	lda $dd01
+	ldx mem stx mmu
+	sta (start),y 
+	ldx saved stx mmu
+	:ack()
+	:next()
+
+	rts
+}
+eof:
+}
+	
+sendfar: {
+.pseudopc common {
+	lda mmu
+	sta saved
+
+	ldy #$00
+!loop:  ldx mem stx mmu
+	lda (start),y
+	ldx saved stx mmu
+	:write()
+	:next()
+	
+	lda saved
+	sta mmu
+	rts
+}
+eof:	
+}
+eof:	
+}
+	
+//------------------------------------------------------------------------------
+	
+readHeader: {
+	jsr read stx mem
+	jsr read stx bank
+	jsr read stx start
+	jsr read stx start+1
+	jsr read stx end
+	jsr read stx end+1
+	rts
+eof:	
+}
 
 //------------------------------------------------------------------------------
 
@@ -187,6 +431,15 @@ eof:
 
 .eval command = command + patch(wedge, wedge.eof)	
 .eval command = command + patch(irq, irq.eof)
+.eval command = command + patch(load, load.eof)
+.eval command = command + patch(save, save.eof)
+.eval command = command + patch(peek, peek.eof)
+.eval command = command + patch(poke, poke.eof)
+.eval command = command + patch(jump, jump.eof)
+.eval command = command + patch(run, run.eof)
+.eval command = command + patch(inject, inject.eof)
+.eval command = command + patch(code, code.eof)
+.eval command = command + patch(readHeader, readHeader.eof)	
 .eval command = command + patch(wait, wait.eof)
 .eval command = command + patch(ack, ack.eof)
 .eval command = command + patch(read, read.eof)                

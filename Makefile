@@ -140,14 +140,14 @@ tools/make-bootstrap: tools/make-bootstrap.c
 
 bootstrap-c64.txt: tools/make-bootstrap bootstrap.asm server.h
 	$(KASM) :target=c64 -o bootstrap-c64.prg bootstrap.asm && \
-	tools/make-bootstrap bootstrap-c64.prg > bootstrap-c64.txt
+	tools/make-bootstrap c64 bootstrap-c64.prg > bootstrap-c64.txt
 
 bootstrap-test-c64.prg: bootstrap-c64.txt
 	petcat -w2 -o bootstrap-test-c64.prg -- bootstrap-c64.txt
 
 bootstrap-c128.txt: tools/make-bootstrap bootstrap.asm
 	$(KASM) :target=c128 -o bootstrap-c128.prg bootstrap.asm && \
-	tools/make-bootstrap bootstrap-c128.prg > bootstrap-c128.txt
+	tools/make-bootstrap c128 bootstrap-c128.prg > bootstrap-c128.txt
 
 bootstrap-test-c128.prg: bootstrap-c128.txt
 	petcat -w70 -o bootstrap-test-c128.prg -- bootstrap-c128.txt
@@ -199,6 +199,7 @@ clean: firmware-clean
 	[ -f server64.c ] && rm -vf server64.c || true
 	[ -f server128.c ] && rm -vf server128.c || true
 	[ -f kernal64.c ] && rm -vf kernal64.c || true
+	[ -f kernal128.c ] && rm -vf kernal128.c || true
 	[ -f bootstrap-c64.txt ] && rm -vf bootstrap-c64.txt || true
 	[ -f bootstrap-c64.prg ] && rm -vf bootstrap-c64.prg || true
 	[ -f bootstrap-c128.txt ] && rm -vf bootstrap-c128.txt || true

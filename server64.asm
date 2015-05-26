@@ -20,6 +20,13 @@ install: {
         sta $0314
         stx $0315       
         cli
+
+	lda #$4c   // install re-entry via "SYS1000"
+	sta $03e8
+	lda #<install
+	sta $03e9
+	lda #>install
+	sta $03ea
 	
 	rts
 }
