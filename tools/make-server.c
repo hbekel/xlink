@@ -5,6 +5,8 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
+#include "machine.h"
+
 #define HIGH 0
 #define LOW 1
 
@@ -39,40 +41,35 @@ int main(int argc, char **argv) {
   int result = EXIT_FAILURE;
   struct stat st;
   int size;
+
+  argc--;
+  argv++;
   
+  char *name = argv[0];
   unsigned char *base   = (unsigned char *) calloc(1, sizeof(unsigned char));
   unsigned char *high   = (unsigned char *) calloc(1, sizeof(unsigned char));
   unsigned char *low    = (unsigned char *) calloc(1, sizeof(unsigned char));
   unsigned char *loader = (unsigned char *) calloc(1, sizeof(unsigned char));
   
-  argc--;
-  argv++;
-
   if(argc < 4) {
-    fprintf(stderr, "usage: make-server <base> <low> <high> <loader>\n");
+    fprintf(stderr, "usage: make-server <name> <base> <low> <high> <loader>\n");
     goto done;
   }
 
-  if(!load(argv[0], &base))
+  if(!load(argv[1], &base))
     goto done;
     
-  if(!load(argv[1], &low))
+  if(!load(argv[2], &low))
     goto done;
   
-  if(!load(argv[2], &high))
+  if(!load(argv[3], &high))
     goto done;  
 
-  if(!load(argv[3], &loader))
+  if(!load(argv[4], &loader))
     goto done;  
   
-  stat(argv[0], &st);
-  size = st.st_size;
-
   stat(argv[1], &st);
-  if (size != st.st_size) {
-    fprintf(stderr, "error: files must be of equal size\n");
-    goto done;
-  }
+  size = st.st_size;
 
   stat(argv[2], &st);
   if (size != st.st_size) {
@@ -81,6 +78,12 @@ int main(int argc, char **argv) {
   }
 
   stat(argv[3], &st);
+  if (size != st.st_size) {
+    fprintf(stderr, "error: files must be of equal size\n");
+    goto done;
+  }
+
+  stat(argv[4], &st);
   int loader_size = st.st_size;
   
   int count = 0;
@@ -115,19 +118,23 @@ int main(int argc, char **argv) {
 
   printf("#include <stdlib.h>\n");
   printf("#include \"xlink.h\"\n");
+  printf("#include \"machine.h\"\n");  
   printf("#include \"error.h\"\n");  
-  printf("unsigned char* xlink_server(unsigned short address, int *size);\n");
-  printf("unsigned char* xlink_server_basic(int *size);\n");
+  printf("unsigned char* xlink_server_%s(unsigned short address, int *size);\n", name);
+  printf("unsigned char* xlink_server_basic_%s(int *size);\n", name);
 
-  printf("unsigned char* xlink_server_basic(int *size) {\n");
+  printf("unsigned char* xlink_server_basic_%s(int *size) {\n", name);
   
   printf("unsigned char loader[%d] = {", loader_size);
   for(int i=0; i<loader_size; i++) {
     printf("%d,", loader[i]);
-  }
+  }  
   printf("};\n");
-
-  printf("unsigned char* code = xlink_server(0xd000-%d+2, size);\n", size);
+  printf("loader[0] = lo(machine->default_basic_start);\n");
+  printf("loader[1] = hi(machine->default_basic_start);\n");
+  printf("sprintf((char*)loader+7, \"%%d\", machine->default_basic_start+0x10);\n");
+  
+  printf("unsigned char* code = xlink_server_%s(0x4000-%d+2, size);\n", name, size);
   printf("unsigned char* result = (unsigned char*) calloc((*size)+%d-2, sizeof(unsigned char));\n", loader_size);
 
   printf("for(int i=0; i<%d; i++) { result[i] = loader[i]; }\n", loader_size);
@@ -138,7 +145,7 @@ int main(int argc, char **argv) {
   
   printf("}\n");
   
-  printf("unsigned char* xlink_server(unsigned short address, int *size) {\n");
+  printf("unsigned char* xlink_server_%s(unsigned short address, int *size) {\n", name);
 
   printf("(*size) = %d;\n", size);
 

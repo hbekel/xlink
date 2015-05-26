@@ -1,7 +1,13 @@
-.pc = $3000
-
 .import source "server.h"
 
+.if(target == "c64") {
+  .pc = $3000
+}
+
+.if(target == "c128") {
+  .pc = $0d00
+}	
+	
 //------------------------------------------------------------------------------	
 	
 jmp main
@@ -37,7 +43,7 @@ loop:	jsr wait
 	jsr load	
         
 done:	cli
-	jmp $a480
+	jmp repl
 }
 
 //------------------------------------------------------------------------------	
@@ -70,8 +76,8 @@ done:   lda end
 readHeader: {
 	jsr read stx mem
 	jsr read stx bank
-	jsr read stx start stx $fb
-	jsr read stx start+1 stx $fc
+	jsr read stx start 
+	jsr read stx start+1
 	jsr read stx end
 	jsr read stx end+1
 	rts

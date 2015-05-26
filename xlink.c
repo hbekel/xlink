@@ -5,6 +5,7 @@
 #include <time.h>
 
 #include "xlink.h"
+#include "machine.h"
 #include "error.h"
 #include "target.h"
 #include "driver/driver.h"
@@ -60,6 +61,16 @@ void libxlink_initialize() {
 
   driver->_open = &_driver_setup_and_open;
 
+  if (getenv("XLINK_MACHINE") != NULL) {
+
+    if (strncmp(getenv("XLINK_MACHINE"), "c64", 3) == 0) {
+      machine = &c64;
+    }
+    if (strncmp(getenv("XLINK_MACHINE"), "c128", 4) == 0) {
+      machine = &c128;
+    }
+  }
+  
   xlink_error = (xlink_error_t *) calloc(1, sizeof(xlink_error_t));
   CLEAR_ERROR;
 
@@ -237,7 +248,7 @@ bool xlink_ready(void) {
     
     while(timeout) {
       if(xlink_ping()) {
-        usleep(250*1000); // wait until basic is ready
+        usleep(250*1000); 
         goto done;
       }
       timeout-=250;
@@ -245,11 +256,11 @@ bool xlink_ready(void) {
     result = false;
   }
   else {
-    if(xlink_peek(0x37, 0x00, 0x9d, &mode)) {
-      if(mode != 0x80) { 
-        // basic program running -> warm start basic
-        xlink_jump(0x37, 0x00, 0xfe66);
-        usleep(250*1000);
+    if(xlink_peek(machine->memory, machine->bank, machine->mode, &mode)) {
+      if(mode == machine->prgmode) {
+	logger->debug("basic program running, performing basic warmstart...");
+        xlink_jump(machine->memory, machine->bank, machine->warmstart);
+        usleep(250*1000); 
       }
     }
   }
@@ -511,8 +522,8 @@ bool xlink_run(void) {
 bool xlink_inject(ushort address, uchar* code, uint size) {
 
   bool result = false;
-  uchar memory = 0x80|0x37;
-  uchar bank = 0x00;
+  uchar memory = machine->memory;
+  uchar bank = machine->bank;
   
   if(!xlink_load(memory, bank, address, code, size)) {
     goto done;
@@ -643,24 +654,23 @@ void xlink_end() {
 
 //------------------------------------------------------------------------------
 
-extern unsigned char* xlink_server(unsigned short address, int *size);
-
 bool xlink_relocate(unsigned short address) {
 
   bool result = false;
   
-  Extension* relocate = EXTENSION_SERVER_RELOCATE;
-
   int size;
-  unsigned char* server = xlink_server(address, &size);  
+  unsigned char* server = machine->server(address, &size);  
 
-  if(extension_init(relocate)) {
-    result = xlink_load(0x37|0x80, 0x00, address, server+2, size-2);
-  }
+  uchar memory = machine->memory | 0x80;
+  uchar bank = machine->bank;
   
-  extension_free(relocate);  
+  if(!(result = xlink_load(memory, bank, address, server+2, size-2))) goto done;
+
+  result = xlink_jump(memory, bank, address);
+  
   free(server);
-  
+
+ done:
   CLEAR_ERROR_IF(result);
   return result;  
 }

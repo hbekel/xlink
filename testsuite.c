@@ -55,6 +55,14 @@ void test_range() {
   free(range);
   free(other);
 
+  range = range_new_from_int(0xc000d000);
+  other = range_new(0xc000, 0xd000);
+
+  check(range_equals(range, other), "Range from int 0xc000d000 does not equal range $c000-$d000");
+
+  free(range);
+  free(other);
+
   range = range_new(0x1000, 0x2000);
   other = range_new(0x1800, 0x2800);
 

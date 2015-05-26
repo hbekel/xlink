@@ -20,6 +20,13 @@ install: {
         sta $0314
         stx $0315       
         cli
+
+	lda #$4c   // install re-entry via "SYS1000"
+	sta $03e8
+	lda #<install
+	sta $03e9
+	lda #>install
+	sta $03ea
 	
 	rts
 }
@@ -210,8 +217,8 @@ jump: {
 
 	ldx #$ff txs // reset stack pointer
 
-        lda #$a4 pha // make sure the code jumped to can rts to basic
-        lda #$7f pha // ($a480 = BASIC REPL)
+        lda #>repl     pha // make sure the code jumped to can rts to basic
+        lda #[<repl-1] pha   
   
 	jsr read txa pha // push high byte of jump address
 	jsr read txa pha // push low byte of jump address
@@ -229,14 +236,14 @@ jump: {
 run: {
 	jsr uninstall
 	
-	ldx #$ff txs     // reset stack pointer
-	lda #$01 sta $cc // cursor off
+	ldx #$ff txs        // reset stack pointer
+	lda #$01 sta cursor // cursor off
 
-	jsr insnewl     // run BASIC program
+	jsr insnewl         // preprare run BASIC program
 	jsr restxtpt
 
-	lda #$00        // flag program mode
-	sta errmode
+	lda #$00            // flag program mode
+	sta mode
 	
 	jmp warmst
 }

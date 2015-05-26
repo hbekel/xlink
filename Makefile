@@ -16,6 +16,7 @@ INPOUT32_BINARIES=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBi
 
 LIBHEADERS=\
 	xlink.h \
+	machine.h \
 	util.h \
 	extension.h \
 	driver/driver.h \
@@ -26,12 +27,15 @@ LIBHEADERS=\
 
 LIBSOURCES=\
 	xlink.c \
+	machine.c \
 	error.h \
 	util.c \
 	extension.c \
 	extensions.c \
-	server.c \
-	kernal.c \
+	server64.c \
+	server128.c \
+	kernal64.c \
+	kernal128.c \
 	driver/driver.c \
 	driver/usb.c \
 	driver/parport.c \
@@ -39,11 +43,15 @@ LIBSOURCES=\
 
 LIBFLAGS=-DXLINK_LIBRARY_BUILD -L.
 
-all: linux c64
-c64: bootstrap
+all: linux cbm
+cbm: bootstrap
 linux: xlink udev
 win32: xlink.exe
-bootstrap: bootstrap.txt
+bootstrap: bootstrap-c64 bootstrap-c128
+bootstrap-c64: bootstrap-c64.txt
+bootstrap-test-c64: bootstrap-test-c64.prg
+bootstrap-c128: bootstrap-c128.txt
+bootstrap-test-c128: bootstrap-test-c128.prg
 prepare-msi: clean win32 firmware xlink.lib
 
 testsuite: testsuite.c range.c
@@ -96,30 +104,53 @@ extensions.c: tools/make-extension extensions.asm
 tools/make-server: tools/make-server.c
 	$(GCC) $(CFLAGS) -o tools/make-server tools/make-server.c
 
-server.c: tools/make-server server.h server.asm loader.asm 
-	$(KASM) :pc=257 -o base server.asm  # 257 = 0101
-	$(KASM) :pc=513 -o high server.asm  # 513 = 0201
-	$(KASM) :pc=258 -o low  server.asm  # 258 = 0102
-	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" -o loader loader.asm)
-	tools/make-server base low high loader > server.c
+server64.c: tools/make-server server.h server64.asm loader.asm 
+	$(KASM) :target=c64 :pc=257 -o base server64.asm  # 257 = 0101
+	$(KASM) :target=c64 :pc=513 -o high server64.asm  # 513 = 0201
+	$(KASM) :target=c64 :pc=258 -o low  server64.asm  # 258 = 0102
+	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" :target=c64 -o loader loader.asm)
+	tools/make-server c64 base low high loader > server64.c
+	rm -v base low high loader
+
+server128.c: tools/make-server server.h server128.asm loader.asm 
+	$(KASM) :target=c128 :pc=257 -o base server128.asm  # 257 = 0101
+	$(KASM) :target=c128 :pc=513 -o high server128.asm  # 513 = 0201
+	$(KASM) :target=c128 :pc=258 -o low  server128.asm  # 258 = 0102
+	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" :target=c128 -o loader loader.asm)
+	tools/make-server c128 base low high loader > server128.c
 	rm -v base low high loader
 
 tools/make-kernal: tools/make-kernal.c
 	$(GCC) $(CFLAGS) -o tools/make-kernal tools/make-kernal.c
 
-kernal.c: tools/make-kernal tools/make-kernal.c kernal.asm
-	$(KASM) -binfile -o kernal.bin kernal.asm | \
+kernal64.c: tools/make-kernal tools/make-kernal.c kernal64.asm
+	$(KASM) -binfile :target=c64 -o kernal64.bin kernal64.asm | \
 	grep make-kernal | \
-	sh -x > kernal.c && \
-	rm kernal.bin
+	sh -x > kernal64.c && \
+	rm kernal64.bin
+
+kernal128.c: tools/make-kernal tools/make-kernal.c kernal128.asm
+	$(KASM) -binfile :target=c128 -o kernal128.bin kernal128.asm | \
+	grep make-kernal | \
+	sh -x > kernal128.c && \
+	rm kernal128.bin
 
 tools/make-bootstrap: tools/make-bootstrap.c
 	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
-bootstrap.txt: tools/make-bootstrap bootstrap.asm
-	$(KASM) -o bootstrap.prg bootstrap.asm && \
-	tools/make-bootstrap bootstrap.prg > bootstrap.txt && \
-	rm -v bootstrap.prg
+bootstrap-c64.txt: tools/make-bootstrap bootstrap.asm server.h
+	$(KASM) :target=c64 -o bootstrap-c64.prg bootstrap.asm && \
+	tools/make-bootstrap c64 bootstrap-c64.prg > bootstrap-c64.txt
+
+bootstrap-test-c64.prg: bootstrap-c64.txt
+	petcat -w2 -o bootstrap-test-c64.prg -- bootstrap-c64.txt
+
+bootstrap-c128.txt: tools/make-bootstrap bootstrap.asm
+	$(KASM) :target=c128 -o bootstrap-c128.prg bootstrap.asm && \
+	tools/make-bootstrap c128 bootstrap-c128.prg > bootstrap-c128.txt
+
+bootstrap-test-c128.prg: bootstrap-c128.txt
+	petcat -w70 -o bootstrap-test-c128.prg -- bootstrap-c128.txt
 
 udev: etc/udev/rules.d/10-xlink.rules
 
@@ -137,7 +168,7 @@ firmware-clean:
 firmware-install: firmware
 	(cd driver/at90usb162 && make dfu)
 
-install: xlink c64
+install: xlink cbm
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
 	install -m644 -D libxlink.so $(DESTDIR)$(PREFIX)/lib/libxlink.so
 	install -m644 -D xlink.h $(DESTDIR)$(PREFIX)/include/xlink.h
@@ -165,9 +196,16 @@ clean: firmware-clean
 	[ -f xlink ] && rm -vf xlink || true
 	[ -f xlink.exe ] && rm -vf xlink.exe || true
 	[ -f extensions.c ] && rm -vf extensions.c || true
-	[ -f server.c ] && rm -vf server.c || true
-	[ -f kernal.c ] && rm -vf kernal.c || true
-	[ -f bootstrap.txt ] && rm -vf bootstrap.txt || true
+	[ -f server64.c ] && rm -vf server64.c || true
+	[ -f server128.c ] && rm -vf server128.c || true
+	[ -f kernal64.c ] && rm -vf kernal64.c || true
+	[ -f kernal128.c ] && rm -vf kernal128.c || true
+	[ -f bootstrap-c64.txt ] && rm -vf bootstrap-c64.txt || true
+	[ -f bootstrap-c64.prg ] && rm -vf bootstrap-c64.prg || true
+	[ -f bootstrap-c128.txt ] && rm -vf bootstrap-c128.txt || true
+	[ -f bootstrap-c128.prg ] && rm -vf bootstrap-c128.prg || true
+	[ -f bootstrap-test-c64.prg ] && rm -vf bootstrap-test-c64.prg || true
+	[ -f bootstrap-test-c128.prg ] && rm -vf bootstrap-test-c128.prg || true
 	[ -f tools/make-extension ] && rm -vf tools/make-extension || true
 	[ -f tools/make-bootstrap ] && rm -vf tools/make-bootstrap || true
 	[ -f tools/make-server ] && rm -vf tools/make-server || true

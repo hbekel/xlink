@@ -14,13 +14,13 @@ xlink
 readline*
 testsuite
 extensions.c
-server.c
-kernal.c
+server*.c
+kernal*.c
 make-extension
 make-bootstrap
 make-server
 make-kernal
-bootstrap.txt
+bootstrap*.txt
 log
 TODO
 inpout32*

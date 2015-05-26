@@ -351,8 +351,8 @@ jump: {
 
 	ldx #$ff txs // reset stack pointer
 
-        lda #$a4 pha // make sure the code jumped to can rts to basic
-        lda #$7f pha // ($a480 = BASIC REPL)
+        lda #>repl     pha // make sure the code jumped to can rts to basic
+        lda #[<repl-1] pha   
         
 	jsr read txa pha // push high byte of jump address
 	jsr read txa pha // push low byte of jump address
@@ -377,7 +377,7 @@ run: {
 	jsr restxtpt
 
 	lda #$00        // flag program mode
-	sta errmode
+	sta mode
 
 	jmp warmst
 eof:
@@ -529,7 +529,7 @@ eof:
 	
 //------------------------------------------------------------------------------		
 
-.var command = "tools/make-kernal kernal.bin"
+.var command = "tools/make-kernal c64 kernal64.bin"
 .eval command = command +  patch(wedge, wedge.eof)	
 .eval command = command + patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
 .eval command = command + patch(powerUpMessage, powerUpMessage.eof)

@@ -302,65 +302,6 @@ done:	// close files and channels
 .label size=*-offset
 }
 
-serverRelocate: {
-offset:
-.pseudopc $0334 {
-address:	
-	jsr read // answer ping
-	jsr read // read command
-	jsr read stx mem
-	jsr read stx bank
-	jsr read stx start   stx jump
-	jsr read stx start+1 stx jump+1
-	jsr read stx end
-	jsr read stx end+1
-
-	:screenOff()
-	
-	ldy #$00
-	
-!loop:  :wait()
-	lda $dd01 
-	sta (start),y  
-	:ack()
-	:next()
-
-	:screenOn()
-	
-	ldx #$31 // reset sysirq vector
-	ldy #$ea
-	stx $0314
-	sty $0315 
-
-	ldx #$ff txs // reset stack pointer
-
-	lda #$a4 pha // rts in server.install will return back to direct mode
-	lda #$7f pha // ($a480 -> BASIC REPL)
-	
-	lda jump+1 pha // push high byte of jump address
-	lda jump pha   // push low byte of jump address
-	
-	lda #$00 tax tay pha // clear registers & push clean flags 
-	
-	rti // will jump to the install routine of the relocated server
-
-read: {
-	:read()
-	rts
-}
-
-write: {
-	:write()
-	rts
-}
-	
-jump:	.word $ffff
-}
-	
-.label size=*-offset
-}
-
-	
 //------------------------------------------------------------------------------	
 	
 .function extension(name, address, offset, size) {
@@ -375,7 +316,7 @@ jump:	.word $ffff
 .print extension("DOS_COMMAND", dosCommand.address, dosCommand.offset, dosCommand.size)
 .print extension("SECTOR_READ", sectorRead.address, sectorRead.offset, sectorRead.size)
 .print extension("SECTOR_WRITE", sectorWrite.address, sectorWrite.offset, sectorWrite.size)
-.print extension("SERVER_RELOCATE", serverRelocate.address, serverRelocate.offset, serverRelocate.size)
+	
 	
 
       
