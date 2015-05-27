@@ -105,7 +105,12 @@ near:	ldy #$00
 	:next()
 	jmp done
 
-far:    :jsrcommon(code.receivefar)
+far:    :checkIO()
+	
+slow:   :jsrcommon(code.slow_receivefar)
+	jmp done
+
+fast:   :jsrcommon(code.fast_receivefar)
 	
 done:   :screenOn()
 	:relinkBasic()
@@ -129,7 +134,12 @@ near:	ldy #$00
 	:next()
 	jmp done
 
-far:    :jsrcommon(code.sendfar)
+far:    :checkIO()
+	
+slow:	:jsrcommon(code.slow_sendfar)
+	jmp done
+
+fast:	:jsrcommon(code.fast_sendfar)
 	
 done:	:input()
 	:screenOn()
@@ -307,10 +317,9 @@ eof:
 
 code: {
 	
-receivefar: {
+slow_receivefar: {
 .pseudopc common {
-	lda mmu
-	sta saved
+	lda mmu sta saved
 
 	ldy #$00	
 !loop:  :wait()
@@ -325,8 +334,27 @@ receivefar: {
 }
 eof:
 }
+
+fast_receivefar: {
+.pseudopc common {
+	lda mmu sta saved
+	lda mem sta mmu
 	
-sendfar: {
+	ldy #$00	
+!loop:  :wait()
+	lda $dd01
+	sta (start),y 
+	:ack()
+	:next()
+
+	lda saved sta mmu
+	
+	rts
+}
+eof:
+}
+	
+slow_sendfar: {
 .pseudopc common {
 	lda mmu
 	sta saved
@@ -338,12 +366,27 @@ sendfar: {
 	:write()
 	:next()
 	
-	lda saved
-	sta mmu
 	rts
 }
 eof:	
 }
+
+fast_sendfar: {
+.pseudopc common {
+	lda mmu sta saved
+	lda mem sta mmu
+	
+	ldy #$00
+!loop:  lda (start),y	
+	:write()
+	:next()
+	
+	lda saved sta mmu
+	rts
+}
+eof:	
+}
+	
 eof:	
 }
 	

@@ -106,7 +106,7 @@ irq: {
         
 !next:
 done:	jsr jiffy
-	jmp sysirq
+	jmp sysirq+3
 eof:
 }
 

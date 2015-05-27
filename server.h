@@ -10,7 +10,7 @@
 .var bank   = $ff       // bank config
 .var mode   = $9d       // Error mode flag
 
-.var sysirq   = $ea34   // System IRQ
+.var sysirq   = $ea31   // System IRQ
 .var jiffy    = $ffea   // Update jiffy clock   
 .var relink   = $a533   // Relink Basic program
 .var insnewl  = $a659   // Insert new line into BASIC program
@@ -120,18 +120,6 @@ check:	lda start+1
 	cmp end
 	bne !loop-
 }
-
-.macro jsrcommon(code) {
-	ldx #[code.eof-code]
-
-!loop:	lda code,x
-	sta common,x
-	dex
-	bpl !loop-
-
-	jsr common
-	jsr reinst
-}     
    
 .macro checkBank() {
         lda mem
@@ -145,6 +133,26 @@ check:	lda start+1
 	bne far
 }   
 
+.macro checkIO() {
+	lda mem
+	and #1
+	cmp #0
+	beq fast
+}
+	
+   
+.macro jsrcommon(code) {
+	ldx #[code.eof-code]
+
+!loop:	lda code,x
+	sta common,x
+	dex
+	bpl !loop-
+
+	jsr common
+	jsr reinst
+}     
+   
 .macro checkBasic() {
 	lda start
 	cmp bstart
