@@ -1626,7 +1626,7 @@ bool command_ready(Command* self) {
   command_print(self);
 
   if (!xlink_ready()) {
-    logger->error("no response from C64");
+    logger->error("no response from server");
     return false;
   }
   return true;
