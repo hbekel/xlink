@@ -5,12 +5,21 @@
 //------------------------------------------------------------------------------	
 	
 .pc = $fa66 // wedge into system irq
-wedge: {
+irqwedge: {
 	jmp irq
 resume: 
 eof:	
 }
 
+//------------------------------------------------------------------------------	
+	
+.pc = $ff56 // wedge into system boot routine
+bootwedge: {
+	jmp boot
+resume: 
+eof:	
+}
+	
 //------------------------------------------------------------------------------
   
 .pc = $f6cc
@@ -37,7 +46,7 @@ disableTapeSave: {
   jsr $f722
   rts
 eof:    
-}
+}	
         
 //------------------------------------------------------------------------------
 
@@ -84,7 +93,7 @@ irq: {
         
 !next:        
 done:   jsr jrsirq
-        jmp wedge.resume
+        jmp irqwedge.resume
 eof:    
 }        
 
@@ -442,7 +451,45 @@ write: {
 	rts
 eof:
 }
-        
+//------------------------------------------------------------------------------		
+
+boot: {
+	ldx #12     // center boot message...
+	            // 12 spaces in 40 column mode
+
+	bit $d7     // check for 80 columns
+	bpl spaces  // no...
+	
+	ldx #32     // 32 spaces in 80 column mode
+
+spaces: lda #$20
+	
+!loop:  jsr $ffd2
+	dex
+	bne !loop-
+	             
+message:            // print message...
+	ldx #$00
+!loop:	lda text,x
+	beq check
+	jsr $ffd2
+	inx
+	jmp !loop-
+	
+check:	lda #%01111111 // check for Control key...
+	sta $dc00
+	lda $dc01
+	and #%00000100
+	cmp #%00000100
+	beq skip       // not pressed -> skip boot
+
+	jmp $f867      // boot
+
+skip:	rts
+
+text: .text "XLINK KERNAL V1.0" .byte $0d, $00
+eof:	
+}
 //------------------------------------------------------------------------------		
 
 Server: {
@@ -472,7 +519,8 @@ eof:
 
 .var command = "tools/make-kernal c128 kernal128.bin"
 
-.eval command = command + patch(wedge, wedge.eof)	
+.eval command = command + patch(irqwedge, irqwedge.eof)
+.eval command = command + patch(bootwedge, bootwedge.eof)		
 .eval command = command + patch(irq, irq.eof)
 .eval command = command + patch(load, load.eof)
 .eval command = command + patch(save, save.eof)
@@ -488,6 +536,7 @@ eof:
 .eval command = command + patch(read, read.eof)                
 .eval command = command + patch(write, write.eof)
 .eval command = command + patch(identify, identify.eof)
+.eval command = command + patch(boot, boot.eof)	
 .eval command = command + patch(Server, Server.eof)                
         
 .eval command = command + patch(disableTapeLoad, disableTapeLoad.eof)
