@@ -65,7 +65,7 @@ libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 		-Wl,-init,libxlink_initialize,-fini,libxlink_finalize\
 		-o libxlink.so $(LIBSOURCES) -lusb-1.0
 
-xlink: libxlink.so client.c client.h disk.c disk.h range.c range.h
+xlink: libxlink.so client.c client.h disk.c disk.h range.c range.h help.c
 	$(GCC) $(CFLAGS) -o xlink client.c disk.c range.c -L. -lxlink 
 
 xlink.res.o: xlink.rc
@@ -75,7 +75,7 @@ xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32 xlink.res.o
 	$(MINGW32-GCC) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
 		-o xlink.dll $(LIBSOURCES) xlink.res.o -lusb-1.0 -linpout32
 
-xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h xlink.lib-clean 
+xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h help.c xlink.lib-clean 
 	$(MINGW32-GCC) $(CFLAGS) -static-libgcc -o xlink.exe \
 		client.c disk.c range.c -L. -lxlink 
 
@@ -152,6 +152,12 @@ bootstrap-c128.txt: tools/make-bootstrap bootstrap.asm
 bootstrap-test-c128.prg: bootstrap-c128.txt
 	petcat -w70 -o bootstrap-test-c128.prg -- bootstrap-c128.txt
 
+tools/make-help: tools/make-help.c
+	$(GCC) $(CFLAGS) -o tools/make-help tools/make-help.c
+
+help.c: tools/make-help help.txt
+	tools/make-help help.txt > help.c
+
 udev: etc/udev/rules.d/10-xlink.rules
 
 etc/udev/rules.d/10-xlink.rules: tools/make-udev-rules.sh
@@ -200,6 +206,7 @@ clean: firmware-clean
 	[ -f server128.c ] && rm -vf server128.c || true
 	[ -f kernal64.c ] && rm -vf kernal64.c || true
 	[ -f kernal128.c ] && rm -vf kernal128.c || true
+	[ -f help.c ] && rm -vf help.c || true
 	[ -f bootstrap-c64.txt ] && rm -vf bootstrap-c64.txt || true
 	[ -f bootstrap-c64.prg ] && rm -vf bootstrap-c64.prg || true
 	[ -f bootstrap-c128.txt ] && rm -vf bootstrap-c128.txt || true
@@ -210,6 +217,7 @@ clean: firmware-clean
 	[ -f tools/make-bootstrap ] && rm -vf tools/make-bootstrap || true
 	[ -f tools/make-server ] && rm -vf tools/make-server || true
 	[ -f tools/make-kernal ] && rm -vf tools/make-kernal || true
+	[ -f tools/make-help ] && rm -vf tools/make-help || true
 	[ -f etc/udev/rules.d/10-xlink.rules ] && rm -v etc/udev/rules.d/10-xlink.rules || true
 	[ -f log ] && rm -v log || true
 

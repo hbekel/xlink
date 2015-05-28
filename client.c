@@ -1749,278 +1749,55 @@ void usage(void) {
   printf("Usage: xlink [<opts>] [<command> [<opts>] [<arguments>]]...\n");
   printf("\n");
   printf("Options:\n");
-  printf("         -h, --help                    : show this help\n");
-  printf("         -q, --quiet                   : show errors only\n");
-  printf("         -v, --verbose                 : show verbose debug output\n");
+  printf("    -h, --help                    : show this help\n");
+  printf("    -q, --quiet                   : show errors only\n");
+  printf("    -v, --verbose                 : show verbose debug output\n");
 #if linux
-  printf("         -d, --device <path>           : ");
+  printf("    -d, --device <path>           : ");
   printf("transfer device (default: /dev/xlink)\n");
 #elif windows
-  printf("         -d, --device <port or \"usb\">  : ");
+  printf("    -d, --device <port or \"usb\">  : ");
   printf("transfer device (default: \"usb\")\n");
 #endif
-  printf("         -M, --machine                 : machine type (default: C64)\n");
-  printf("         -m, --memory                  : C64/C128 memory (default: 0x37/0x00)\n");
-  printf("         -b, --bank                    : C128 bank (default: 15)\n");
-  printf("         -a, --address <start>[-<end>] : address/range (default: autodetect)\n");
-  printf("         -s, --skip <n>                : Skip n bytes of file\n");
+  printf("    -M, --machine                 : machine type (default: C64)\n");
+  printf("    -m, --memory                  : C64/C128 memory config (default: 0x37/0x00)\n");
+  printf("    -b, --bank                    : C128 bank value (default: 15)\n");
+  printf("    -a, --address <start>[-<end>] : address/range (default: autodetect)\n");
+  printf("    -s, --skip <n>                : Skip n bytes of file\n");
   printf("\n");
   printf("Commands:\n");
-  printf("          help  [<command>]            : show detailed help for command\n");
+  printf("     help  [<command>]            : show detailed help for command\n");
   printf("\n");
-  printf("          kernal <infile> <outfile>    : patch kernal image to include server\n");
-  printf("          server [-a<addr>] <file>     : create server and save to file\n");
-  printf("          relocate <addr>              : relocate running server\n");
+  printf("     kernal <infile> <outfile>    : patch kernal image to include server code\n");
+  printf("     server [-a<addr>] <file>     : create server program and save to file\n");
+  printf("     relocate <addr>              : relocate currently running server\n");
   printf("\n");  
-  printf("          reset                        : reset machine (if supported)\n");
-  printf("          ready                        : try to make sure the server is ready\n");
-  printf("          ping                         : check if the server is available\n");
-  printf("          identify                     : identify remote server and machine\n");
+  printf("     reset                        : reset machine (requires hardware support)\n");
+  printf("     ready                        : try to make sure the server is ready\n");
+  printf("     ping                         : check if the server is available\n");
+  printf("     identify                     : identify remote server and machine type\n");
   printf("\n");
-  printf("          load  [<opts>] <file>        : load file into memory\n");
-  printf("          save  [<opts>] <file>        : save memory to file\n");
-  printf("          poke  [<opts>] <addr>,<val>  : poke value into memory\n");
-  printf("          peek  [<opts>] <addr>        : read value from memory\n");
-  printf("          fill  <range>  <val>         : fill memory range with value\n");
-  printf("          jump  [<opts>] <addr>        : jump to specified address\n");
-  printf("          run   [<opts>] [<file>]      : run program, optionally load it before\n");
-  printf("          <file>...                    : load file(s) and run last file\n");
+  printf("     load  [<opts>] <file>        : load file into memory\n");
+  printf("     save  [<opts>] <file>        : save memory to file\n");
+  printf("     poke  [<opts>] <addr>,<val>  : poke value into memory\n");
+  printf("     peek  [<opts>] <addr>        : read value from memory\n");
+  printf("     fill  <range>  <val>         : fill memory range with value\n");
+  printf("     jump  [<opts>] <addr>        : jump to specified address\n");
+  printf("     run   [<opts>] [<file>]      : run program, optionally load it before\n");
+  printf("     <file>...                    : load file(s) and run last file\n");
   printf("\n");
-  printf("          @[<dos-command>]             : read drive status or send dos command\n");    
-  printf("          backup <file>                : backup disk to d64 file\n");
-  printf("          restore <file>               : restore d64 file to disk\n");
-  printf("          verify <file>                : verify disk against d64 file\n");
+  printf("     @[<dos-command>]             : read drive status or send dos command\n");    
+  printf("     backup <file>                : backup disk to d64 file\n");
+  printf("     restore <file>               : restore d64 file to disk\n");
+  printf("     verify <file>                : verify disk against d64 file\n");
   printf("\n");
-  printf("          benchmark                    : test/measure transfer speed\n");
-  printf("          bootloader                   : enter dfu-bootloader (at90usb162)\n");  
+  printf("     benchmark                    : test/measure transfer speed\n");
+  printf("     bootloader                   : enter dfu-bootloader (at90usb162)\n");  
   printf("\n");
 }
 
 //------------------------------------------------------------------------------
 
-bool help(int id) {
+#include "help.c"
 
-  switch(id) {
-  case COMMAND_NONE:
-    usage();
-    break;
-
-  case COMMAND_HELP:
-    printf("Usage: help <command>\n");
-    printf("\n");
-    printf("Show detailed help for <command>\n");
-    printf("\n");
-    break;
-    
-  case COMMAND_LOAD:
-    printf("Usage: load [--address <start>[-<end>] [--memory <mem>] [--skip <n>] <file>\n");
-    printf("\n");
-    printf("Load the specified file into C64 memory\n");
-    printf("\n");
-    printf("If no start address is given it is assumed that the file is a PRG\n");
-    printf("file and that its first two bytes contain the start address in\n");
-    printf("little-endian order.\n");
-    printf("\n");    
-    printf("Otherwise, if a start address is given it is assumed that the\n");
-    printf("file is a plain binary file that does not contain a start\n");
-    printf("address. In this case the entire file is loaded to the specified\n");
-    printf("address. The --skip option may be used to skip an arbitrary\n");
-    printf("amount of bytes at the beginning of the file.\n");
-    printf("\n");    
-    printf("If an additional end address is specified, transfer will end as\n");
-    printf("soon as the end address or the end of the file is reached,\n");
-    printf("whichever comes first.\n");    
-    printf("\n");
-    printf("If a memory config is specified, it is poked to $01 prior to writing\n");
-    printf("the transfered value to C64 memory. The memory setting defaults to\n");
-    printf("0x37, which is the default setting in direct mode. If the file\n");
-    printf("overlaps the io area ($d000-$dfff) then the default memory config will\n");
-    printf("be changed to 0x33, so that data will always be loaded into the RAM\n");
-    printf("residing below the io area. This is a safety measure preventing\n");
-    printf("possible damage to either the PC's parallel port or the C64's CIA2.\n");
-    printf("In order to load data directly into the io area the memory config\n");
-    printf("needs to be set to 0x37 explicitly.\n");
-    printf("\n");
-    printf("If the server on the C64 is running from RAM and is located\n");
-    printf("in the same memory area as the data to be loaded then an attempt\n");
-    printf("is made to relocate the server to a different location beforehand.\n");
-    printf("\n"); 
-    break;
-
-  case COMMAND_SAVE:
-    printf("Usage: save [--address <start>-<end>] [--memory <mem>] file\n");
-    printf("\n");
-    printf("Save the specified C64 memory area to a file.\n");
-    printf("\n");
-    printf("If the destination filename ends with .prg then the destination file\n");
-    printf("will be prefixed with the supplied start address. If no address range\n");
-    printf("is specified, then the basic program currently residing in C64 memory\n");
-    printf("will be saved.\n");
-    printf("\n");
-    printf("If a memory config is specified, it will be poked to $01 prior to\n");
-    printf("reading the value to be transfered from C64 memory. The default value\n");
-    printf("is 0x37.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_POKE:
-    printf("Usage: poke [--memory <mem>] <address>,<byte>\n");
-    printf("\n");
-    printf("Poke the specified byte to the specified address. \n");
-    printf("\n");
-    printf("If no memory config is specified, then the default memory config 0x37\n");
-    printf("will be used, so that values poked to the io area $d000-$dfff will\n");
-    printf("have the expected effect.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_PEEK:
-    printf("Usage: peek [--memory <mem>] <address>\n");
-    printf("\n");
-    printf("Read the byte at the specified C64 memory address and print it on\n");
-    printf("standard output.\n");
-    printf("\n");
-    printf("If no memory config is specified, the default value 0x37 will be used.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_JUMP:
-   printf("Usage: jump <address>\n");
-   printf("\n");
-   printf("Jump to the specified address in C64 memory. The stack pointer,\n");
-   printf("processor flags and registers will be reset prior to jumping.\n");
-   printf("\n");
-   break;
-
-  case COMMAND_RUN:
-    printf("Usage: run [<file>]\n");
-    printf("\n");
-    printf("Without argument, RUN the currently loaded basic program. With a file argument\n");
-    printf("specified, load the file beforehand. If the file loads to 0x0801, assume its a\n");
-    printf("basic program and RUN it, else assume it's an ml program and jump to the\n");
-    printf("address the file loaded to.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_RESET:
-    printf("Usage: reset\n");
-    printf("\n");
-    printf("Reset the C64. Works without the server actually running on the C64 side.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_DOS:
-  case COMMAND_STATUS:
-    printf("Usage: @[command]\n");
-    printf("\n");
-    printf("Send the specified DOS command to the drive and report the resulting\n");
-    printf("drive status. If no command is specified, report drive status only.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_BACKUP:
-    printf("Usage: backup <file>.d64\n");
-    printf("\n");
-    printf("Backup a disk to a d64 file. Reads 35 tracks from disk and saves them to\n");
-    printf("the specified file. Note that no error checking is performed and no error\n");
-    printf("information is appended to the d64 file.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_RESTORE:
-    printf("Usage: restore <file>.d64\n");
-    printf("\n");
-    printf("Write a 35 track d64 file to disk. The data is written as is, i.e. without\n");
-    printf("interpreting any error information that may be included in the d64 file.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_VERIFY:
-    printf("Usage: verify <file>.d64\n");
-    printf("\n");
-    printf("Verify disk against d64 file. Reads 35 tracks from disk and compares the data\n");
-    printf("against the specified d64 file. Track 18 is verified first, then the remaining\n");
-    printf("tracks are verified in order.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_READY:
-    printf("Usage: ready [<commands>...]\n");
-    printf("\n");
-    printf("Makes sure that the server is ready. First the server is pinged. If it doesn't\n");
-    printf("respond immediately, the C64 is reset. If the server responds to another ping\n");
-    printf("within three seconds, then the remaining commands (if any) are executed.\n");
-    printf("\n");
-    printf("This command requires the server to be installed permanently so that it is\n");
-    printf("available after reset.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_PING:
-    printf("Usage: ping\n");
-    printf("\n");
-    printf("Ping the server, exit successfully if the server responds.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_BOOTLOADER:
-    printf("Usage: bootloader\n");
-    printf("\n");
-    printf("Prepare USB devices for firmware updates. Enters the atmel dfu-bootloader.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_BENCHMARK:
-    printf("Usage: benchmark\n");
-    printf("\n");
-    printf("Write 32k of random data into C64 memory, then read it back and compare it\n");
-    printf("to the original data while measuring the achieved transfer rates.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_IDENTIFY:
-    printf("Usage: identify\n");
-    printf("\n");
-    printf("Query information about the remote server. Reports machine type, server\n");
-    printf("version, server type (RAM- or ROM-based), memory location and size.\n");
-    printf("Additionally reports the top of the lower memory area ($A000 or $8000).\n");    
-    printf("\n");
-    break;
-
-  case COMMAND_SERVER:
-    printf("Usage: server [--address <address>] <file>\n");
-    printf("\n");
-    printf("Write a ram-based C64 server programm to file. Use address to specify the\n");
-    printf("start address for the server code. If the address is $0801 the server can\n");
-    printf("be started with RUN. This is the default if no address is specified.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_RELOCATE:
-    printf("Usage: relocate <address>\n");
-    printf("\n");
-    printf("Relocate the currently running ram-based server to the specified address.\n");
-    printf("Note that the server cannot be relocated to areas occupied by ROM or IO.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_KERNAL:
-    printf("Usage: kernal <infile> <outfile>\n");
-    printf("\n");
-    printf("Patch the kernal image supplied via <infile> to include an xlink server and\n");
-    printf("write the results to <outfile>. Note that the resulting kernal will no longer\n");
-    printf("support tape IO.\n");
-    printf("\n");
-    break;
-
-  case COMMAND_FILL:
-    printf("Usage: fill --address <start>-<end> <value>\n");
-    printf("\n");
-    printf("Fill the specified memory area with <value>. The memory config defaults to 0x37.\n");
-    printf("\n");
-    break;   
-  }
-  return true;
-}
-
-
+//------------------------------------------------------------------------------

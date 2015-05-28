@@ -16,6 +16,7 @@ testsuite
 extensions.c
 server*.c
 kernal*.c
+help.c
 make-extension
 make-bootstrap
 make-server

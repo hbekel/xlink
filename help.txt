@@ -1,0 +1,220 @@
+# This file is used to generate the code for the build in help command.
+# For more information about xlink, see www.henning-bekel.de/xlink.
+
+COMMAND_HELP
+
+Usage: help <command>
+
+Show detailed help for <command>
+
+COMMAND_LOAD
+
+Usage: load [--address <start>[-<end>] [--memory <mem>] [--bank <bank>] [--skip <n>] <file>
+
+Load the specified file into memory
+
+If no start address is given it is assumed that the file is a PRG file and
+that its first two bytes contain the start address in little-endian order.
+
+Otherwise, if a start address is given it is assumed that the file is a
+plain binary file that does not contain a start address. In this case the
+entire file is loaded to the specified address. The --skip option may be
+used to skip an arbitrary amount of bytes at the beginning of the file. Thus
+you can load a file already containing a start address to a different
+location by specifying --skip 2 in addition to --address.
+
+If an additional end address is specified, transfer will end as soon as the
+end address or the end of the file is reached, whichever comes first.
+
+Optional memory and bank configuration values can be specified that will be
+applied on the remote machine before writing the transfered values to their
+destination.
+
+If no memory or bank values are specified, values will be written using the
+default memory configuration for the respective machine. The only exception
+to this rule is that if the destination range overlaps with the io area,
+values will be written to the ram residing below the io area. This is a
+safety measure that prevents possible damage to the involved hardware io
+ports. In order to load data directly into the io area the memory
+configuration needs to be set explicitly.
+
+On the C64, the value of --memory is applied via the processor port
+at $01. The bank value has no effect.
+
+On the C128, the value of --memory is applied via the MMU configuration
+register at $ff00. Alternatively, the --bank value can be used to chose one
+of the fifteen predefined bank configurations of the C128. If both options
+are specified, --memory will take precedence over --bank.
+
+If the server on the remote machine is running from RAM and is located in
+the same memory area as the data to be loaded then an attempt is made to
+relocate the server to a different location beforehand.
+
+COMMAND_SAVE
+
+Usage: save [--address <start>-<end>] [--memory <mem>] [--bank <bank>] file
+
+Save the specified memory area to file.
+
+If the destination filename ends with .prg then the destination file will be
+prefixed with the supplied start address. If no address range is specified,
+then the basic program currently residing in memory will be saved.
+
+The --memory and --bank options work similar to those of the load command.
+
+COMMAND_PEEK
+
+Usage: peek [--memory <mem>] <address>
+
+Read the byte at the specified memory address and print it on standard
+output.
+
+COMMAND_POKE
+
+Usage: poke [--memory <mem>] <address>,<byte>
+
+Poke the specified byte to the specified address.
+
+If no memory config is specified, then the default memory config will be
+used, so that values poked to the io area will have the expected effect.
+
+COMMAND_JUMP
+
+Usage: jump <address>
+
+Jump to the specified address in C64 memory. The stack pointer, processor
+flags and registers will be reset prior to jumping.
+
+COMMAND_RUN
+
+Usage: run [<file>]
+
+Without argument, RUN the currently loaded basic program. With a file
+argument specified, load the file beforehand. If the file loads to the
+respective machines' default basic start address, then assume its a basic
+program and RUN it, else assume it's an ml program and jump to the files
+load address.
+
+COMMAND_RESET
+
+Usage: reset
+
+Reset the remote machine. Works without the server actually running on the
+remote side.
+
+COMMAND_DOS
+
+Usage: @[command]
+
+Send the specified DOS command to the drive and report the resulting drive
+status. If no command is specified, report drive status only.
+
+This command is currently not implemented for the C128.
+
+COMMAND_STATUS
+
+Usage: @[command]
+
+Send the specified DOS command to the drive and report the resulting drive
+status. If no command is specified, report drive status only.
+
+This command is currently not implemented for the C128.
+
+COMMAND_BACKUP
+
+Usage: backup <file>.d64
+
+Backup a disk to a d64 file. Reads 35 tracks from disk and saves them to the
+specified file. Note that no error checking is performed and no error
+information is appended to the d64 file.
+
+This command is currently not implemented for the C128.
+
+COMMAND_RESTORE
+
+Usage: restore <file>.d64
+
+Write a 35 track d64 file to disk. The data is written as is, i.e. without
+interpreting any error information that may be included in the d64 file.
+
+This command is currently not implemented for the C128.
+
+COMMAND_VERIFY
+
+Usage: verify <file>.d64
+
+Verify disk against d64 file. Reads 35 tracks from disk and compares the
+data against the specified d64 file. Track 18 is verified first, then the
+remaining tracks are verified in order.
+
+This command is currently not implemented for the C128.
+
+COMMAND_READY
+
+Usage: ready [<commands>...]
+
+Makes sure that the server is ready. First the server is pinged. If it
+doesn't respond immediately, the remote machine is reset. If the server
+responds to another ping within three seconds, then the remaining commands
+(if any) are executed.
+
+This command requires the server to be installed permanently so that it is
+available after reset.
+
+COMMAND_PING
+
+Usage: ping
+
+Ping the server, exit successfully if the server responds.
+
+COMMAND_BOOTLOADER
+
+Usage: bootloader
+
+Prepare USB devices for firmware updates. Enters the atmel dfu-bootloader.
+
+COMMAND_BENCHMARK
+
+Usage: benchmark [--address <start>[-<end>] [--memory <mem>] [--bank <bank>]
+
+Write random data into memory, then read it back and compare it to the
+original data while measuring the achieved transfer rates.
+
+COMMAND_IDENTIFY
+
+Usage: identify
+
+Query information about the remote server. Reports machine type, server
+version, server type (RAM- or ROM-based) and the memory area occupied by the
+server.
+
+COMMAND_SERVER
+
+Usage: server [--address <address>] <file>
+
+Write a ram-based server programm to file. Use address to specify the start
+address for the server code. If the address corresponds to the machines
+default basic start address, then the server can be started with RUN. This
+is the default if no address is specified.
+
+COMMAND_KERNAL
+
+Usage: kernal <infile> <outfile>
+
+Patch the kernal image supplied via <infile> to include an xlink server and
+write the results to <outfile>. Note that the resulting kernal will no
+longer support tape IO.
+
+COMMAND_RELOCATE
+
+Usage: relocate <address>
+
+Relocate the currently running ram-based server to the specified address.
+Note that the server cannot be relocated to areas occupied by ROM or IO.
+
+COMMAND_FILL
+
+Usage: fill --address <start>-<end> <value>
+
+Fill the specified memory area with <value>.
+
