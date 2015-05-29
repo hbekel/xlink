@@ -60,30 +60,34 @@ If the destination filename ends with .prg then the destination file will be
 prefixed with the supplied start address. If no address range is specified,
 then the basic program currently residing in memory will be saved.
 
-The --memory and --bank options work similar to those of the load command.
+For a description of the --memory and --bank options see `xlink help load`
 
 COMMAND_PEEK
 
-Usage: peek [--memory <mem>] <address>
+Usage: peek [--memory <mem>] [--bank <bank>] <address>
 
 Read the byte at the specified memory address and print it on standard
 output.
 
 COMMAND_POKE
 
-Usage: poke [--memory <mem>] <address>,<byte>
+Usage: poke [--memory <mem>] [--bank <bank>] <address>,<byte>
 
 Poke the specified byte to the specified address.
 
-If no memory config is specified, then the default memory config will be
-used, so that values poked to the io area will have the expected effect.
+If no memory or bank option is specified, then the default memory
+config for the respective machine will be used, so that values poked
+to the io area will have the expected effect.
 
 COMMAND_JUMP
 
-Usage: jump <address>
+Usage: jump [--memory <mem>] [--bank <bank>] <address>
 
-Jump to the specified address in C64 memory. The stack pointer, processor
+Jump to the specified address in memory. The stack pointer, processor
 flags and registers will be reset prior to jumping.
+
+The --memory and --bank options can be used to configure the memory
+setup of the remote machine prior to jumping.
 
 COMMAND_RUN
 
@@ -180,6 +184,14 @@ Usage: benchmark [--address <start>[-<end>] [--memory <mem>] [--bank <bank>]
 Write random data into memory, then read it back and compare it to the
 original data while measuring the achieved transfer rates.
 
+If no address range is specified, a default range of freely usable ram
+is chosen for the respective machine.
+
+If an address range is specified that overlaps with rom or io, the
+data received will differ from the data send, and the comparison will
+fail. Use the --memory and --bank options to disable rom and/or io for
+such ranges.
+
 COMMAND_IDENTIFY
 
 Usage: identify
@@ -205,6 +217,17 @@ Patch the kernal image supplied via <infile> to include an xlink server and
 write the results to <outfile>. Note that the resulting kernal will no
 longer support tape IO.
 
+The patch will always be applied to the last 8192 bytes of the input
+file. This allows patching the combined 16 or 32k roms of the C128,
+which contain the kernal code in the upmost 8k.
+
+The reset procedures of the respective machines have been modified to
+speed up development cycles. On the C64, the memory check on startup
+has been made optional and is skipped by default unless the commodore
+key is held down during reset. On the C128, automatic boot from disk
+has been made optional and is skipped by default unless the control
+key is held down during reset.
+
 COMMAND_RELOCATE
 
 Usage: relocate <address>
@@ -214,7 +237,8 @@ Note that the server cannot be relocated to areas occupied by ROM or IO.
 
 COMMAND_FILL
 
-Usage: fill --address <start>-<end> <value>
+Usage: fill --address <start>-<end> [--memory <mem>] [--bank <bank>] <value>
 
-Fill the specified memory area with <value>.
+Fill the specified memory area with <value>. The end address will
+default to 0x10000 unless explicitly specified.
 
