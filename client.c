@@ -55,6 +55,7 @@ static struct option options[] = {
   {"bank",    required_argument, 0, 'b'},
   {"address", required_argument, 0, 'a'},
   {"skip",    required_argument, 0, 's'},
+  {"force",   required_argument, 0, 'f'},
   {0, 0, 0, 0}
 };
 
@@ -255,6 +256,7 @@ Command* command_new(int *argc, char ***argv) {
   command->start     = -1;
   command->end       = -1;
   command->skip      = -1;
+  command->force     = false;
   command->argc      = 0;
   command->argv      = (char**) calloc(1, sizeof(char*));
   
@@ -395,7 +397,7 @@ bool command_parse_options(Command *self) {
   
   while(1) {
 
-    option = getopt_long(self->argc, self->argv, "hvqd:M:m:b:a:s:", options, &index);
+    option = getopt_long(self->argc, self->argv, "hvqfd:M:m:b:a:s:", options, &index);
     
     if(option == -1)
       break;
@@ -474,6 +476,11 @@ bool command_parse_options(Command *self) {
 
     case 's':
       self->skip = strtol(optarg, NULL, 0);
+      break;
+
+    case 'f':
+      self->force = true;
+      break;
     }    
   }
 
@@ -706,11 +713,15 @@ bool command_load(Command* self) {
 
   command_print(self);
 
-  if(!command_server_usable_after_possible_relocation(self)) {
+  if(self->force) logger->suspend();
+  
+  if(!self->force && !command_server_usable_after_possible_relocation(self)) {
     free(data);
     return false;
   }      
 
+  if(self->force) logger->resume();
+  
   if (!xlink_load(self->memory, self->bank, self->start, data, size)) {
     free(data);
     return false;

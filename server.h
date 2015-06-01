@@ -21,6 +21,7 @@
 .var repl     = $a480   // BASIC read-eval-print loop
 .var cursor   = $cc     // Cursor blink flag (00=blinking)
 .var default  = $37     // Default processor port value
+.var booted   = repl    // How to exit the bootstrap server 
    
 .if(target == "c128") {	
   .eval start = $c1     // Transfer start address
@@ -40,6 +41,7 @@
   .eval repl    = $4dc6  // BASIC read-eval-print loop
   .eval cursor  = $0a27  // Cursor blink flag (00=blinking)
   .eval default = $73    // Default processor port value
+  .eval booted  = basrun // How to exit the bootstrap server 
 }
 
 // C128 specific:

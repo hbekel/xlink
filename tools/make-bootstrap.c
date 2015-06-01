@@ -54,15 +54,20 @@ int main(int argc, char **argv) {
 
   if(strcmp(machine, "c64") == 0) {
     printf("%d print\"xlink server xlink.prg\"\n", l+=10);
-    printf("%d print\"xlink load xlink.prg\":print\n", l+=10);
+    printf("%d print\"xlink load -f xlink.prg\":print\n", l+=10);
   }
   else if(strcmp(machine, "c128") == 0) {
     printf("%d print\"xlink server -M c128 xlink.prg\"\n", l+=10);
-    printf("%d print\"xlink load -M c128 xlink.prg\":print\n", l+=10);
+    printf("%d print\"xlink load -M c128 -f xlink.prg\":print\n", l+=10);
   }
 
   printf("%d print\"then save the server:\":print\n", l+=10);
-  printf("%d print\"save\"chr$(34)\"xlink\"chr$(34)\",8\"chr$(145)\n", l+=10);
+  if(strcmp(machine, "c64") == 0) {
+    printf("%d print\"save\"chr$(34)\"xlink\"chr$(34)\",8\"chr$(145)\n", l+=10);
+  }
+  else if(strcmp(machine, "c128") == 0) {
+    printf("%d print\"dsave\"chr$(34)\"xlink\"chr$(34)\"\"chr$(145)\n", l+=10);
+  }
   printf("%d sys %d\n", l+=10, address);
   printf("%d end\n", l+=10);
   l = 1000;

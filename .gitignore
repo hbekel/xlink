@@ -21,6 +21,7 @@ make-extension
 make-bootstrap
 make-server
 make-kernal
+make-help
 bootstrap*.txt
 log
 TODO

@@ -15,6 +15,7 @@ typedef struct {
   int argc;
   char **argv; 
   int offset;
+  int force;
 } Command;
 
 typedef struct {

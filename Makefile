@@ -185,6 +185,20 @@ install: xlink cbm
 	install -m644 -D etc/bash_completion.d/xlink \
 			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
+server64.prg: /usr/bin/xlink
+	xlink server -Mc64 server64.prg
+
+server128.prg: /usr/bin/xlink
+	xlink server -Mc128 server128.prg
+
+xlink.d64: server64.prg server128.prg bootstrap-test-c64.prg bootstrap-test-c128.prg
+	c1541 -format xlink,12 d64 xlink.d64 8 \
+		-attach xlink.d64 8 \
+		-write bootstrap-test-c64.prg bootstrap64 \
+		-write server64.prg server64 \
+		-write bootstrap-test-c128.prg bootstrap128 \
+		-write server128.prg server128
+
 uninstall:
 	rm -v $(DESTDIR)$(PREFIX)/bin/xlink || true
 	rm -v $(DESTDIR)$(PREFIX)/lib/libxlink.so || true
