@@ -1807,7 +1807,7 @@ void usage(void) {
   printf("     restore <file>               : restore d64 file to disk\n");
   printf("     verify <file>                : verify disk against d64 file\n");
   printf("\n");
-  printf("     benchmark                    : test/measure transfer speed\n");
+  printf("     benchmark [<opts>]           : test/measure transfer speed\n");
   printf("     bootloader                   : enter dfu-bootloader (at90usb162)\n");  
   printf("\n");
 }

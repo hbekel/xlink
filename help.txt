@@ -185,7 +185,8 @@ Write random data into memory, then read it back and compare it to the
 original data while measuring the achieved transfer rates.
 
 If no address range is specified, a default range of freely usable ram
-is chosen for the respective machine.
+in the standard memory configuration is chosen for the respective
+machine.
 
 If an address range is specified that overlaps with rom or io, the
 data received will differ from the data send, and the comparison will
