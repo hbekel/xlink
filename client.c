@@ -696,7 +696,7 @@ bool command_load(Command* self) {
     Range* io = range_new_from_int(machine->io);
     Range* data = range_new(self->start, self->end);
 
-    if(range_inside(data, io))
+    if(range_overlaps(data, io))
       command_apply_safe_memory_and_bank(self);
     else 
       command_apply_memory_and_bank(self);
@@ -1216,6 +1216,11 @@ bool command_benchmark(Command* self) {
   unsigned char payload[range_size(benchmark)];
   unsigned char roundtrip[sizeof(payload)];
 
+  srand(time(0));
+  for(int i=0; i<sizeof(payload); i++) {
+    payload[i] = (unsigned char) rand();
+  }
+  
   int start = benchmark->start;
     
   if (!xlink_ping()) {
