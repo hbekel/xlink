@@ -249,7 +249,7 @@ bool xlink_ready(void) {
     while(timeout) {
       if(xlink_ping()) {
         usleep(250*1000); 
-        goto done;
+        goto check;
       }
       timeout-=250;
     }
@@ -258,10 +258,19 @@ bool xlink_ready(void) {
   else {
     if(xlink_peek(machine->memory, machine->bank, machine->mode, &mode)) {
       if(mode == machine->prgmode) {
-	logger->debug("basic program running, performing basic warmstart...");
+        logger->debug("basic program running, performing basic warmstart...");
         xlink_jump(machine->memory, machine->bank, machine->warmstart);
         usleep(250*1000); 
       }
+    }
+  }
+  
+ check:
+  if(machine->type == XLINK_MACHINE_C64) {
+    xlink_server_info_t info;
+    xlink_identify(&info);
+    if(info.machine == XLINK_MACHINE_C128) {
+      xlink_jump(c128.memory, c128.bank, 0xff4d);
     }
   }
   

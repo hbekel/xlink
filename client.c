@@ -1180,7 +1180,7 @@ bool command_relocate(Command *self) {
 
 bool command_reset(Command* self) {
   command_print(self);
-  return xlink_reset();
+  return xlink_reset() && xlink_ready();
 }
 
 //------------------------------------------------------------------------------
