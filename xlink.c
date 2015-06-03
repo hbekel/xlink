@@ -18,6 +18,7 @@
 #endif
 
 #define XLINK_DEFAULT_TIMEOUT  0x01
+#define XLINK_GO64 0xff4d
 
 Driver* driver;
 xlink_error_t* xlink_error;
@@ -218,17 +219,31 @@ bool xlink_ping() {
 //------------------------------------------------------------------------------
 
 bool xlink_reset(void) {
+
   bool result = false;
   
   if(driver->open()) {
     driver->reset();
     driver->close();
-    result = true;
+    return true;
   }
-  
+ 
   CLEAR_ERROR_IF(result);
   return result;
 };
+
+//------------------------------------------------------------------------------
+
+static bool server_ready_after(int ms) {
+
+  while(ms) {
+    if(xlink_ping()) {
+      return true;
+    }
+    ms-=250;
+  }
+  return false;
+}
 
 //------------------------------------------------------------------------------
 
@@ -236,6 +251,8 @@ bool xlink_ready(void) {
 
   bool result = true;
   int timeout = 3000;
+  
+  xlink_server_info_t remote;
   unsigned char mode;
 
   if(!driver->ready()) {
@@ -246,34 +263,44 @@ bool xlink_ready(void) {
   if(!xlink_ping()) {
     xlink_reset();
     
-    while(timeout) {
-      if(xlink_ping()) {
-        usleep(250*1000); 
-        goto check;
-      }
-      timeout-=250;
-    }
-    result = false;
+    if(!(result = server_ready_after(timeout))) {
+      goto done;
+    }    
   }
-  else {
-    if(xlink_peek(machine->memory, machine->bank, machine->mode, &mode)) {
-      if(mode == machine->prgmode) {
-        logger->debug("basic program running, performing basic warmstart...");
-        xlink_jump(machine->memory, machine->bank, machine->warmstart);
-        usleep(250*1000); 
-      }
-    }
-  }
-  
- check:
+
   if(machine->type == XLINK_MACHINE_C64) {
-    xlink_server_info_t info;
-    xlink_identify(&info);
-    if(info.machine == XLINK_MACHINE_C128) {
-      xlink_jump(c128.memory, c128.bank, 0xff4d);
+    if((result = xlink_identify(&remote))) {
+      if(remote.machine == XLINK_MACHINE_C128) {
+	if((result = xlink_jump(c128.memory, c128.bank, XLINK_GO64))) {
+	  result = server_ready_after(timeout);
+	  goto done;	  
+	}
+      }
+    }
+  }
+
+  if(machine->type == XLINK_MACHINE_C128) {
+    if((result = xlink_identify(&remote))) {
+      if(remote.machine == XLINK_MACHINE_C64) {
+	if((result = xlink_reset())) {
+	  result = server_ready_after(timeout);
+	  goto done;	  
+	}
+      }
     }
   }
   
+  if(result) {
+    if((result = xlink_peek(machine->memory, machine->bank, machine->mode, &mode))) {
+      if(mode == machine->prgmode) {
+	logger->debug("basic program running, performing basic warmstart...");
+	if((result = xlink_jump(machine->memory, machine->bank, machine->warmstart))) {
+	  usleep(250*1000);
+	}
+      }
+    }
+  }
+
  done:
   CLEAR_ERROR_IF(result);
   return result;

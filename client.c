@@ -1178,9 +1178,32 @@ bool command_relocate(Command *self) {
 
 //------------------------------------------------------------------------------
 
+static bool server_ready_after(int ms) {
+
+  while(ms) {
+    if(xlink_ping()) {
+      return true;
+    }
+    ms-=250;
+  }
+  return false;
+}
+
+//------------------------------------------------------------------------------
+
 bool command_reset(Command* self) {
+
+  bool result = false;
+  int timeout = 3000;
+  
   command_print(self);
-  return xlink_reset() && xlink_ready();
+
+  if(xlink_reset()) {
+    if(server_ready_after(timeout)) {
+      result = xlink_ready();
+    }
+  }
+  return result;
 }
 
 //------------------------------------------------------------------------------
