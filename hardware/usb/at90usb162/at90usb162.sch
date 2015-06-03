@@ -37,7 +37,7 @@ $Descr A4 11693 8268
 encoding utf-8
 Sheet 1 1
 Title "xlink usb adapter"
-Date "28 apr 2015"
+Date "3 jun 2015"
 Rev "2"
 Comp "Henning Bekel"
 Comment1 ""
@@ -61,7 +61,7 @@ PSTROBE
 Text Label 9500 4300 0    60   ~ 0
 PACK
 Text Label 8350 3500 2    60   ~ 0
-RESET
+EXTRES
 NoConn ~ 8350 3700
 NoConn ~ 8350 3600
 NoConn ~ 8350 3800
@@ -687,4 +687,19 @@ Text Label 9500 4100 0    60   ~ 0
 P6
 Text Label 9500 4200 0    60   ~ 0
 P7
+$Comp
+L JUMPER JP1
+U 1 1 556F07A0
+P 6350 5500
+F 0 "JP1" H 6350 5650 60  0000 C CNN
+F 1 "JUMPER" H 6350 5420 40  0000 C CNN
+F 2 "~" H 6350 5500 60  0000 C CNN
+F 3 "~" H 6350 5500 60  0000 C CNN
+	1    6350 5500
+	1    0    0    -1  
+$EndComp
+Text Label 6050 5500 2    60   ~ 0
+RESET
+Text Label 6650 5500 0    60   ~ 0
+EXTRES
 $EndSCHEMATC
