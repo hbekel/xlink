@@ -1182,6 +1182,7 @@ static bool server_ready_after(int ms) {
 
   while(ms) {
     if(xlink_ping()) {
+      usleep(250*1000);
       return true;
     }
     ms-=250;

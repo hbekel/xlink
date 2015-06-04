@@ -236,8 +236,11 @@ bool xlink_reset(void) {
 
 static bool server_ready_after(int ms) {
 
+  logger->trace("waiting for server...");
+  
   while(ms) {
     if(xlink_ping()) {
+      usleep(250*1000);
       return true;
     }
     ms-=250;
@@ -261,8 +264,9 @@ bool xlink_ready(void) {
   }
 
   if(!xlink_ping()) {
+    logger->trace("server not reachable, resetting...");
     xlink_reset();
-    
+
     if(!(result = server_ready_after(timeout))) {
       goto done;
     }    
@@ -271,6 +275,7 @@ bool xlink_ready(void) {
   if(machine->type == XLINK_MACHINE_C64) {
     if((result = xlink_identify(&remote))) {
       if(remote.machine == XLINK_MACHINE_C128) {
+	logger->trace("C128 server identified, switching to C64 mode");
 	if((result = xlink_jump(c128.memory, c128.bank, XLINK_GO64))) {
 	  result = server_ready_after(timeout);
 	  goto done;	  
@@ -282,6 +287,7 @@ bool xlink_ready(void) {
   if(machine->type == XLINK_MACHINE_C128) {
     if((result = xlink_identify(&remote))) {
       if(remote.machine == XLINK_MACHINE_C64) {
+	logger->trace("C64 server identified, switching to C128 mode");
 	if((result = xlink_reset())) {
 	  result = server_ready_after(timeout);
 	  goto done;	  
