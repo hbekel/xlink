@@ -225,6 +225,11 @@ bool xlink_reset(void) {
   if(driver->open()) {
     driver->reset();
     driver->close();
+
+    if(machine->type == XLINK_MACHINE_C128) {
+      while(xlink_ping()); 
+    }
+    
     return true;
   }
  
@@ -263,10 +268,11 @@ bool xlink_ready(void) {
     goto done;
   }
 
-  if(!xlink_ping()) {
+  if(!xlink_ping() || !xlink_ping()) {
     logger->trace("server not reachable, resetting...");
-    xlink_reset();
 
+    xlink_reset();
+    
     if(!(result = server_ready_after(timeout))) {
       goto done;
     }    
@@ -275,11 +281,11 @@ bool xlink_ready(void) {
   if(machine->type == XLINK_MACHINE_C64) {
     if((result = xlink_identify(&remote))) {
       if(remote.machine == XLINK_MACHINE_C128) {
-	logger->trace("C128 server identified, switching to C64 mode");
-	if((result = xlink_jump(c128.memory, c128.bank, XLINK_GO64))) {
-	  result = server_ready_after(timeout);
-	  goto done;	  
-	}
+        logger->trace("C128 server identified, switching to C64 mode");
+        if((result = xlink_jump(c128.memory, c128.bank, XLINK_GO64))) {
+          result = server_ready_after(timeout);
+          goto done;	  
+        }
       }
     }
   }
@@ -287,11 +293,11 @@ bool xlink_ready(void) {
   if(machine->type == XLINK_MACHINE_C128) {
     if((result = xlink_identify(&remote))) {
       if(remote.machine == XLINK_MACHINE_C64) {
-	logger->trace("C64 server identified, switching to C128 mode");
-	if((result = xlink_reset())) {
-	  result = server_ready_after(timeout);
-	  goto done;	  
-	}
+        logger->trace("C64 server identified, switching to C128 mode");
+        if((result = xlink_reset())) {
+          result = server_ready_after(timeout);
+          goto done;	  
+        }
       }
     }
   }
@@ -299,10 +305,10 @@ bool xlink_ready(void) {
   if(result) {
     if((result = xlink_peek(machine->memory, machine->bank, machine->mode, &mode))) {
       if(mode == machine->prgmode) {
-	logger->debug("basic program running, performing basic warmstart...");
-	if((result = xlink_jump(machine->memory, machine->bank, machine->warmstart))) {
-	  usleep(250*1000);
-	}
+        logger->debug("basic program running, performing basic warmstart...");
+        if((result = xlink_jump(machine->memory, machine->bank, machine->warmstart))) {
+          usleep(250*1000);
+        }
       }
     }
   }

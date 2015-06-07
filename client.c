@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <signal.h>
+#include <time.h>
 
 #include "target.h"
 #include "client.h"
