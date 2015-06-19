@@ -1,6 +1,5 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
-
 #include "xlink.h"
 
 static volatile uint8_t last;
@@ -51,16 +50,16 @@ void EVENT_USB_Device_ControlRequest(void) {
 
     switch(USB_ControlRequest.bRequest) {
 
-    case USB_RESET:   Reset();                break;
-    case USB_STROBE:  Strobe();               break;
-    case USB_ACKED:   Acked();                break;
-    case USB_INPUT:   Input();                break;
-    case USB_OUTPUT:  Output();               break;
-    case USB_READ:    Read();                 break;
-    case USB_WRITE:   Write(byte);            break;
-    case USB_SEND:    Send(size, timeout);    break;
-    case USB_RECEIVE: Receive(size, timeout); break;
-    case USB_BOOT:    Boot();                 break;
+    case CMD_RESET:   Reset();                break;
+    case CMD_STROBE:  Strobe();               break;
+    case CMD_ACKED:   Acked();                break;
+    case CMD_INPUT:   Input();                break;
+    case CMD_OUTPUT:  Output();               break;
+    case CMD_READ:    Read();                 break;
+    case CMD_WRITE:   Write(byte);            break;
+    case CMD_SEND:    Send(size, timeout);    break;
+    case CMD_RECEIVE: Receive(size, timeout); break;
+    case CMD_BOOT:    Boot();                 break;
     }
   }
 }

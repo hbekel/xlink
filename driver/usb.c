@@ -182,7 +182,7 @@ bool driver_usb_open() {
     return false;
   }
 
-  control(USB_INPUT);
+  control(CMD_INPUT);
 
   CLEAR_ERROR;
   return true;
@@ -191,7 +191,7 @@ bool driver_usb_open() {
 //------------------------------------------------------------------------------
 
 void driver_usb_strobe() {
-  control(USB_STROBE);
+  control(CMD_STROBE);
 }
 
 //------------------------------------------------------------------------------
@@ -201,7 +201,7 @@ bool driver_usb_wait(int timeout) {
   response[0] = 0;
 
   bool acked() {
-    if(controlEndpointIn(USB_ACKED, response, sizeof(response))) {
+    if(controlEndpointIn(CMD_ACKED, response, sizeof(response))) {
       return response[0] == 1;
     }
     return false;
@@ -225,13 +225,13 @@ bool driver_usb_wait(int timeout) {
 //------------------------------------------------------------------------------
 
 void driver_usb_write(unsigned char value) {
-  controlEndpointOutWithValue(USB_WRITE, value);
+  controlEndpointOutWithValue(CMD_WRITE, value);
 } 
 
 //------------------------------------------------------------------------------
 
 unsigned char driver_usb_read() {
-  controlEndpointIn(USB_READ, response, sizeof(response));
+  controlEndpointIn(CMD_READ, response, sizeof(response));
   return response[0];
 } 
 
@@ -265,7 +265,7 @@ bool driver_usb_send(unsigned char* data, int size) {
   
   bool send(ushort chunk) {
 
-    int transfered = controlEndpointOut(USB_SEND, data, chunk);
+    int transfered = controlEndpointOut(CMD_SEND, data, chunk);
 
     if(transfered < 0) {
       return false;
@@ -301,7 +301,7 @@ bool driver_usb_receive(unsigned char* data, int size) {
   
   bool receive(ushort chunk) {
 
-    int transfered = controlEndpointIn(USB_RECEIVE, data, chunk);
+    int transfered = controlEndpointIn(CMD_RECEIVE, data, chunk);
 
     if(transfered < 0) { 
       return false;
@@ -333,13 +333,13 @@ bool driver_usb_receive(unsigned char* data, int size) {
 //------------------------------------------------------------------------------
 
 void driver_usb_input() {
-  control(USB_INPUT);
+  control(CMD_INPUT);
 }
 
 //------------------------------------------------------------------------------
 
 void driver_usb_output() {
-  control(USB_OUTPUT);
+  control(CMD_OUTPUT);
 }
 
 //------------------------------------------------------------------------------
@@ -354,13 +354,13 @@ bool driver_usb_ping() {
 //------------------------------------------------------------------------------
 
 void driver_usb_reset() { 
-  control(USB_RESET);
+  control(CMD_RESET);
 }
 
 //------------------------------------------------------------------------------
 
 void driver_usb_boot() { 
-  control(USB_BOOT);
+  control(CMD_BOOT);
 }
 
 //------------------------------------------------------------------------------

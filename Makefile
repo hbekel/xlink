@@ -174,6 +174,15 @@ firmware-clean:
 firmware-install: firmware
 	(cd driver/at90usb162 && make dfu)
 
+servant64: driver/servant64/xlink.c driver/servant64/xlink.h
+	(cd driver/servant64 && make)
+
+servant64-clean:
+	(cd driver/servant64 && make clean)
+
+servant64-install: servant64
+	avrdude -p m32 -P /dev/ttyUSB0 -c stk500v1 -b 19200 -F -u -U flash:w:driver/servant64/xlink.hex
+
 install: xlink cbm
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
 	install -m644 -D libxlink.so $(DESTDIR)$(PREFIX)/lib/libxlink.so
@@ -207,7 +216,7 @@ uninstall:
 	rm -v $(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
 	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
-clean: firmware-clean 
+clean: firmware-clean servant64-clean
 	[ -f testsuite ] && rm -vf testsuite || true
 	[ -f libxlink.so ] && rm -vf libxlink.so || true
 	[ -f xlink.dll ] && rm -vf xlink.dll || true
