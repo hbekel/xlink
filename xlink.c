@@ -272,6 +272,7 @@ bool xlink_ready(void) {
     logger->trace("server not reachable, resetting...");
 
     xlink_reset();
+    usleep(100*1000);
     
     if(!(result = server_ready_after(timeout))) {
       goto done;
