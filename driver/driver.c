@@ -15,6 +15,7 @@
 #include "parport.h"
 #include "usb.h"
 #include "shm.h"
+#include "servant64.h"
 
 extern Driver* driver;
 
@@ -169,8 +170,36 @@ bool driver_setup(char* path) {
     else {
       SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize shm device \"%s\"", driver->path);
     }
-  }
 
+  } else if(device_is_servant64(type)) {
+    
+    logger->debug("trying to use servant64 device \"%s\"...",  driver->path);
+
+    driver->_open    = &driver_servant64_open;
+    driver->_close   = &driver_servant64_close;    
+    driver->_strobe  = &driver_servant64_strobe;    
+    driver->_wait    = &driver_servant64_wait;
+    driver->_read    = &driver_servant64_read;    
+    driver->_write   = &driver_servant64_write;    
+    driver->_send    = &driver_servant64_send;    
+    driver->_receive = &driver_servant64_receive;    
+    driver->_input   = &driver_servant64_input;    
+    driver->_output  = &driver_servant64_output;    
+    driver->_ping    = &driver_servant64_ping;    
+    driver->_reset   = &driver_servant64_reset;    
+    driver->_boot    = &driver_servant64_boot;    
+    driver->_free    = &driver_servant64_free;
+    
+    result = driver->ready();
+    
+    if(result) {
+      logger->debug("using servant64 device \"%s\"", driver->path);
+    }
+    else {
+      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize servant64 device \"%s\"", driver->path);
+    }
+  }  
+  
  done:
   CLEAR_ERROR_IF(result);
   return result;
@@ -223,7 +252,10 @@ bool device_identify(char* path, int* type) {
 bool device_is_supported(char *path, int type) {
 #if linux
 
-  if(!(device_is_parport(type) || device_is_usb(type) || device_is_shm(type))) {
+  if(!(device_is_parport(type) ||
+       device_is_usb(type) ||
+       device_is_shm(type) ||
+       device_is_servant64(type))) {
 
     SET_ERROR(XLINK_ERROR_DEVICE, 
               "%s: unsupported device major number: %d", path, type);
@@ -250,6 +282,12 @@ bool device_is_usb(int type) {
 
 bool device_is_shm(int type) {
   return type == XLINK_DRIVER_DEVICE_SHM;
+}
+
+//------------------------------------------------------------------------------
+
+bool device_is_servant64(int type) {
+  return type == XLINK_DRIVER_DEVICE_SERVANT64;
 }
 
 //------------------------------------------------------------------------------
