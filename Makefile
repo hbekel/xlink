@@ -12,6 +12,9 @@ XLINK_SERIAL:=$(XLINK_SERIAL)
 GCC=gcc
 CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -O3 -I.
 
+AVRDUDE=avrdude
+AVRDUDE_FLAGS=-c arduino -b 57600 -P /dev/ttyUSB0 -p atmega328p -F -u
+
 INPOUT32_BINARIES=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries
 
 LIBHEADERS=\
@@ -183,7 +186,7 @@ servant64-clean:
 	(cd driver/servant64 && make clean)
 
 servant64-install: servant64
-	avrdude -p m32 -P /dev/ttyUSB0 -c stk500v1 -b 19200 -F -u -U flash:w:driver/servant64/xlink.hex
+	$(AVRDUDE)  $(AVRDUDE_FLAGS) -U flash:w:driver/servant64/xlink.hex:i
 
 install: xlink cbm
 	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
