@@ -9,17 +9,15 @@
 #endif
 
 #ifndef BAUD
-#define BAUD 9600
+#define BAUD 115200U
 #endif
 
-#include <util/setbaud.h>
-
+#include "uart.h"
 #include "xlink.h"
 #include "../protocol.h"
 
 //------------------------------------------------------------------------------
-
-/* Pin Mapping
+/*
 
 CBM  |  Atmega
 ===========
@@ -37,14 +35,13 @@ PB7  ->  PC2
 FLAG ->  PD4  
 PA2  ->  PD3
 RES  ->  PC4
-*/
 
+*/
 //------------------------------------------------------------------------------
 
 static volatile uint8_t last;
 static volatile uint16_t elapsed = 0;
-static volatile uint32_t hs = 0;
-static uint32_t Boot_Key ATTR_NO_INIT;
+static volatile uint32_t qs = 0;
 
 //------------------------------------------------------------------------------
 
@@ -52,8 +49,8 @@ int main(void) {
 
   uint8_t  cmd     = 0;
   uint8_t  byte    = 0;
-  uint16_t size    = 0;
-  uint16_t timeout = 0;
+  uint32_t size    = 0;
+  uint32_t timeout = 0;
   
   SetupHardware();
   
@@ -63,8 +60,12 @@ int main(void) {
     cmd     |= ReadSerial();
     size    |= (byte |= ReadSerial());
     size    |= (ReadSerial() << 8);
+    size    |= (((uint32_t)ReadSerial()) << 16);
+    size    |= (((uint32_t)ReadSerial()) << 24);    
     timeout |= ReadSerial();
     timeout |= (ReadSerial() << 8);
+    timeout |= (((uint32_t)ReadSerial()) << 16);
+    timeout |= (((uint32_t)ReadSerial()) << 24);    
 
     switch(cmd) {
 
@@ -77,7 +78,6 @@ int main(void) {
     case CMD_WRITE:   Write(byte);            break;
     case CMD_SEND:    Send(size, timeout);    break;
     case CMD_RECEIVE: Receive(size, timeout); break;
-    case CMD_BOOT:    Boot();                 break;
     default: break;
     }
     wdt_reset();
@@ -119,7 +119,7 @@ void SetupTimer() {
   // set initial value to 0
   TCNT1 = 0x00;
   
-  // start with /64 prescaler =~ 0.5secs
+  // start with /64 prescaler =~ 0.25secs
   TCCR1B |= (1 << CS10) | (1 << CS11);
 
   ResetTimer();
@@ -131,7 +131,7 @@ void ResetTimer() {
   GlobalInterruptDisable();
 
   TCNT1=0x00;
-  hs=0;
+  qs=0;
   elapsed=0;
 
   GlobalInterruptEnable();
@@ -140,24 +140,14 @@ void ResetTimer() {
 //------------------------------------------------------------------------------
 
 ISR(TIMER1_OVF_vect) {
-  hs++;
-  elapsed = hs/2;
+  qs++;
+  elapsed = qs/4;
 }
 
 //------------------------------------------------------------------------------
 
 void SetupSerial(void) {
-    UBRR0H = UBRRH_VALUE;
-    UBRR0L = UBRRL_VALUE;
-    
-#if USE_2X
-    UCSR0A |= _BV(U2X0);
-#else
-    UCSR0A &= ~(_BV(U2X0));
-#endif
-
-    UCSR0C = _BV(UCSZ01) | _BV(UCSZ00); /* 8-bit data */ 
-    UCSR0B = _BV(RXEN0) | _BV(TXEN0);   /* Enable RX and TX */    
+  uart_init(UART_BAUD_SELECT_DOUBLE_SPEED(BAUD, F_CPU));
 }
 
 //------------------------------------------------------------------------------
@@ -197,15 +187,14 @@ void AssertRESET() {
 //------------------------------------------------------------------------------
 
 uint8_t ReadSerial(void) {
-    loop_until_bit_is_set(UCSR0A, RXC0);
-    return UDR0;
+  while(!uart_available()) { wdt_reset(); }
+  return uart_getc() & 0xff;
 }
 
 //------------------------------------------------------------------------------
 
 void WriteSerial(uint8_t c) {
-    loop_until_bit_is_set(UCSR0A, UDRE0);
-    UDR0 = c;
+  uart_putc(c);
 }
 
 //------------------------------------------------------------------------------
@@ -240,11 +229,11 @@ void Strobe() {
 
 void Acked() {
 
-  uint8_t acked = 0;
+  uint8_t acked = 0xaa;
   uint8_t current = PIND & PIN_ACK;
 
   if(last != current) {
-    acked = 1;
+    acked = 0x55;
     last = current;
   }
   WriteSerial(acked);
@@ -277,57 +266,80 @@ void Write(uint8_t byte) {
 
 //------------------------------------------------------------------------------
 
-void Send(uint16_t bytesToSend, uint16_t timeout) {
+void Send(uint32_t bytesToSend, uint32_t timeout) {
 
- uint8_t i;
- uint8_t current = last;
+  uint32_t bytesSent = bytesToSend;
+  uint8_t current = last;
 
- for(i=0; i<bytesToSend; i++) {
-     
-   Write(ReadSerial());
+  uint32_t i;
+  
+  for(i=0; i<bytesToSend; i++) {
+    
+    Write(ReadSerial());
 
-   PORTD &= ~PIN_STROBE;
-   PORTD |= PIN_STROBE;
+    PORTD &= ~PIN_STROBE;
+    PORTD |= PIN_STROBE;
+    
+    ResetTimer();
+    
+    while(current == last) {
+      current = PIND & PIN_ACK;
+      wdt_reset();
+      
+      if(timeout > 0 && elapsed >= timeout) {
+        bytesSent = i+1;
+        uart_flush();
+        goto done;
+      }
+    }
+    last = current;
+  }
 
-   ResetTimer();
-     
-   while(current == last) {
-     current = PIND & PIN_ACK;
-     wdt_reset();
-       
-     if(timeout > 0 && elapsed >= timeout) {
-       return;
-     }
-   }
-   last = current;
- }
+ done:
+  WriteSerial(bytesSent);
+  WriteSerial(bytesSent >> 8);
+  WriteSerial(bytesSent >> 16);
+  WriteSerial(bytesSent >> 24);
 }
 
 //------------------------------------------------------------------------------
 
-void Receive(uint16_t bytesToReceive, uint16_t timeout) {
- uint8_t i;
- uint8_t current = last;
+void Receive(uint32_t bytesToReceive, uint32_t timeout) {
 
- for(i=0; i<bytesToReceive; i++) {
+  uint32_t bytesReceived = bytesToReceive;
+  uint8_t current = last;
 
-   ResetTimer();
-   
-   while(current == last) {
-     current = PIND & PIN_ACK;
-     wdt_reset();
-       
-     if(timeout > 0 && elapsed >= timeout) {
-       return;
-     }
-   }
-   last = current;
+  uint32_t i;  
+  for(i=0; i<bytesToReceive; i++) {
 
-   WriteSerial(Read());
-
-   PORTD &= ~PIN_STROBE;
-   PORTD |= PIN_STROBE;   
- }
+    ResetTimer();
+    
+    while(current == last) {
+      current = PIND & PIN_ACK;
+      wdt_reset();
+      
+      if(timeout > 0 && elapsed >= timeout) {
+        bytesReceived = i+1;
+        for(;i<bytesToReceive; i++) {
+          WriteSerial(0xff);
+          wdt_reset();
+        }
+        goto done;
+      }
+    }
+    last = current;
+    
+    WriteSerial(Read());
+    
+    PORTD &= ~PIN_STROBE;
+    PORTD |= PIN_STROBE;
+  }
+  
+ done:
+  WriteSerial(bytesReceived);
+  WriteSerial(bytesReceived >> 8);
+  WriteSerial(bytesReceived >> 16);
+  WriteSerial(bytesReceived >> 24);
 }
 
 //------------------------------------------------------------------------------
@@ -336,26 +348,6 @@ void Reset() {
   AssertRESET();
   _delay_ms(10);   
   TristateRESET();
-}
-
-//------------------------------------------------------------------------------
-
-void BootCheck(void) {
-
-  if ((MCUSR & (1 << WDRF)) && (Boot_Key == MAGIC_BOOT_KEY)) {
-    Boot_Key = 0;
-    ((void (*)(void))BOOTLOADER_START_ADDRESS)();
-  }
-}
-
-//------------------------------------------------------------------------------
-
-void Boot(void) {
-
-  GlobalInterruptDisable();
-  Boot_Key = MAGIC_BOOT_KEY;
-  wdt_enable(WDTO_250MS);  
-  for(;;);
 }
 
 //------------------------------------------------------------------------------

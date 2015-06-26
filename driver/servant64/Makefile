@@ -51,7 +51,7 @@ FORMAT = ihex
 TARGET = xlink
 
 # List C source files here. (C dependencies are automatically generated.)
-SRC = $(TARGET).c
+SRC = $(TARGET).c uart.c
 
 # List Assembler source files here.
 #     Make them always end in a capital .S.  Files ending in a lowercase .s
@@ -119,7 +119,9 @@ CFLAGS += -Wall -Wstrict-prototypes
 CFLAGS += -Wa,-adhlns=$(<:.c=.lst)
 CFLAGS += $(patsubst %,-I%,$(EXTRAINCDIRS))
 CFLAGS += $(CSTANDARD)
-
+CFLAGS += -DUART_RX0_BUFFER_SIZE=512
+CFLAGS += -DUART_TX0_BUFFER_SIZE=512
+CFLAGS += -DUSART0_LARGE_BUFFER
 
 #---------------- Assembler Options ----------------
 #  -Wa,...:   tell GCC to pass this to the assembler.

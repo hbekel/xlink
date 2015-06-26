@@ -1,17 +1,9 @@
 #ifndef XLINK_H
 #define XLINK_H
 
-#define GCC_MEMORY_BARRIER()             __asm__ __volatile__("" ::: "memory");
-#define ATTR_NO_INIT                     __attribute__ ((section (".noinit")))
-#define ATTR_INIT_SECTION(SectionIndex)  __attribute__ ((used, naked, section (".init" #SectionIndex )))
-
 #define PIN_RESET  (1 << PINC4)
 #define PIN_STROBE (1 << PIND4)
 #define PIN_ACK    (1 << PIND3)
-
-#define MAGIC_BOOT_KEY            0xFEEDBABE
-#define BOOTLOADER_START_ADDRESS  (0x8000 - 0x800)
-
 
 int main(void);
 
@@ -37,15 +29,12 @@ void Acked(void);
 uint8_t Read(void);
 void Write(uint8_t);
 
-void Send(uint16_t bytesToSend, uint16_t timeout);
-void Receive(uint16_t byteToReceive, uint16_t timeout);
+void Send(uint32_t bytesToSend, uint32_t timeout);
+void Receive(uint32_t byteToReceive, uint32_t timeout);
 
 void Reset(void);
 
-void BootCheck(void) ATTR_INIT_SECTION(3);
-void BootCheck(void);
-void Boot(void);
-
+#define GCC_MEMORY_BARRIER() __asm__ __volatile__("" ::: "memory");
 
 static inline void GlobalInterruptEnable(void) {
   GCC_MEMORY_BARRIER();
