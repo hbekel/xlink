@@ -274,4 +274,28 @@ void watch_free(Watch* self) {
   free(self);
 }
 
+//------------------------------------------------------------------------------
+// Chunked processing
+//------------------------------------------------------------------------------
 
+bool chunked(bool (*callback) (unsigned short chunk), unsigned short chunk, int size) {
+
+  bool result = true;
+
+  do {
+    if(size > chunk) {
+      size -= chunk;
+    }
+    else {
+      chunk = size;
+      size = 0;
+    }
+    
+    if(!(result = (*callback)(chunk))) {
+      break;
+    }    
+  } while(size > 0);
+  return result;
+}
+
+//------------------------------------------------------------------------------

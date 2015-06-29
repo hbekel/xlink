@@ -33,10 +33,17 @@ static void serial_read(uchar* data, int size) {
   }
 }
 
+
 static void serial_write(uchar* data, int size) {
 #if linux
-  write(driver->device, data, size);
-  tcflush(driver->device, TCOFLUSH);
+
+  bool write_chunk(ushort chunk) {
+    write(driver->device, data, chunk);
+    tcdrain(driver->device);
+    data+=chunk;
+  }
+
+  chunked(&write_chunk, 64, size);
 #endif
 }
 

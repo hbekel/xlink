@@ -77,4 +77,10 @@ void watch_start(Watch*);
 double watch_elapsed(Watch*);
 void watch_free(Watch*);
 
+//------------------------------------------------------------------------------
+// Chunked processing
+//------------------------------------------------------------------------------
+
+bool chunked(bool (*callback) (unsigned short chunk), unsigned short chunk, int size);
+
 #endif // UTIL_H

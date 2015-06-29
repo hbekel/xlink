@@ -237,28 +237,6 @@ unsigned char driver_usb_read() {
 
 //------------------------------------------------------------------------------
 
-static bool chunked(bool (*callback) (ushort chunk), ushort chunk, int size) {
-
-  bool result = true;
-
-  do {
-    if(size > chunk) {
-      size -= chunk;
-    }
-    else {
-      chunk = size;
-      size = 0;
-    }
-    
-    if(!(result = (*callback)(chunk))) {
-      break;
-    }    
-  } while(size > 0);
-  return result;
-}
-
-//------------------------------------------------------------------------------
-
 bool driver_usb_send(unsigned char* data, int size) {
 
   int sent = 0;
