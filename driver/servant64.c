@@ -20,7 +20,7 @@
 #include "protocol.h"
 #include "util.h"
 
-#define BAUD B115200
+#define BAUD B500000
 
 extern Driver* driver;
 static bool initialized = false;
@@ -29,21 +29,20 @@ static void serial_read(uchar* data, int size) {
   int bytesRead = 0;
 
   while(size > bytesRead) {
-    bytesRead += read(driver->device, data+bytesRead, size-bytesRead);    
+    bytesRead += read(driver->device, data+bytesRead, size-bytesRead);
   }
 }
 
 
 static void serial_write(uchar* data, int size) {
 #if linux
-
   bool write_chunk(ushort chunk) {
     write(driver->device, data, chunk);
     tcdrain(driver->device);
     data+=chunk;
+    return true;
   }
-
-  chunked(&write_chunk, 64, size);
+  chunked(&write_chunk, 16, size);
 #endif
 }
 
@@ -64,7 +63,7 @@ bool driver_servant64_open(void) {
     if((driver->device = open(driver->path, O_RDWR, O_NOCTTY)) < 0) goto error;
 
     options.c_cflag |= (BAUD | CS8 | CLOCAL | CREAD);
-    options.c_cflag &= ~(HUPCL);
+    options.c_cflag &= ~(HUPCL | CRTSCTS);
     options.c_iflag = IGNPAR;
     options.c_oflag &= ~(OPOST);
     options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);

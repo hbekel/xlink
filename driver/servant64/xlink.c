@@ -9,7 +9,7 @@
 #endif
 
 #ifndef BAUD
-#define BAUD 115200U
+#define BAUD 500000UL
 #endif
 
 #include "uart.h"
@@ -49,8 +49,8 @@ int main(void) {
 
   uint8_t  cmd     = 0;
   uint8_t  byte    = 0;
-  uint32_t size    = 0;
-  uint32_t timeout = 0;
+  uint32_t size    = 0UL;
+  uint32_t timeout = 0UL;
   
   SetupHardware();
   
@@ -58,14 +58,15 @@ int main(void) {
     cmd = byte = size = timeout = 0;
     
     cmd     |= ReadSerial();
-    size    |= (byte |= ReadSerial());
-    size    |= (ReadSerial() << 8);
-    size    |= (((uint32_t)ReadSerial()) << 16);
-    size    |= (((uint32_t)ReadSerial()) << 24);    
-    timeout |= ReadSerial();
-    timeout |= (ReadSerial() << 8);
-    timeout |= (((uint32_t)ReadSerial()) << 16);
-    timeout |= (((uint32_t)ReadSerial()) << 24);    
+    byte    |= ReadSerial();
+    size    |= (uint32_t) byte;
+    size    |= ((uint32_t)(ReadSerial()) << 8UL);
+    size    |= (((uint32_t)ReadSerial()) << 16UL);
+    size    |= (((uint32_t)ReadSerial()) << 24UL);    
+    timeout |= (uint32_t) ReadSerial();
+    timeout |= (((uint32_t)ReadSerial()) << 8UL);
+    timeout |= (((uint32_t)ReadSerial()) << 16UL);
+    timeout |= (((uint32_t)ReadSerial()) << 24UL);    
 
     switch(cmd) {
 
@@ -147,7 +148,7 @@ ISR(TIMER1_OVF_vect) {
 //------------------------------------------------------------------------------
 
 void SetupSerial(void) {
-  uart_init(UART_BAUD_SELECT_DOUBLE_SPEED(BAUD, F_CPU));
+  uart_init(UART_BAUD_SELECT(BAUD, F_CPU));
 }
 
 //------------------------------------------------------------------------------
