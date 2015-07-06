@@ -113,6 +113,7 @@ fast:
 
 slow:	
 !loop:  :wait()
+        lda $dd01
 	ldx #$33        // write to ram with io disabled
 	stx $01
 	sta (start),y

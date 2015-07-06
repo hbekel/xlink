@@ -164,10 +164,10 @@ eof:
 ram: {
 
 install:
-	ldy #codeend-codestart-1
-copy:	lda codestart,y
-	sta $0100,y
-	dey
+	ldx #codeend-codestart-1
+copy:	lda codestart,x
+	sta $0100,x
+	dex
 	bpl copy
 	rts
 	
@@ -223,6 +223,7 @@ fast:
 
 slow:	
 !loop:  :wait()
+        lda $dd01
 	ldx #$33        // write to ram with io disabled
 	stx $01
 	sta (start),y
