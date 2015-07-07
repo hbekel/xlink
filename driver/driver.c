@@ -237,6 +237,11 @@ bool device_identify(char* path, int* type) {
 #elif windows
 
   (*type) = XLINK_DRIVER_DEVICE_USB;
+
+  if(strncmp(path, "COM", 3) == 0) {
+    (*type) = XLINK_DRIVER_DEVICE_SERVANT64;
+    return true;
+  }
   
   errno = 0;
   if ((strtol(path, NULL, 0) > 0) && (errno == 0)) {

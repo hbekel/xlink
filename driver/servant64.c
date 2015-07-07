@@ -8,10 +8,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#if linux
-  #include <termios.h>
-#endif
-
 #include "target.h"
 #include "error.h"
 #include "xlink.h"
@@ -20,37 +16,72 @@
 #include "protocol.h"
 #include "util.h"
 
-#define BAUD B500000
+#if linux
+  #include <termios.h>
+  #define BAUD B500000
+
+#elif windows
+  #include <windows.h> 
+  static HANDLE hSerial;
+#endif
 
 extern Driver* driver;
 static bool initialized = false;
 
-static void serial_read(uchar* data, int size) {
-  int bytesRead = 0;
+//------------------------------------------------------------------------------
 
+static void serial_read(uchar* data, int size) {
+
+#if linux
+  int bytesRead = 0;
   while(size > bytesRead) {
     bytesRead += read(driver->device, data+bytesRead, size-bytesRead);
   }
+  
+#elif windows
+  DWORD bytesReadTotal = 0;
+  DWORD bytesRead = 0;
+
+  while(size > bytesReadTotal) {
+    ReadFile(hSerial, data+bytesReadTotal, size-bytesReadTotal, &bytesRead, NULL);
+    bytesReadTotal += bytesRead;
+  }  
+#endif
 }
 
+//------------------------------------------------------------------------------
 
 static void serial_write(uchar* data, int size) {
-#if linux
+
   bool write_chunk(ushort chunk) {
+#if linux
     write(driver->device, data, chunk);
     tcdrain(driver->device);
+
+#elif windows
+    DWORD bytesWritten;
+    WriteFile(hSerial, data, chunk, &bytesWritten, NULL);
+    FlushFileBuffers(hSerial);
+#endif
+
     data+=chunk;
     return true;
   }
   chunked(&write_chunk, 16, size);
-#endif
+
 }
 
-static bool send(uchar cmd, uint arg1, uint arg2) {
-  uchar command[9] = { cmd, lo(arg1), hi(arg1), hlo(arg1), hhi(arg1), lo(arg2), hi(arg2), hlo(arg2), hhi(arg2) };
+//------------------------------------------------------------------------------
+
+static bool cmd(uchar cmd, uint arg1, uint arg2) {
+  uchar command[9] = { cmd,
+		       lo(arg1), hi(arg1), hlo(arg1), hhi(arg1),
+		       lo(arg2), hi(arg2), hlo(arg2), hhi(arg2) };
   serial_write(command, 9);  
   return true;
 }
+
+//------------------------------------------------------------------------------
 
 bool driver_servant64_open(void) {
   bool result = false;
@@ -73,8 +104,37 @@ bool driver_servant64_open(void) {
     tcflush(driver->device, TCIFLUSH);
     tcsetattr(driver->device, TCSANOW, &options);   
     
+#elif windows
+    hSerial = CreateFile(driver->path,
+			 GENERIC_READ | GENERIC_WRITE,
+			 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+    if(hSerial == INVALID_HANDLE_VALUE) goto error;
+
+    DCB options = {0};
+    options.DCBlength=sizeof(options);
+
+    if(!GetCommState(hSerial, &options)) goto error;
+
+    options.BaudRate = 500000;
+    options.ByteSize = 8;
+    options.StopBits = ONESTOPBIT;
+    options.Parity   = NOPARITY;
+
+    if(!SetCommState(hSerial, &options)) goto error;
+
+    COMMTIMEOUTS timeouts = {0};
+
+    timeouts.ReadIntervalTimeout = 50;
+    timeouts.ReadTotalTimeoutConstant = 50;
+    timeouts.ReadTotalTimeoutMultiplier = 10;
+    timeouts.WriteTotalTimeoutConstant = 50;
+    timeouts.WriteTotalTimeoutMultiplier = 10;
+
+    if(!SetCommTimeouts(hSerial, &timeouts)) goto error;
+       
+#endif
     initialized = true;
-#endif    
   }
   
   driver->input();
@@ -84,29 +144,31 @@ bool driver_servant64_open(void) {
   CLEAR_ERROR_IF(result);
   return result;
 
+ error:  
 #if linux
- error:
   SET_ERROR(XLINK_ERROR_FILE, strerror(errno));
-  goto done;
+#elif windows
+  SET_ERROR(XLINK_ERROR_FILE, strerror(GetLastError()));
 #endif
+  goto done;
 }
 
 //------------------------------------------------------------------------------
 
 void driver_servant64_input(void) {
-  send(CMD_INPUT, 0, 0);
+  cmd(CMD_INPUT, 0, 0);
 }
 
 //------------------------------------------------------------------------------
 
 void driver_servant64_output(void) {
-  send(CMD_OUTPUT, 0, 0);
+  cmd(CMD_OUTPUT, 0, 0);
 }
 
 //------------------------------------------------------------------------------
 
 void driver_servant64_strobe(void) {
-  send(CMD_STROBE, 0, 0);
+  cmd(CMD_STROBE, 0, 0);
 }
 
 //------------------------------------------------------------------------------
@@ -116,7 +178,7 @@ bool driver_servant64_wait(int timeout) {
   uchar response[1] = { 0 };
   
   bool acked() {
-    send(CMD_ACKED, 0, 0);
+    cmd(CMD_ACKED, 0, 0);
     serial_read(response, 1);
     return response[0] == 0x55;
   }
@@ -140,7 +202,7 @@ bool driver_servant64_wait(int timeout) {
 
 unsigned char driver_servant64_read(void) {
   uchar response[1] = { 0xff };
-  send(CMD_READ, 0, 0);
+  cmd(CMD_READ, 0, 0);
   serial_read(response, 1);
   return response[0];
 }
@@ -148,7 +210,7 @@ unsigned char driver_servant64_read(void) {
 //------------------------------------------------------------------------------
 
 void driver_servant64_write(unsigned char value) {
-  send(CMD_WRITE, 0, 0);
+  cmd(CMD_WRITE, 0, 0);
 }
 
 //------------------------------------------------------------------------------
@@ -156,7 +218,7 @@ void driver_servant64_write(unsigned char value) {
 bool driver_servant64_send(unsigned char* data, int size) {
   unsigned int bytesSent;
   
-  send(CMD_SEND, size, 2);
+  cmd(CMD_SEND, size, 2);
   serial_write(data, size);
   serial_read((uchar*) &bytesSent, 4);
 
@@ -175,7 +237,7 @@ bool driver_servant64_send(unsigned char* data, int size) {
 bool driver_servant64_receive(unsigned char* data, int size) { 
   unsigned int bytesReceived;
 
-  send(CMD_RECEIVE, size, 2);
+  cmd(CMD_RECEIVE, size, 2);
   serial_read(data, size);
   serial_read((uchar*) &bytesReceived, 4);
 
@@ -202,14 +264,18 @@ bool driver_servant64_ping() {
 //------------------------------------------------------------------------------
 
 void driver_servant64_reset(void) {
-  send(CMD_RESET, 0, 0);
+  cmd(CMD_RESET, 0, 0);
   usleep(250*1000);
 }
 
 //------------------------------------------------------------------------------
 
 void driver_servant64_free(void) {
+#if linux
   close(driver->device);
+#elif windows
+  CloseHandle(hSerial);
+#endif
 }
 
 //------------------------------------------------------------------------------
