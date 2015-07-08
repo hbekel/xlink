@@ -38,7 +38,7 @@ encoding utf-8
 Sheet 1 1
 Title "xlink usb adapter"
 Date "3 jun 2015"
-Rev "2"
+Rev "3"
 Comp "Henning Bekel"
 Comment1 ""
 Comment2 ""
@@ -688,10 +688,10 @@ P6
 Text Label 9500 4200 0    60   ~ 0
 P7
 $Comp
-L JUMPER JP?
+L JUMPER JP1
 U 1 1 556F07A0
 P 6350 5500
-F 0 "JP?" H 6350 5650 60  0000 C CNN
+F 0 "JP1" H 6350 5650 60  0000 C CNN
 F 1 "JUMPER" H 6350 5420 40  0000 C CNN
 F 2 "~" H 6350 5500 60  0000 C CNN
 F 3 "~" H 6350 5500 60  0000 C CNN

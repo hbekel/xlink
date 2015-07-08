@@ -38,7 +38,7 @@ encoding utf-8
 Sheet 1 1
 Title "xlink usb adapter"
 Date "3 jun 2015"
-Rev "2"
+Rev "3"
 Comp "Henning Bekel"
 Comment1 ""
 Comment2 ""

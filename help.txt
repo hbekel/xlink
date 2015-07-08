@@ -205,7 +205,7 @@ COMMAND_SERVER
 
 Usage: server [--address <address>] <file>
 
-Write a ram-based server programm to file. Use address to specify the start
+Write a ram-based server program to file. Use address to specify the start
 address for the server code. If the address corresponds to the machines
 default basic start address, then the server can be started with RUN. This
 is the default if no address is specified.
