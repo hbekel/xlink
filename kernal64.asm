@@ -13,8 +13,8 @@ eof:
 //------------------------------------------------------------------------------	
 	
 .pc = $f0d9
-tapeLoadDisabledMessage: {
-.text "TAPE LOAD DISABLE" .byte $c4 
+tapeIODisabledMessage: {
+.text "TAPE IO DISABLE" .byte $c4 
 eof:
 }
 
@@ -116,6 +116,14 @@ eof:
 
 //------------------------------------------------------------------------------		
 
+.pc = $f5f8
+disableTapeSave: {
+	jmp disableTapeLoad
+eof:	
+}
+
+//------------------------------------------------------------------------------		
+	
 .pc = $f82e // begin of kernal "Check Tape Status" routine
 	
 
@@ -532,9 +540,10 @@ eof:
 
 .var command = "tools/make-kernal c64 kernal64.bin"
 .eval command = command +  patch(wedge, wedge.eof)	
-.eval command = command + patch(tapeLoadDisabledMessage, tapeLoadDisabledMessage.eof)
+.eval command = command + patch(tapeIODisabledMessage, tapeIODisabledMessage.eof)
 .eval command = command + patch(powerUpMessage, powerUpMessage.eof)
 .eval command = command + patch(disableTapeLoad, disableTapeLoad.eof)
+.eval command = command + patch(disableTapeSave, disableTapeSave.eof)
 .eval command = command + patch(fastMemoryCheck, fastMemoryCheck.eof)
 .eval command = command + patch(irq, irq.eof)
 .eval command = command + patch(ack, ack.eof)
