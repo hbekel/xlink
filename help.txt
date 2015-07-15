@@ -106,53 +106,6 @@ Usage: reset
 Reset the remote machine. Works without the server actually running on the
 remote side.
 
-COMMAND_DOS
-
-Usage: @[command]
-
-Send the specified DOS command to the drive and report the resulting drive
-status. If no command is specified, report drive status only.
-
-This command is currently not implemented for the C128.
-
-COMMAND_STATUS
-
-Usage: @[command]
-
-Send the specified DOS command to the drive and report the resulting drive
-status. If no command is specified, report drive status only.
-
-This command is currently not implemented for the C128.
-
-COMMAND_BACKUP
-
-Usage: backup <file>.d64
-
-Backup a disk to a d64 file. Reads 35 tracks from disk and saves them to the
-specified file. Note that no error checking is performed and no error
-information is appended to the d64 file.
-
-This command is currently not implemented for the C128.
-
-COMMAND_RESTORE
-
-Usage: restore <file>.d64
-
-Write a 35 track d64 file to disk. The data is written as is, i.e. without
-interpreting any error information that may be included in the d64 file.
-
-This command is currently not implemented for the C128.
-
-COMMAND_VERIFY
-
-Usage: verify <file>.d64
-
-Verify disk against d64 file. Reads 35 tracks from disk and compares the
-data against the specified d64 file. Track 18 is verified first, then the
-remaining tracks are verified in order.
-
-This command is currently not implemented for the C128.
-
 COMMAND_READY
 
 Usage: ready [<commands>...]

@@ -12,7 +12,6 @@
 #include "target.h"
 #include "client.h"
 #include "range.h"
-#include "disk.h"
 #include "util.h"
 #include "xlink.h"
 #include "machine.h"
@@ -26,11 +25,6 @@
 #define COMMAND_RUN        0x06
 #define COMMAND_RESET      0x07
 #define COMMAND_HELP       0x08
-#define COMMAND_DOS        0x09
-#define COMMAND_BACKUP     0x0a
-#define COMMAND_RESTORE    0x0b
-#define COMMAND_VERIFY     0x0c
-#define COMMAND_STATUS     0x0d
 #define COMMAND_READY      0x0e
 #define COMMAND_PING       0x0f
 #define COMMAND_BOOTLOADER 0x10
@@ -71,9 +65,6 @@ char str2id(const char* arg) {
   if (strcmp(arg, "run"       ) == 0) return COMMAND_RUN;  
   if (strcmp(arg, "reset"     ) == 0) return COMMAND_RESET;  
   if (strcmp(arg, "help"      ) == 0) return COMMAND_HELP;  
-  if (strcmp(arg, "backup"    ) == 0) return COMMAND_BACKUP;  
-  if (strcmp(arg, "restore"   ) == 0) return COMMAND_RESTORE;  
-  if (strcmp(arg, "verify"    ) == 0) return COMMAND_VERIFY;  
   if (strcmp(arg, "ready"     ) == 0) return COMMAND_READY;  
   if (strcmp(arg, "ping"      ) == 0) return COMMAND_PING;  
   if (strcmp(arg, "bootloader") == 0) return COMMAND_BOOTLOADER;  
@@ -84,14 +75,6 @@ char str2id(const char* arg) {
   if (strcmp(arg, "kernal"    ) == 0) return COMMAND_KERNAL;      
   if (strcmp(arg, "fill"      ) == 0) return COMMAND_FILL;      
 
-  if (strncmp(arg, "@", 1) == 0) {
-    if(strlen(arg) == 1) {
-      return COMMAND_STATUS;
-    }
-    else {
-      return COMMAND_DOS;
-    }
-  }
   return COMMAND_NONE;
 }
 
@@ -107,11 +90,6 @@ char* id2str(const char id) {
   if (id == COMMAND_RUN)        return (char*) "run";
   if (id == COMMAND_RESET)      return (char*) "reset";
   if (id == COMMAND_HELP)       return (char*) "help";
-  if (id == COMMAND_DOS)        return (char*) "dos";
-  if (id == COMMAND_BACKUP)     return (char*) "backup";
-  if (id == COMMAND_RESTORE)    return (char*) "restore";
-  if (id == COMMAND_VERIFY)     return (char*) "verify";
-  if (id == COMMAND_STATUS)     return (char*) "status";  
   if (id == COMMAND_READY)      return (char*) "ready";  
   if (id == COMMAND_PING)       return (char*) "ping";  
   if (id == COMMAND_BOOTLOADER) return (char*) "bootloader";  
@@ -293,11 +271,6 @@ int command_arity(Command* self) {
   if (self->id == COMMAND_RUN)        return 1;
   if (self->id == COMMAND_RESET)      return 0;
   if (self->id == COMMAND_HELP)       return 1;
-  if (self->id == COMMAND_DOS)        return 0;
-  if (self->id == COMMAND_BACKUP)     return 1;
-  if (self->id == COMMAND_RESTORE)    return 1;
-  if (self->id == COMMAND_VERIFY)     return 1;
-  if (self->id == COMMAND_STATUS)     return 0;
   if (self->id == COMMAND_READY)      return 0;
   if (self->id == COMMAND_PING)       return 0;
   if (self->id == COMMAND_BOOTLOADER) return 0;
@@ -1450,218 +1423,6 @@ bool command_help(Command *self) {
 
 //------------------------------------------------------------------------------
 
-// FIXME: hardcoded drive routines for C64
-
-extern bool xlink_drive_status(char* status);
-extern bool xlink_dos(char* cmd);
-extern bool xlink_sector_read(unsigned char track, unsigned char sector, unsigned char* data);
-extern bool xlink_sector_write(unsigned char track, unsigned char sector, unsigned char* data);
-
-bool command_status(Command* self) {
-
-  NOT_IMPLEMENTED_FOR_C128
-  
-  char *status = (char*) calloc(sizeof(unsigned char), 256);
-  int result = false;
-  
-  command_print(self);
-
-  if(xlink_drive_status(status)) {
-    printf("%s\n", status);
-    result = true;
-  }
-
-  free(status);
-  return result;
-}
-
-//------------------------------------------------------------------------------
-
-bool command_dos(Command *self) {
-
-  NOT_IMPLEMENTED_FOR_C128
-  
-  command_print(self);
-
-  if (xlink_dos(self->name+1)) {
-    return command_status(self);
-  }
-  return false;
-}
-
-//------------------------------------------------------------------------------
-
-static bool read_sector(Sector *sector) {
-  printf("\rreading track %02d, sector %02d", sector->track, sector->number); fflush(stdout);    
-  
-  return xlink_sector_read(sector->track, sector->number, sector->bytes); 
-}
-
-//------------------------------------------------------------------------------
-
-bool command_backup(Command *self) {
-
-  NOT_IMPLEMENTED_FOR_C128
-  
-  bool result = true;
-  Disk* disk;
-
-  if (self->argc == 0) {
-    logger->error("no file specified");
-    return false;
-  }
-
-  command_print(self);
-
-  char *filename = self->argv[0];
-
-  screenOff();
-
-  disk = disk_new(35);
-  if(disk_each_sector(disk, &read_sector)) {
-    disk_save(disk, filename);
-  }
-
-  screenOn();
-  printf("\n");
-
-  disk_free(disk);
-  return result;
-}
-
-//------------------------------------------------------------------------------
-
-static bool write_sector(Sector *sector) {
-
-  printf("\rwriting track %02d, sector %02d", sector->track, sector->number);
-  fflush(stdout);
-  
-  return xlink_sector_write(sector->track, sector->number, sector->bytes); 
-}
-
-//------------------------------------------------------------------------------
-
-bool command_restore(Command *self) {
-
-  NOT_IMPLEMENTED_FOR_C128
-  
-  bool result = true;
-  
-  if (self->argc == 0) {
-    logger->error("no file specified");
-    return false;
-  }
-
-  char *filename = self->argv[0];
-  Disk* disk = disk_load(filename);
-
-  if(disk == NULL) {
-    return false;
-  }
-
-  int size = 2+16+1+2+1; 
-
-  char *format_disk = (char *) calloc(size, sizeof(char));
-  snprintf(format_disk, size, "N:%s,%s", disk->name, disk->id);
-
-  if(disk->size > 35) {
-    logger->error("no support for disks > 35 tracks\n");
-    result = false;
-    goto done;
-  }
-
-  command_print(self);
-
-  printf("formatting disk: \"%s,%s\"...", disk->name, disk->id); fflush(stdout);
-
-  if(!(xlink_dos(format_disk) && xlink_dos("I"))) {
-    printf("FAILED\n");
-    result = false;
-    goto done;
-  }
-  printf("OK\n");
-
-  screenOff();
-
-  disk_each_sector(disk, &write_sector);
-  xlink_dos("I");
-
-  screenOn();
-  printf("\n");
-
- done:
-  free(format_disk);
-  disk_free(disk);
-  return result;
-}
-
-//------------------------------------------------------------------------------
-
-static bool verify_sector(Sector* expected) {
-  
-  Sector* actual = sector_new(expected->track, expected->number);
-  int result = false;
-  
-  printf("\rverifying track %02d, sector %02d...", 
-	 actual->track, actual->number); fflush(stdout);
-  
-  if(!xlink_sector_read(actual->track, actual->number, actual->bytes)) {
-    goto done;
-  }
-  result = sector_equals(expected, actual);
-  
- done:
-  sector_free(actual);
-  return result;
-}
-
-//------------------------------------------------------------------------------
-
-static bool verify_sector_skipping_track_18(Sector* expected) {
-  
-  if(expected->track == 18) 
-    return true;
-  
-  return verify_sector(expected);
-}
-
-//------------------------------------------------------------------------------
-
-bool command_verify(Command *self) {
-
-  NOT_IMPLEMENTED_FOR_C128
-  
-  Disk* disk;
-  bool result = true;
-
-  if (self->argc == 0) {
-    logger->error("no file specified");
-    return false;
-  }
-  
-  command_print(self);
-
-  if ((disk = disk_load(self->argv[0])) == NULL) {
-    return false;
-  }
-  screenOff();
-  
-  // verify track 18 first
-  result = track_each_sector(disk->tracks[17], &verify_sector);
-  
-  if (result) // verify other tracks
-    result = disk_each_sector(disk, &verify_sector_skipping_track_18);
-  
-  screenOn();
-
-  printf("%s\n", result ? "OK" : "FAILED");
-
-  disk_free(disk);
-  return result;
-}
-
-//------------------------------------------------------------------------------
-
 bool command_ready(Command* self) {
 
   command_print(self);
@@ -1720,11 +1481,6 @@ bool command_execute(Command* self) {
   case COMMAND_RUN        : result = command_run(self);        break;
   case COMMAND_RESET      : result = command_reset(self);      break;
   case COMMAND_HELP       : result = command_help(self);       break;
-  case COMMAND_DOS        : result = command_dos(self);        break;
-  case COMMAND_BACKUP     : result = command_backup(self);     break;
-  case COMMAND_RESTORE    : result = command_restore(self);    break;
-  case COMMAND_VERIFY     : result = command_verify(self);     break;
-  case COMMAND_STATUS     : result = command_status(self);     break;
   case COMMAND_READY      : result = command_ready(self);      break;
   case COMMAND_PING       : result = command_ping(self);       break;
   case COMMAND_BOOTLOADER : result = command_bootloader(self); break;
@@ -1826,11 +1582,6 @@ void usage(void) {
   printf("     jump  [<opts>] <addr>        : jump to specified address\n");
   printf("     run   [<opts>] [<file>]      : run program, optionally load it before\n");
   printf("     <file>...                    : load file(s) and run last file\n");
-  printf("\n");
-  printf("     @[<dos-command>]             : read drive status or send dos command\n");    
-  printf("     backup <file>                : backup disk to d64 file\n");
-  printf("     restore <file>               : restore d64 file to disk\n");
-  printf("     verify <file>                : verify disk against d64 file\n");
   printf("\n");
   printf("     benchmark [<opts>]           : test/measure transfer speed\n");
   printf("     bootloader                   : enter dfu-bootloader (at90usb162)\n");  

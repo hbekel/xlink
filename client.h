@@ -63,11 +63,6 @@ bool command_peek(Command* self);
 bool command_fill(Command* self);
 bool command_jump(Command* self);
 bool command_run(Command* self);
-bool command_status(Command* self);
-bool command_dos(Command* self);
-bool command_backup(Command* self);
-bool command_restore(Command* self);
-bool command_verify(Command* self);
 bool command_ready(Command* self);
 bool command_ping(Command* self);
 bool command_reset(Command* self);
@@ -80,8 +75,6 @@ bool command_server(Command *self);
 bool command_relocate(Command *self);
 bool command_kernal(Command *self);
 void command_free(Command* self);
-
-#define NOT_IMPLEMENTED_FOR_C128 if(machine->type == XLINK_MACHINE_C128) { logger->error("not implemented for the C128 (yet)"); return false; }
 
 #if windows
 void handle(int signal);

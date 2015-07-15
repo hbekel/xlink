@@ -21,7 +21,6 @@ LIBHEADERS=\
 	xlink.h \
 	machine.h \
 	util.h \
-	extension.h \
 	driver/driver.h \
 	driver/protocol.h \
 	driver/usb.h \
@@ -34,8 +33,6 @@ LIBSOURCES=\
 	machine.c \
 	error.h \
 	util.c \
-	extension.c \
-	extensions.c \
 	server64.c \
 	server128.c \
 	kernal64.c \
@@ -70,8 +67,8 @@ libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
 		-Wl,-init,libxlink_initialize,-fini,libxlink_finalize\
 		-o libxlink.so $(LIBSOURCES) -lusb-1.0
 
-xlink: libxlink.so client.c client.h disk.c disk.h range.c range.h help.c
-	$(GCC) $(CFLAGS) -o xlink client.c disk.c range.c -L. -lxlink 
+xlink: libxlink.so client.c client.h range.c range.h help.c
+	$(GCC) $(CFLAGS) -o xlink client.c range.c -L. -lxlink 
 
 xlink.res.o: xlink.rc
 	$(MINGW32-WINDRES) -i xlink.rc -o xlink.res.o
@@ -80,9 +77,9 @@ xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32 xlink.res.o
 	$(MINGW32-GCC) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
 		-o xlink.dll $(LIBSOURCES) xlink.res.o -lusb-1.0 -linpout32
 
-xlink.exe: xlink.dll client.c client.h disk.c disk.h range.c range.h help.c xlink.lib-clean 
+xlink.exe: xlink.dll client.c client.h range.c range.h help.c xlink.lib-clean 
 	$(MINGW32-GCC) $(CFLAGS) -static-libgcc -o xlink.exe \
-		client.c disk.c range.c -L. -lxlink 
+		client.c range.c -L. -lxlink 
 
 xlink.lib: xlink.dll
 	dos2unix tools/make-msvc-lib.sh
@@ -97,14 +94,6 @@ inpout32:
 	cp inpout32/Win32/inpout32.h . && \
 	cp inpout32/Win32/inpout32.dll . && \
 	chmod +x inpout32.dll
-
-tools/make-extension: tools/make-extension.c
-	$(GCC) $(CFLAGS) -o tools/make-extension tools/make-extension.c
-
-extensions.c: tools/make-extension extensions.asm
-	$(KASM) -binfile -o extensions.bin extensions.asm | \
-	grep make-extension | \
-	sh > extensions.c && rm extensions.bin
 
 tools/make-server: tools/make-server.c
 	$(GCC) $(CFLAGS) -o tools/make-server tools/make-server.c
@@ -229,7 +218,6 @@ clean: firmware-clean servant64-clean
 	[ -f xlink.res.o ] && rm -vf xlink.res.o || true
 	[ -f xlink ] && rm -vf xlink || true
 	[ -f xlink.exe ] && rm -vf xlink.exe || true
-	[ -f extensions.c ] && rm -vf extensions.c || true
 	[ -f server64.c ] && rm -vf server64.c || true
 	[ -f server128.c ] && rm -vf server128.c || true
 	[ -f kernal64.c ] && rm -vf kernal64.c || true
@@ -241,7 +229,6 @@ clean: firmware-clean servant64-clean
 	[ -f bootstrap-c128.prg ] && rm -vf bootstrap-c128.prg || true
 	[ -f bootstrap-test-c64.prg ] && rm -vf bootstrap-test-c64.prg || true
 	[ -f bootstrap-test-c128.prg ] && rm -vf bootstrap-test-c128.prg || true
-	[ -f tools/make-extension ] && rm -vf tools/make-extension || true
 	[ -f tools/make-bootstrap ] && rm -vf tools/make-bootstrap || true
 	[ -f tools/make-server ] && rm -vf tools/make-server || true
 	[ -f tools/make-kernal ] && rm -vf tools/make-kernal || true
