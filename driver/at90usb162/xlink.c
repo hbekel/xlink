@@ -110,8 +110,8 @@ void ReadACK() {
 }
 
 void TristateRESET() {
-  DDRC &= ~PIN_RESET; // RESET as input
-  PORTC |= PIN_RESET; // with pullup
+  DDRC &= ~PIN_RESET;  // RESET as input
+  PORTC &= ~PIN_RESET; // without pullup -> tristate
 }
 
 void AssertRESET() {
