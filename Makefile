@@ -10,7 +10,7 @@ VERSION=1.1
 XLINK_SERIAL:=$(XLINK_SERIAL)
 
 GCC=gcc
-CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -O3 -I.
+CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security -O3 -I.
 
 AVRDUDE=avrdude
 AVRDUDE_FLAGS=-c arduino -b 57600 -P /dev/ttyUSB0 -p atmega328p -F -u
@@ -21,6 +21,7 @@ LIBHEADERS=\
 	xlink.h \
 	machine.h \
 	util.h \
+	error.h \
 	driver/driver.h \
 	driver/protocol.h \
 	driver/usb.h \
@@ -31,7 +32,6 @@ LIBHEADERS=\
 LIBSOURCES=\
 	xlink.c \
 	machine.c \
-	error.h \
 	util.c \
 	server64.c \
 	server128.c \

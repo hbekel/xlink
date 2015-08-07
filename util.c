@@ -104,7 +104,7 @@ static void _logger_log(int level, char *fmt, va_list ap) {
       count += printf(format);
       fmt += j;
     } else {
-      for (j = 0; !isalpha(fmt[j]); j++) {
+      for (j = 0; !isalpha((int)fmt[j]); j++) {
         format[j] = fmt[j];
         if (j && fmt[j] == '%')
           break;
