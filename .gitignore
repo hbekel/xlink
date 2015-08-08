@@ -1,5 +1,6 @@
 xlink
 *.so
+*.dylib
 *.prg
 *.sym
 *.exe

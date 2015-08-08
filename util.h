@@ -81,6 +81,6 @@ void watch_free(Watch*);
 // Chunked processing
 //------------------------------------------------------------------------------
 
-bool chunked(bool (*callback) (unsigned short chunk), unsigned short chunk, int size);
+bool chunked(bool (*callback) (unsigned short chunk, void* context), void* context, unsigned short chunk, int size);
 
 #endif // UTIL_H

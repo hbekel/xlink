@@ -35,6 +35,10 @@ void xlink_set_debug(bool enabled) {
 
 //------------------------------------------------------------------------------
 
+#if mac
+__attribute((constructor))
+#endif
+
 void libxlink_initialize() {
 
   driver = (Driver*) calloc(1, sizeof(Driver));
@@ -77,6 +81,10 @@ void libxlink_initialize() {
 }
 
 //------------------------------------------------------------------------------
+
+#if mac
+__attribute((destructor))
+#endif
 
 void libxlink_finalize(void) {
   

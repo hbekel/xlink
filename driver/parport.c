@@ -113,6 +113,8 @@ bool driver_parport_open() {
     SET_ERROR(XLINK_ERROR_PARPORT, "InpOut32 driver is required for parallel port access");    
     goto done;
   }
+#elif mac
+  goto done;
 #endif
   
  result = true;

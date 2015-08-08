@@ -16,7 +16,12 @@
 #include "protocol.h"
 #include "util.h"
 
-#if linux
+#if posix
+
+  #if mac
+    #define B500000 500000
+  #endif
+
   #include <termios.h>
   #define BAUD B500000
 
@@ -32,7 +37,9 @@ static bool initialized = false;
 
 static void serial_read(uchar* data, int size) {
 
-#if linux
+  logger->debug("Serial read %d bytes", size);
+  
+#if posix
   int bytesRead = 0;
   while(size > bytesRead) {
     bytesRead += read(driver->device, data+bytesRead, size-bytesRead);
@@ -51,24 +58,32 @@ static void serial_read(uchar* data, int size) {
 
 //------------------------------------------------------------------------------
 
+static bool write_chunk(ushort chunk, void *context) {
+
+  Transfer *transfer = (Transfer*) context;
+
+#if posix
+  write(driver->device, transfer->data, chunk);
+  tcdrain(driver->device);
+  
+#elif windows
+  DWORD bytesWritten;
+  WriteFile(hSerial, transfer->data, chunk, &bytesWritten, NULL);
+  FlushFileBuffers(hSerial);
+#endif
+  
+  transfer->data += chunk;
+  return true;
+}
+
 static void serial_write(uchar* data, int size) {
 
-  bool write_chunk(ushort chunk) {
-#if linux
-    write(driver->device, data, chunk);
-    tcdrain(driver->device);
+  logger->debug("Serial write %d bytes", size);  
 
-#elif windows
-    DWORD bytesWritten;
-    WriteFile(hSerial, data, chunk, &bytesWritten, NULL);
-    FlushFileBuffers(hSerial);
-#endif
-
-    data+=chunk;
-    return true;
-  }
-  chunked(&write_chunk, 16, size);
-
+  Transfer transfer;
+  transfer.data = data;
+  transfer.completed = 0;
+  chunked(&write_chunk, &transfer, 16, size);
 }
 
 //------------------------------------------------------------------------------
@@ -88,7 +103,7 @@ bool driver_servant64_open(void) {
 
   if(!initialized) {
 
-#if linux      
+#if posix      
     struct termios options;
     
     if((driver->device = open(driver->path, O_RDWR, O_NOCTTY)) < 0) goto error;
@@ -145,7 +160,7 @@ bool driver_servant64_open(void) {
   return result;
 
  error:  
-#if linux
+#if posix
   SET_ERROR(XLINK_ERROR_FILE, strerror(errno));
 #elif windows
   SET_ERROR(XLINK_ERROR_FILE, strerror(GetLastError()));
@@ -173,16 +188,15 @@ void driver_servant64_strobe(void) {
 
 //------------------------------------------------------------------------------
 
-bool driver_servant64_wait(int timeout) {
-
+static bool acked(void) {
   uchar response[1] = { 0 };
-  
-  bool acked() {
-    cmd(CMD_ACKED, 0, 0);
-    serial_read(response, 1);
-    return response[0] == 0x55;
-  }
+  cmd(CMD_ACKED, 0, 0);
+  serial_read(response, 1);
+  return response[0] == 0x55;
+}
 
+bool driver_servant64_wait(int timeout) {
+  
   bool result = false;
 
   if(timeout <= 0) {
@@ -271,7 +285,7 @@ void driver_servant64_reset(void) {
 //------------------------------------------------------------------------------
 
 void driver_servant64_free(void) {
-#if linux
+#if posix
   close(driver->device);
 #elif windows
   CloseHandle(hSerial);

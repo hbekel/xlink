@@ -4,7 +4,12 @@
 #define XLINK_DRIVER_DEVICE_USB       189
 #define XLINK_DRIVER_DEVICE_PARPORT   99
 #define XLINK_DRIVER_DEVICE_SHM       -1
-#define XLINK_DRIVER_DEVICE_SERVANT64 188
+
+#if mac
+  #define XLINK_DRIVER_DEVICE_SERVANT64 31
+#else
+  #define XLINK_DRIVER_DEVICE_SERVANT64 188
+#endif
 
 #define XLINK_DRIVER_STATE_IDLE   0x01
 #define XLINK_DRIVER_STATE_INPUT  0x02
@@ -48,6 +53,11 @@ typedef struct {
   void (*boot) (void);
   void (*free) (void);
 } Driver;
+
+typedef struct {
+  uchar *data;
+  uint completed;
+} Transfer;
 
 bool driver_setup(char*);
 bool device_identify(char*, int*); 

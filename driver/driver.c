@@ -30,6 +30,9 @@ bool _driver_setup_and_open(void) {
   char default_usb_device[] = "/dev/xlink";
   char default_parport_device[] = "/dev/parport0";
 
+#elif mac
+  char default_usb_device[] = "usb";
+
 #elif windows
   char default_usb_device[] = "usb";
   char default_parport_device[] = "0x378";
@@ -43,12 +46,15 @@ bool _driver_setup_and_open(void) {
 
     if(!(result = driver_setup(default_usb_device))) {
 
+#if linux || windows      
       result = driver_setup(default_parport_device);
 
       if(result) {
         logger->info("using default parallel port device %s",
                      default_parport_device);
       }
+#endif
+      
     }
     else {
       logger->info("using default usb device \"%s\"",
@@ -59,12 +65,14 @@ bool _driver_setup_and_open(void) {
   if(result) {
     result = driver->open();
   }
+#if linux || windows
   else if(autodetect) {
     SET_ERROR(XLINK_ERROR_DEVICE, 
 	      "failed to initialize \"%s\" or \"%s\" (autodetect)",
 	      default_usb_device, default_parport_device);    
   }
-
+#endif
+  
   CLEAR_ERROR_IF(result);
   return result;
 }
@@ -234,7 +242,33 @@ bool device_identify(char* path, int* type) {
   CLEAR_ERROR;
   return true;
 
-#elif windows
+#elif mac
+  (*type) = XLINK_DRIVER_DEVICE_USB;
+
+  if(strncmp(path, "usb", 3) == 0) {
+    return true;
+  }
+  
+  struct stat device;
+
+  if(stat(path, &device) == -1) {
+
+    SET_ERROR(XLINK_ERROR_DEVICE, "%s: couldn't stat: %s", path, strerror(errno));
+    return false;
+  }
+
+  if(!S_ISCHR(device.st_mode)) {
+
+    SET_ERROR(XLINK_ERROR_DEVICE, "%s: not a character device", path);
+    return false;
+  }
+
+  (*type) = major(device.st_rdev);
+
+  CLEAR_ERROR;
+  return true;
+
+#elif windows 
 
   (*type) = XLINK_DRIVER_DEVICE_USB;
 

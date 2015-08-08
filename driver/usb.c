@@ -196,16 +196,16 @@ void driver_usb_strobe() {
 
 //------------------------------------------------------------------------------
 
+static bool acked(void) {
+  if(controlEndpointIn(CMD_ACKED, response, sizeof(response))) {
+    return response[0] == 1;
+  }
+  return false;
+}
+
 bool driver_usb_wait(int timeout) {
   
   response[0] = 0;
-
-  bool acked() {
-    if(controlEndpointIn(CMD_ACKED, response, sizeof(response))) {
-      return response[0] == 1;
-    }
-    return false;
-  }
 
   bool result = false;
 
@@ -237,35 +237,39 @@ unsigned char driver_usb_read() {
 
 //------------------------------------------------------------------------------
 
+static bool send(ushort chunk, void *context) {
+
+  Transfer *transfer = (Transfer*) context;
+  
+  int transfered = controlEndpointOut(CMD_SEND, transfer->data, chunk);
+  
+  if(transfered < 0) {
+    return false;
+  }
+  
+  if (transfered < chunk) { 
+    transfer->completed += transfered;
+    return false;
+  }
+  
+  transfer->data += chunk;
+  transfer->completed += chunk;
+  return true;
+}
+
 bool driver_usb_send(unsigned char* data, int size) {
 
-  int sent = 0;
+  Transfer transfer;
+  transfer.data = data;
+  transfer.completed = 0;
   
-  bool send(ushort chunk) {
+  chunked(send, &transfer, MAX_PAYLOAD_SIZE, size);
 
-    int transfered = controlEndpointOut(CMD_SEND, data, chunk);
-
-    if(transfered < 0) {
-      return false;
-    }
-
-    if (transfered < chunk) { 
-      sent += transfered;
-      return false;
-    }
-    
-    data += chunk;
-    sent += chunk;
-    return true;
-  }
-
-  chunked(send, MAX_PAYLOAD_SIZE, size);
-
-  bool result = sent == size;
+  bool result = transfer.completed == size;
   
   if(!result) {
     SET_ERROR(XLINK_ERROR_LIBUSB,
-              "transfer timeout (%d of %d bytes sent)", sent, size);
+              "transfer timeout (%d of %d bytes sent)", transfer.completed, size);
   }
   
   CLEAR_ERROR_IF(result);
@@ -274,34 +278,39 @@ bool driver_usb_send(unsigned char* data, int size) {
 
 //------------------------------------------------------------------------------
 
-bool driver_usb_receive(unsigned char* data, int size) {
-  int received = 0;
+static bool receive(ushort chunk, void* context) {
+
+  Transfer *transfer = (Transfer*) context;
   
-  bool receive(ushort chunk) {
-
-    int transfered = controlEndpointIn(CMD_RECEIVE, data, chunk);
-
-    if(transfered < 0) { 
-      return false;
-    }
-
-    if (transfered < chunk) { 
-      received += transfered;
-      return false;
-    }
-    
-    data += chunk;
-    received += chunk;
-    return true;
+  int transfered = controlEndpointIn(CMD_RECEIVE, transfer->data, chunk);
+  
+  if(transfered < 0) { 
+    return false;
   }
+  
+  if (transfered < chunk) { 
+    transfer->completed += transfered;
+    return false;
+  }
+  
+  transfer->data += chunk;
+  transfer->completed += chunk;
+  return true;
+}
 
-  chunked(receive, MAX_PAYLOAD_SIZE, size);
+bool driver_usb_receive(unsigned char* data, int size) {
 
-  bool result = received == size;
+  Transfer transfer;
+  transfer.data = data;
+  transfer.completed = 0;
+  
+  chunked(&receive, &transfer, MAX_PAYLOAD_SIZE, size);
+
+  bool result = transfer.completed == size;
   
   if(!result) {
     SET_ERROR(XLINK_ERROR_LIBUSB,
-              "transfer timeout (%d of %d bytes received)", received, size);
+              "transfer timeout (%d of %d bytes received)", transfer.completed, size);
   }
   
   CLEAR_ERROR_IF(result);

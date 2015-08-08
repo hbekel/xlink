@@ -285,65 +285,49 @@ int command_arity(Command* self) {
 }
 //------------------------------------------------------------------------------
 void command_consume_arguments(Command *self, int *argc, char ***argv) {
-  
+
+#define hasNext (*argc) > 0
+#define next (*argc)--, (*argv)++, isFirst=false
+#define current (*argv[0])
+#define hasPrevious !isFirst
+#define previous (*(*(argv)-1))
+
   bool isFirst = true;
 
-  int hasNext(void) {
-    return (*argc) > 0;
-  }
-
-  void next(void) {
-    (*argc)--; 
-    (*argv)++;
-    isFirst = false;
-  }    
-
-  char *current(void) {
-    return (*argv)[0];
-  }
-
-  int hasPrevious(void) {
-    return !isFirst;
-  }
-
-  char *previous(void) {
-    return (*(*(argv)-1));
-  }
-
-  self->name = (char *) calloc(strlen(current())+1, sizeof(char));
-  strncpy(self->name, current(), strlen(current()));
+  self->name = (char *) calloc(strlen(current)+1, sizeof(char));
+  strncpy(self->name, current, strlen(current));
 
   self->id = str2id(self->name);
 
   if(isCommand(self->name)) {
-    next();
+    next;
   }
 
   int arity = command_arity(self);
   int consumed = 0;
 
-  for(;hasNext();next()) {
+  for(;hasNext;next) {
 
-    if(isCommand(current()) && !isOptarg(previous(), current())) {
+    if(isCommand(current) && !isOptarg(previous, current)) {
       break;
     }
     
     if (consumed == arity && arity > 0) {
-      if (hasPrevious() && !isOptarg(previous(), current())) {
+      if (hasPrevious && !isOptarg(previous, current)) {
         break;
       }
-      else if (!isOption(current())) {
+      else if (!isOption(current)) {
         break;
       }
     }
 
-    command_append_argument(self, current());
+    command_append_argument(self, current);
 
     if (consumed < arity) {
-      if (hasPrevious() && isOptarg(previous(), current())) {
+      if (hasPrevious && isOptarg(previous, current)) {
         continue;
       }
-      else if (isOption(current())) {
+      else if (isOption(current)) {
         continue;
       }
       consumed+=1;      

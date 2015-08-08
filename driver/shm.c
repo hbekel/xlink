@@ -13,7 +13,7 @@
 #include "shm.h"
 #include "util.h"
 
-#if linux
+#if posix
   #include <sys/shm.h>
   #include <signal.h>
 #elif windows
@@ -24,7 +24,7 @@ extern Driver* driver;
 static xlink_port_t *port;
 static char* shmname = "/tmp/xlink";
 
-#if linux
+#if posix
   static int shmid;
 #elif windows
   static HANDLE hMapFile;
@@ -39,7 +39,7 @@ bool driver_shm_open(void) {
 
   if(!initialized) {
     
-#if linux
+#if posix
     int fd = open(shmname, O_CREAT | O_RDWR, S_IRWXU);
     close(fd);
 
@@ -81,7 +81,7 @@ bool driver_shm_open(void) {
   return result;  
 
  error:
-#if linux
+#if posix
   SET_ERROR(XLINK_ERROR_FILE, strerror(errno));
 #elif windows
   SET_ERROR(XLINK_ERROR_FILE, strerror(GetLastError()));
@@ -232,7 +232,7 @@ void driver_shm_reset(void) {
 
 void driver_shm_free(void) {
 
-#if linux
+#if posix
     shmdt(&port);
 #elif windows
     UnmapViewOfFile(port);

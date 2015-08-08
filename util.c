@@ -278,7 +278,7 @@ void watch_free(Watch* self) {
 // Chunked processing
 //------------------------------------------------------------------------------
 
-bool chunked(bool (*callback) (unsigned short chunk), unsigned short chunk, int size) {
+bool chunked(bool (*callback) (unsigned short chunk, void *context), void* context, unsigned short chunk, int size) {
 
   bool result = true;
 
@@ -291,7 +291,7 @@ bool chunked(bool (*callback) (unsigned short chunk), unsigned short chunk, int 
       size = 0;
     }
     
-    if(!(result = (*callback)(chunk))) {
+    if(!(result = (*callback)(chunk, context))) {
       break;
     }    
   } while(size > 0);

@@ -1,4 +1,4 @@
-PREFIX=/usr
+PREFIX=/usr/local
 SYSCONFDIR=/etc
 KASM?=java -jar /usr/share/kickassembler/KickAss.jar
 
@@ -9,8 +9,9 @@ MINGW32-WINDRES=$(MINGW32)-windres
 VERSION=1.1
 XLINK_SERIAL:=$(XLINK_SERIAL)
 
+CC?=gcc
 GCC=gcc
-CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security -O3 -I.
+CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security -O3 -I. -I$(PREFIX)/include
 
 AVRDUDE=avrdude
 AVRDUDE_FLAGS=-c arduino -b 57600 -P /dev/ttyUSB0 -p atmega328p -F -u
@@ -43,12 +44,24 @@ LIBSOURCES=\
 	driver/shm.c \
 	driver/servant64.c
 
-LIBFLAGS=-DXLINK_LIBRARY_BUILD -L.
+LIBFLAGS=-DXLINK_LIBRARY_BUILD -L. -L$(PREFIX)/lib
+LIBEXT=so
+
+UNAME = $(shell uname)
+
+ifeq ($(UNAME), Darwin)
+  LIBEXT=dylib
+  ifeq ($(PREFIX), /usr/local)
+    SYSCONFDIR=/usr/local/etc
+  endif
+endif
 
 all: linux cbm
 cbm: bootstrap
 linux: xlink udev
 win32: xlink.exe
+macosx: xlink
+
 bootstrap: bootstrap-c64 bootstrap-c128
 bootstrap-c64: bootstrap-c64.txt
 bootstrap-test-c64: bootstrap-test-c64.prg
@@ -57,18 +70,17 @@ bootstrap-test-c128: bootstrap-test-c128.prg
 prepare-msi: clean win32 firmware xlink.lib
 
 testsuite: testsuite.c range.c
-	$(GCC) -o testsuite testsuite.c range.c
+	$(CC) -o testsuite testsuite.c range.c
 
 test: testsuite
 	./testsuite
 
-libxlink.so: $(LIBHEADERS) $(LIBSOURCES)
-	$(GCC) $(CFLAGS) $(LIBFLAGS) -shared -fPIC \
-		-Wl,-init,libxlink_initialize,-fini,libxlink_finalize\
-		-o libxlink.so $(LIBSOURCES) -lusb-1.0
+libxlink.$(LIBEXT): $(LIBHEADERS) $(LIBSOURCES)
+	$(CC) $(CFLAGS) $(LIBFLAGS) -shared -fPIC \
+		-o libxlink.$(LIBEXT) $(LIBSOURCES) -lusb-1.0
 
-xlink: libxlink.so client.c client.h range.c range.h help.c
-	$(GCC) $(CFLAGS) -o xlink client.c range.c -L. -lxlink 
+xlink: libxlink.$(LIBEXT) client.c client.h range.c range.h help.c
+	$(CC) $(CFLAGS) -o xlink client.c range.c -L. -lxlink 
 
 xlink.res.o: xlink.rc
 	$(MINGW32-WINDRES) -i xlink.rc -o xlink.res.o
@@ -96,7 +108,7 @@ inpout32:
 	chmod +x inpout32.dll
 
 tools/make-server: tools/make-server.c
-	$(GCC) $(CFLAGS) -o tools/make-server tools/make-server.c
+	$(CC) $(CFLAGS) -o tools/make-server tools/make-server.c
 
 server64.c: tools/make-server server.h server64.asm loader.asm 
 	$(KASM) :target=c64 :pc=257 -o base server64.asm  # 257 = 0101
@@ -115,7 +127,7 @@ server128.c: tools/make-server server.h server128.asm loader.asm
 	rm -v base low high loader
 
 tools/make-kernal: tools/make-kernal.c
-	$(GCC) $(CFLAGS) -o tools/make-kernal tools/make-kernal.c
+	$(CC) $(CFLAGS) -o tools/make-kernal tools/make-kernal.c
 
 kernal64.c: tools/make-kernal tools/make-kernal.c kernal64.asm
 	$(KASM) -binfile :target=c64 -o kernal64.bin kernal64.asm | \
@@ -130,7 +142,7 @@ kernal128.c: tools/make-kernal tools/make-kernal.c kernal128.asm
 	rm kernal128.bin
 
 tools/make-bootstrap: tools/make-bootstrap.c
-	$(GCC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
+	$(CC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
 bootstrap-c64.txt: tools/make-bootstrap bootstrap.asm server.h
 	$(KASM) :target=c64 -o bootstrap-c64.prg bootstrap.asm && \
@@ -147,7 +159,7 @@ bootstrap-test-c128.prg: bootstrap-c128.txt
 	petcat -w70 -o bootstrap-test-c128.prg -- bootstrap-c128.txt
 
 tools/make-help: tools/make-help.c
-	$(GCC) $(CFLAGS) -o tools/make-help tools/make-help.c
+	$(CC) $(CFLAGS) -o tools/make-help tools/make-help.c
 
 help.c: tools/make-help help.txt
 	tools/make-help help.txt > help.c
@@ -178,15 +190,23 @@ servant64-install: servant64
 	$(AVRDUDE)  $(AVRDUDE_FLAGS) -U flash:w:driver/servant64/xlink.hex:i
 
 install: xlink cbm
-	install -m755 -D xlink $(DESTDIR)$(PREFIX)/bin/xlink
-	install -m644 -D libxlink.so $(DESTDIR)$(PREFIX)/lib/libxlink.so
-	install -m644 -D xlink.h $(DESTDIR)$(PREFIX)/include/xlink.h
+	install -d $(DESTDIR)$(PREFIX)/bin
+	install -m755 xlink $(DESTDIR)$(PREFIX)/bin
 
-	install -m644 -D etc/udev/rules.d/10-xlink.rules \
+	install -d $(DESTDIR)$(PREFIX)/lib/
+	install -m644 libxlink.$(LIBEXT) $(DESTDIR)$(PREFIX)/lib/
+
+	install -d $(DESTDIR)$(PREFIX)/include/
+	install -m644 xlink.h $(DESTDIR)$(PREFIX)/include/
+
+ifeq ($(UNAME), Linux)
+		install -m644 -D etc/udev/rules.d/10-xlink.rules \
 			$(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
+endif	
 
-	install -m644 -D etc/bash_completion.d/xlink \
-			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
+	install -d $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/	
+	install -m644 etc/bash_completion.d/xlink \
+			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/
 
 server64.prg: /usr/bin/xlink
 	xlink server -Mc64 server64.prg
@@ -204,15 +224,19 @@ xlink.d64: server64.prg server128.prg bootstrap-test-c64.prg bootstrap-test-c128
 
 uninstall:
 	rm -v $(DESTDIR)$(PREFIX)/bin/xlink || true
-	rm -v $(DESTDIR)$(PREFIX)/lib/libxlink.so || true
+	rm -v $(DESTDIR)$(PREFIX)/lib/libxlink.$(LIBEXT) || true
 	rm -v $(DESTDIR)$(PREFIX)/include/xlink.h || true
-	rm -rv $(DESTDIR)$(PREFIX)/share/xlink || true
-	rm -v $(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
+
+ifeq ($(UNAME), Linux)
+		rm -v $(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
+endif
+
 	rm -v $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/xlink || true
 
 clean: firmware-clean servant64-clean
 	[ -f testsuite ] && rm -vf testsuite || true
 	[ -f libxlink.so ] && rm -vf libxlink.so || true
+	[ -f libxlink.dylib ] && rm -vf libxlink.dylib || true
 	[ -f xlink.dll ] && rm -vf xlink.dll || true
 	[ -f xlink.lib ] && rm -vf xlink.lib || true
 	[ -f xlink.res.o ] && rm -vf xlink.res.o || true
