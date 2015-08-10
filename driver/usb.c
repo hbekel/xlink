@@ -237,7 +237,7 @@ unsigned char driver_usb_read() {
 
 //------------------------------------------------------------------------------
 
-static bool send(ushort chunk, void *context) {
+static bool send_chunk(ushort chunk, void *context) {
 
   Transfer *transfer = (Transfer*) context;
   
@@ -263,7 +263,7 @@ bool driver_usb_send(unsigned char* data, int size) {
   transfer.data = data;
   transfer.completed = 0;
   
-  chunked(send, &transfer, MAX_PAYLOAD_SIZE, size);
+  chunked(send_chunk, &transfer, MAX_PAYLOAD_SIZE, size);
 
   bool result = transfer.completed == size;
   
@@ -278,7 +278,7 @@ bool driver_usb_send(unsigned char* data, int size) {
 
 //------------------------------------------------------------------------------
 
-static bool receive(ushort chunk, void* context) {
+static bool receive_chunk(ushort chunk, void* context) {
 
   Transfer *transfer = (Transfer*) context;
   
@@ -304,7 +304,7 @@ bool driver_usb_receive(unsigned char* data, int size) {
   transfer.data = data;
   transfer.completed = 0;
   
-  chunked(&receive, &transfer, MAX_PAYLOAD_SIZE, size);
+  chunked(&receive_chunk, &transfer, MAX_PAYLOAD_SIZE, size);
 
   bool result = transfer.completed == size;
   
