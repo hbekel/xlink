@@ -19,7 +19,7 @@ The implementation of the underlying functionality is distributed as a
 shared library, making the functionality provided by xlink readily
 available for use in other programs.
 
-The xlink client software and library is supported under Linux and
+The xlink client software and library is supported under Linux, MacOSX and
 Windows.
 
 Please see the [project website](http://henning-bekel.de/xlink) for
