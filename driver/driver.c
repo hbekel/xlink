@@ -272,11 +272,6 @@ bool device_identify(char* path, int* type) {
 
   (*type) = XLINK_DRIVER_DEVICE_USB;
 
-  if(strncmp(path, "COM", 3) == 0) {
-    (*type) = XLINK_DRIVER_DEVICE_SERVANT64;
-    return true;
-  }
-  
   errno = 0;
   if ((strtol(path, NULL, 0) > 0) && (errno == 0)) {
     (*type) = XLINK_DRIVER_DEVICE_PARPORT;
@@ -293,8 +288,7 @@ bool device_is_supported(char *path, int type) {
 
   if(!(device_is_parport(type) ||
        device_is_usb(type) ||
-       device_is_shm(type) ||
-       device_is_servant64(type))) {
+       device_is_shm(type))) {
 
     SET_ERROR(XLINK_ERROR_DEVICE, 
               "%s: unsupported device major number: %d", path, type);
