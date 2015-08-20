@@ -6,7 +6,7 @@ MINGW32?=i686-w64-mingw32
 MINGW32-GCC=$(MINGW32)-gcc
 MINGW32-WINDRES=$(MINGW32)-windres
 
-VERSION=1.1
+VERSION=1.2
 XLINK_SERIAL:=$(XLINK_SERIAL)
 
 CC?=gcc
@@ -48,9 +48,11 @@ LIBFLAGS=-DXLINK_LIBRARY_BUILD -L. -L$(PREFIX)/lib
 LIBEXT=so
 
 UNAME=$(shell uname)
+MD5SUM=md5sum
 
 ifeq ($(UNAME), Darwin)
   LIBEXT=dylib
+  MD5SUM=md5 -r
 endif
 
 ifneq ($(PREFIX), /usr)
@@ -266,7 +268,7 @@ distclean: clean
 
 release: distclean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD && \
-	md5sum ../xlink-$(VERSION).tar.gz > ../xlink-$(VERSION).tar.gz.md5
+	$(MD5SUM) ../xlink-$(VERSION).tar.gz > ../xlink-$(VERSION).tar.gz.md5
 
 macosx-package: ../xlink-$(VERSION)-macosx.tar.gz
 
@@ -274,4 +276,4 @@ macosx-package: ../xlink-$(VERSION)-macosx.tar.gz
 	make DESTDIR=stage PREFIX=/usr/local install && \
 	(cd stage && tar vczf ../../xlink-$(VERSION)-macosx.tar.gz .) && \
 	rm -rf stage && \
-	md5sum ../xlink-$(VERSION)-macosx.tar.gz > ../xlink-$(VERSION)-macosx.tar.gz.md5
+	$(MD5SUM) ../xlink-$(VERSION)-macosx.tar.gz > ../xlink-$(VERSION)-macosx.tar.gz.md5
