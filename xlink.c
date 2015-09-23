@@ -92,25 +92,6 @@ void libxlink_finalize(void) {
 
 //------------------------------------------------------------------------------
 
-#if windows
-BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
-  switch(nReason) {
-
-   case DLL_PROCESS_ATTACH:
-     DisableThreadLibraryCalls(hDllHandle);
-     libxlink_initialize();
-     break;
- 
-   case DLL_PROCESS_DETACH:
-     libxlink_finalize();
-     break;
-  }
-  return true;
-}
-#endif
-
-//------------------------------------------------------------------------------
-
 bool xlink_set_device(char* path) {
   return driver_setup(path);
 }  
