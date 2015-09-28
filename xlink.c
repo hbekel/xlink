@@ -92,25 +92,6 @@ void libxlink_finalize(void) {
 
 //------------------------------------------------------------------------------
 
-#if windows
-BOOL WINAPI DllMain(HINSTANCE hDllHandle, DWORD nReason, LPVOID Reserved ) {
-  switch(nReason) {
-
-   case DLL_PROCESS_ATTACH:
-     DisableThreadLibraryCalls(hDllHandle);
-     libxlink_initialize();
-     break;
- 
-   case DLL_PROCESS_DETACH:
-     libxlink_finalize();
-     break;
-  }
-  return true;
-}
-#endif
-
-//------------------------------------------------------------------------------
-
 bool xlink_set_device(char* path) {
   return driver_setup(path);
 }  
@@ -241,10 +222,13 @@ bool xlink_reset(void) {
 
 static bool server_ready_after(int ms) {
 
-  logger->trace("waiting for server...");
+  logger->trace("waiting at most %dms for server...", ms);
+  int elapsed = 0;
   
-  while(ms) {
+  while(ms > 0) {
+    elapsed+=250;
     if(xlink_ping()) {
+      logger->trace("server ready after less than %dms", elapsed);
       usleep(250*1000);
       return true;
     }

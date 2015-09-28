@@ -8,6 +8,8 @@ static uint32_t Boot_Key ATTR_NO_INIT;
 static volatile uint32_t hs = 0;
 static volatile uint16_t elapsed = 0;
 
+#define STROBE_DELAY() for(uint8_t i=0; i<6; i++) { __asm__ __volatile__ ("nop"); }
+
 int main(void)
 {      
   USB_Init();
@@ -134,6 +136,7 @@ void Strobe() {
   Endpoint_ClearSETUP();
 
   PORTC &= ~PIN_STROBE;
+  STROBE_DELAY();
   PORTC |= PIN_STROBE;
 
   Endpoint_ClearOUT();
@@ -217,6 +220,7 @@ void Send(uint16_t bytesToSend, uint16_t timeout) {
      PORTD = Endpoint_Read_8();
 
      PORTC &= ~PIN_STROBE;
+     STROBE_DELAY();
      PORTC |= PIN_STROBE;
 
      ResetTimer();
@@ -276,6 +280,7 @@ void Receive(uint16_t bytesToReceive, uint16_t timeout) {
      Endpoint_Write_8(PIND);
      
      PORTC &= ~PIN_STROBE;
+     STROBE_DELAY();
      PORTC |= PIN_STROBE;     
    }
    bytesToReceive -= bytesInPacket;
