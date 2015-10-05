@@ -9,6 +9,7 @@ MINGW32-WINDRES=$(MINGW32)-windres
 VERSION=1.3
 XLINK_SERIAL:=$(XLINK_SERIAL)
 
+SHELL=/bin/bash
 CC?=gcc
 GCC=gcc
 CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security -O3 -I. -I$(PREFIX)/include
