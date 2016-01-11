@@ -1,3 +1,5 @@
+/* -*- mode: kasm -*- */
+        
 .import source "server.h"
 
 .pc = basic

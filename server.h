@@ -1,3 +1,5 @@
+/* -*- mode: kasm -*- */
+
 .import source "target.asm"
 	
 .var start = $c1        // Transfer start address

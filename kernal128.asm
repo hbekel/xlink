@@ -1,3 +1,5 @@
+/* -*- mode: kasm -*- */
+
 .pc = $e000
 
 .import source "server.h"
