@@ -1,10 +1,15 @@
 #ifndef DRIVER_H
 #define DRIVER_H
 
-#define XLINK_DRIVER_DEVICE_USB       189
-#define XLINK_DRIVER_DEVICE_PARPORT   99
-#define XLINK_DRIVER_DEVICE_SHM       -1
-#define XLINK_DRIVER_DEVICE_SERVANT64 188
+#define XLINK_DRIVER_DEVICE_USB        189
+#define XLINK_DRIVER_DEVICE_PARPORT    99
+#define XLINK_DRIVER_DEVICE_SHM        -1
+
+#if mac
+  #define XLINK_DRIVER_DEVICE_SERIAL 31
+#else
+  #define XLINK_DRIVER_DEVICE_SERIAL 188
+#endif
 
 #define XLINK_DRIVER_STATE_IDLE   0x01
 #define XLINK_DRIVER_STATE_INPUT  0x02
@@ -60,7 +65,7 @@ bool device_is_supported(char*, int);
 bool device_is_parport(int);
 bool device_is_usb(int);
 bool device_is_shm(int);
-bool device_is_servant64(int);
+bool device_is_serial(int);
 
 bool _driver_setup_and_open(void);
 bool _driver_ready(void);

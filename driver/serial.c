@@ -12,7 +12,7 @@
 #include "error.h"
 #include "xlink.h"
 #include "driver.h"
-#include "servant64.h"
+#include "serial.h"
 #include "protocol.h"
 #include "util.h"
 
@@ -98,7 +98,7 @@ static bool cmd(uchar cmd, uint arg1, uint arg2) {
 
 //------------------------------------------------------------------------------
 
-bool driver_servant64_open(void) {
+bool driver_serial_open(void) {
   bool result = false;
 
   if(!initialized) {
@@ -170,19 +170,19 @@ bool driver_servant64_open(void) {
 
 //------------------------------------------------------------------------------
 
-void driver_servant64_input(void) {
+void driver_serial_input(void) {
   cmd(CMD_INPUT, 0, 0);
 }
 
 //------------------------------------------------------------------------------
 
-void driver_servant64_output(void) {
+void driver_serial_output(void) {
   cmd(CMD_OUTPUT, 0, 0);
 }
 
 //------------------------------------------------------------------------------
 
-void driver_servant64_strobe(void) {
+void driver_serial_strobe(void) {
   cmd(CMD_STROBE, 0, 0);
 }
 
@@ -195,7 +195,7 @@ static bool acked(void) {
   return response[0] == 0x55;
 }
 
-bool driver_servant64_wait(int timeout) {
+bool driver_serial_wait(int timeout) {
   
   bool result = false;
 
@@ -214,7 +214,7 @@ bool driver_servant64_wait(int timeout) {
 
 //------------------------------------------------------------------------------
 
-unsigned char driver_servant64_read(void) {
+unsigned char driver_serial_read(void) {
   uchar response[1] = { 0xff };
   cmd(CMD_READ, 0, 0);
   serial_read(response, 1);
@@ -223,13 +223,13 @@ unsigned char driver_servant64_read(void) {
 
 //------------------------------------------------------------------------------
 
-void driver_servant64_write(unsigned char value) {
+void driver_serial_write(unsigned char value) {
   cmd(CMD_WRITE, 0, 0);
 }
 
 //------------------------------------------------------------------------------
 
-bool driver_servant64_send(unsigned char* data, int size) {
+bool driver_serial_send(unsigned char* data, int size) {
   unsigned int bytesSent;
   
   cmd(CMD_SEND, size, 2);
@@ -239,7 +239,7 @@ bool driver_servant64_send(unsigned char* data, int size) {
   bool result = bytesSent == size;
   
   if(!result) {
-    SET_ERROR(XLINK_ERROR_SERVANT64,
+    SET_ERROR(XLINK_ERROR_SERIAL,
               "transfer timeout (%d of %d bytes sent)", bytesSent, size);
   }
   
@@ -248,7 +248,7 @@ bool driver_servant64_send(unsigned char* data, int size) {
 }
 //------------------------------------------------------------------------------
 
-bool driver_servant64_receive(unsigned char* data, int size) { 
+bool driver_serial_receive(unsigned char* data, int size) { 
   unsigned int bytesReceived;
 
   cmd(CMD_RECEIVE, size, 2);
@@ -258,7 +258,7 @@ bool driver_servant64_receive(unsigned char* data, int size) {
   bool result = bytesReceived == size;
   
   if(!result) {
-    SET_ERROR(XLINK_ERROR_SERVANT64,
+    SET_ERROR(XLINK_ERROR_SERIAL,
               "transfer timeout (%d of %d bytes received)", bytesReceived, size);
   }
   
@@ -268,7 +268,7 @@ bool driver_servant64_receive(unsigned char* data, int size) {
 
 //------------------------------------------------------------------------------
 
-bool driver_servant64_ping() { 
+bool driver_serial_ping() { 
   driver->output();
   driver->write(XLINK_COMMAND_PING);
   driver->strobe();
@@ -277,14 +277,14 @@ bool driver_servant64_ping() {
 
 //------------------------------------------------------------------------------
 
-void driver_servant64_reset(void) {
+void driver_serial_reset(void) {
   cmd(CMD_RESET, 0, 0);
   usleep(250*1000);
 }
 
 //------------------------------------------------------------------------------
 
-void driver_servant64_free(void) {
+void driver_serial_free(void) {
 #if posix
   close(driver->device);
 #elif windows
@@ -294,11 +294,11 @@ void driver_servant64_free(void) {
 
 //------------------------------------------------------------------------------
 
-void driver_servant64_close(void) {
+void driver_serial_close(void) {
 }
 
 //------------------------------------------------------------------------------
 
-void driver_servant64_boot(void) { }
+void driver_serial_boot(void) { }
 
 //------------------------------------------------------------------------------

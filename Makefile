@@ -29,7 +29,7 @@ LIBHEADERS=\
 	driver/usb.h \
 	driver/parport.h \
 	driver/shm.h \
-	driver/servant64.h
+	driver/serial.h
 
 LIBSOURCES=\
 	xlink.c \
@@ -43,7 +43,7 @@ LIBSOURCES=\
 	driver/usb.c \
 	driver/parport.c \
 	driver/shm.c \
-	driver/servant64.c
+	driver/serial.c
 
 LIBFLAGS=-DXLINK_LIBRARY_BUILD -L. -L$(PREFIX)/lib
 LIBEXT=so

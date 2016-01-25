@@ -15,7 +15,7 @@
 #include "parport.h"
 #include "usb.h"
 #include "shm.h"
-#include "servant64.h"
+#include "serial.h"
 
 extern Driver* driver;
 
@@ -179,32 +179,32 @@ bool driver_setup(char* path) {
       SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize shm device \"%s\"", driver->path);
     }
 
-  } else if(device_is_servant64(type)) {
+  } else if(device_is_serial(type)) {
     
-    logger->debug("trying to use servant64 device \"%s\"...",  driver->path);
+    logger->debug("trying to use serial device \"%s\"...",  driver->path);
 
-    driver->_open    = &driver_servant64_open;
-    driver->_close   = &driver_servant64_close;    
-    driver->_strobe  = &driver_servant64_strobe;    
-    driver->_wait    = &driver_servant64_wait;
-    driver->_read    = &driver_servant64_read;    
-    driver->_write   = &driver_servant64_write;    
-    driver->_send    = &driver_servant64_send;    
-    driver->_receive = &driver_servant64_receive;    
-    driver->_input   = &driver_servant64_input;    
-    driver->_output  = &driver_servant64_output;    
-    driver->_ping    = &driver_servant64_ping;    
-    driver->_reset   = &driver_servant64_reset;    
-    driver->_boot    = &driver_servant64_boot;    
-    driver->_free    = &driver_servant64_free;
+    driver->_open    = &driver_serial_open;
+    driver->_close   = &driver_serial_close;    
+    driver->_strobe  = &driver_serial_strobe;    
+    driver->_wait    = &driver_serial_wait;
+    driver->_read    = &driver_serial_read;    
+    driver->_write   = &driver_serial_write;    
+    driver->_send    = &driver_serial_send;    
+    driver->_receive = &driver_serial_receive;    
+    driver->_input   = &driver_serial_input;    
+    driver->_output  = &driver_serial_output;    
+    driver->_ping    = &driver_serial_ping;    
+    driver->_reset   = &driver_serial_reset;    
+    driver->_boot    = &driver_serial_boot;    
+    driver->_free    = &driver_serial_free;
     
     result = driver->ready();
     
     if(result) {
-      logger->debug("using servant64 device \"%s\"", driver->path);
+      logger->debug("using serial device \"%s\"", driver->path);
     }
     else {
-      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize servant64 device \"%s\"", driver->path);
+      SET_ERROR(XLINK_ERROR_DEVICE, "failed to initialize serial device \"%s\"", driver->path);
     }
   }  
   
@@ -271,6 +271,11 @@ bool device_identify(char* path, int* type) {
 #elif windows 
 
   (*type) = XLINK_DRIVER_DEVICE_USB;
+  
+  if(strncmp(path, "COM", 3) == 0) {
+    (*type) = XLINK_DRIVER_DEVICE_SERIAL;
+    return true;
+  }
 
   errno = 0;
   if ((strtol(path, NULL, 0) > 0) && (errno == 0)) {
@@ -287,8 +292,9 @@ bool device_is_supported(char *path, int type) {
 #if linux
 
   if(!(device_is_parport(type) ||
-       device_is_usb(type) ||
-       device_is_shm(type))) {
+       device_is_usb(type) ||       
+       device_is_shm(type)
+       device_is_serial(type))) {
 
     SET_ERROR(XLINK_ERROR_DEVICE, 
               "%s: unsupported device major number: %d", path, type);
@@ -319,8 +325,8 @@ bool device_is_shm(int type) {
 
 //------------------------------------------------------------------------------
 
-bool device_is_servant64(int type) {
-  return type == XLINK_DRIVER_DEVICE_SERVANT64;
+bool device_is_serial(int type) {
+  return type == XLINK_DRIVER_DEVICE_SERIAL;
 }
 
 //------------------------------------------------------------------------------
