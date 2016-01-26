@@ -293,7 +293,7 @@ bool device_is_supported(char *path, int type) {
 
   if(!(device_is_parport(type) ||
        device_is_usb(type) ||       
-       device_is_shm(type)
+       device_is_shm(type) ||
        device_is_serial(type))) {
 
     SET_ERROR(XLINK_ERROR_DEVICE, 
