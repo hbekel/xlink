@@ -224,7 +224,7 @@ unsigned char driver_serial_read(void) {
 //------------------------------------------------------------------------------
 
 void driver_serial_write(unsigned char value) {
-  cmd(CMD_WRITE, 0, 0);
+  cmd(CMD_WRITE, value, 0);
 }
 
 //------------------------------------------------------------------------------
