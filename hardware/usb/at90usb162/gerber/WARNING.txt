@@ -1,0 +1,13 @@
+These files come WITHOUT ANY WARRANTY.
+
+These gerber files SHOULD work for most manufacturers. However, you
+always need to make sure that the files you commit into production
+comply with the requirements of your chosen manufacturer. The
+manufacturer SHOULD state their requirements for gerber files on their
+website.
+
+To recreate these files with different parameters, open the pcb file
+in KiCAD's Pcbnew application and choose File -> Plot.
+
+Always use KiCAD's GerbView application to review the gerber files and
+the drill file prior to ordering pcbs.
