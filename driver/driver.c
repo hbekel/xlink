@@ -7,6 +7,7 @@
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/sysmacros.h>
 
 #include "target.h"
 #include "error.h"
