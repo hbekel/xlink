@@ -654,7 +654,7 @@ bool command_load(Command* self) {
     Range* io = range_new_from_int(machine->io);
     Range* data = range_new(self->start, self->end);
 
-    if(range_overlaps(data, io))
+    if(range_overlaps(data, io) && self->memory == 0xff)
       command_apply_safe_memory_and_bank(self);
     else 
       command_apply_memory_and_bank(self);
