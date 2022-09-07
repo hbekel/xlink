@@ -292,10 +292,11 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
 #define hasPrevious !isFirst
 #define previous (*(*(argv)-1))
 
-  bool isFirst = true;
+  bool isFirst = true;  
+  size_t len = strlen(current);  
 
-  self->name = (char *) calloc(strlen(current)+1, sizeof(char));
-  strncpy(self->name, current, strlen(current));
+  self->name = (char *) calloc(len+1, sizeof(char));
+  strncpy(self->name, current, len);
 
   self->id = str2id(self->name);
 
@@ -339,8 +340,9 @@ void command_consume_arguments(Command *self, int *argc, char ***argv) {
 
 void command_append_argument(Command* self, char* arg) {
   self->argv = (char**) realloc(self->argv, (self->argc+1) * sizeof(char*));
-  self->argv[self->argc] = (char*) calloc(strlen(arg)+1, sizeof(char));
-  strncpy(self->argv[self->argc], arg, strlen(arg));
+  size_t len = strlen(arg);
+  self->argv[self->argc] = (char*) calloc(len+1, sizeof(char));
+  strncpy(self->argv[self->argc], arg, len+1);
   self->argc++;
 }
 

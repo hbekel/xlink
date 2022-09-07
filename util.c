@@ -20,9 +20,10 @@ StringList *stringlist_new(void) {
 }
 
 void stringlist_append(StringList *self, char *string) {
+  size_t len = strlen(string);
   self->strings = (char**) realloc(self->strings, (self->size+1) * sizeof(char *));
-  self->strings[self->size] = calloc(strlen(string)+1, sizeof(char));
-  strncpy(self->strings[self->size], string, strlen(string));
+  self->strings[self->size] = calloc(len+1, sizeof(char));
+  strncpy(self->strings[self->size], string, len+1);
   self->size++;
 }
 

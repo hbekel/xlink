@@ -52,7 +52,7 @@ bool driver_shm_open(void) {
     
     port = (xlink_port_t*) shmat(shmid, NULL, 0);
     
-    if((int)port == -1) goto error;
+    if((long)port == -1) goto error;
 
 #elif windows
     
