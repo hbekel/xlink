@@ -1,10 +1,12 @@
-PREFIX=/usr/local
+PREFIX=/usr
 SYSCONFDIR=/etc
-KASM?=java -jar /usr/share/kickassembler/KickAss.jar
+KASM?=kasm3
 
-MINGW32?=i686-w64-mingw32
+MINGW32?=x86_64-w64-mingw32
 MINGW32-GCC=$(MINGW32)-gcc
 MINGW32-WINDRES=$(MINGW32)-windres
+MINGW32-CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security \
+	-O3 -I. -I/usr/$(MINGW32)/include
 
 VERSION=1.3
 XLINK_SERIAL:=$(XLINK_SERIAL)
@@ -12,7 +14,8 @@ XLINK_SERIAL:=$(XLINK_SERIAL)
 SHELL=/bin/bash
 CC?=gcc
 GCC=gcc
-CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security -O3 -I. -I$(PREFIX)/include
+CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security -O3 \
+	-I. -I$(PREFIX)/include -I/usr/include
 
 AVRDUDE=avrdude
 AVRDUDE_FLAGS=-c arduino -b 57600 -P /dev/ttyUSB0 -p atmega328p -F -u
@@ -45,7 +48,7 @@ LIBSOURCES=\
 	driver/shm.c \
 	driver/serial.c
 
-LIBFLAGS=-DXLINK_LIBRARY_BUILD -L. -L$(PREFIX)/lib
+LIBFLAGS=-DXLINK_LIBRARY_BUILD -L. -L/usr/lib -L$(PREFIX)/lib
 LIBEXT=so
 
 UNAME=$(shell uname)
@@ -90,11 +93,12 @@ xlink.res.o: xlink.rc
 	$(MINGW32-WINDRES) -i xlink.rc -o xlink.res.o
 
 xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32 xlink.res.o
-	$(MINGW32-GCC) $(CFLAGS) $(LIBFLAGS) -static-libgcc -Wl,--enable-stdcall-fixup -shared \
-		-o xlink.dll $(LIBSOURCES) xlink.res.o -lusb-1.0 -linpout32
+	$(MINGW32-GCC) $(MINGW32-CFLAGS) $(LIBFLAGS) \
+		-static-libgcc -Wl,--enable-stdcall-fixup -shared \
+		-o xlink.dll $(LIBSOURCES) xlink.res.o -lusb-1.0 -linpoutx64
 
 xlink.exe: xlink.dll client.c client.h range.c range.h help.c xlink.lib-clean 
-	$(MINGW32-GCC) $(CFLAGS) -static-libgcc -o xlink.exe \
+	$(MINGW32-GCC) $(MINGW32-CFLAGS) -static-libgcc -o xlink.exe \
 		client.c range.c -L. -lxlink 
 
 xlink.lib: xlink.dll
@@ -107,9 +111,9 @@ xlink.lib-clean:
 inpout32:
 	wget -O inpout32.zip $(INPOUT32_BINARIES) && \
 	unzip -d inpout32 inpout32.zip && \
-	cp inpout32/Win32/inpout32.h . && \
-	cp inpout32/Win32/inpout32.dll . && \
-	chmod +x inpout32.dll
+	cp inpout32/x64/inpout32.h . && \
+	cp inpout32/x64/inpoutx64.dll . && \
+	chmod +x inpoutx64.dll
 
 tools/make-server: tools/make-server.c
 	$(CC) $(CFLAGS) -o tools/make-server tools/make-server.c
@@ -118,7 +122,8 @@ server64.c: tools/make-server server.h server64.asm loader.asm
 	$(KASM) :target=c64 :pc=257 -o base server64.asm  # 257 = 0101
 	$(KASM) :target=c64 :pc=513 -o high server64.asm  # 513 = 0201
 	$(KASM) :target=c64 :pc=258 -o low  server64.asm  # 258 = 0102
-	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" :target=c64 -o loader loader.asm)
+	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" \
+		:target=c64 -o loader loader.asm)
 	tools/make-server c64 base low high loader > server64.c
 	rm -v base low high loader
 
@@ -126,7 +131,8 @@ server128.c: tools/make-server server.h server128.asm loader.asm
 	$(KASM) :target=c128 :pc=257 -o base server128.asm  # 257 = 0101
 	$(KASM) :target=c128 :pc=513 -o high server128.asm  # 513 = 0201
 	$(KASM) :target=c128 :pc=258 -o low  server128.asm  # 258 = 0102
-	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" :target=c128 -o loader loader.asm)
+	(let size=$$(stat --format=%s base)-2 && $(KASM) :size="$$size" \
+		:target=c128 -o loader loader.asm)
 	tools/make-server c128 base low high loader > server128.c
 	rm -v base low high loader
 
@@ -277,4 +283,5 @@ macosx-package: ../xlink-$(VERSION)-macosx.tar.gz
 	make DESTDIR=stage PREFIX=/usr/local install && \
 	(cd stage && tar vczf ../../xlink-$(VERSION)-macosx.tar.gz .) && \
 	rm -rf stage && \
-	$(MD5SUM) ../xlink-$(VERSION)-macosx.tar.gz > ../xlink-$(VERSION)-macosx.tar.gz.md5
+	$(MD5SUM) ../xlink-$(VERSION)-macosx.tar.gz > \
+		../xlink-$(VERSION)-macosx.tar.gz.md5
