@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "range.h"
+#include "target.h"
 
 void check(bool condition, const char* message) {
   if(!condition) {
@@ -10,6 +11,25 @@ void check(bool condition, const char* message) {
     fprintf(stderr, "\n");
     exit(EXIT_FAILURE);
   }
+}
+
+void test_target() {
+
+#if linux
+  printf("Target is linux\n");
+#endif
+
+#if windows
+  printf("Target is windows\n");
+#endif
+
+#if mac
+  printf("Target is mac\n");
+#endif
+
+#if posix
+  printf("Target is posix\n");
+#endif  
 }
 
 void test_parse(char *str, int start, int end) {
@@ -123,6 +143,7 @@ void test_range() {
 }
 
 int main(int argc, char** argv) {
+  test_target();
   test_range();
 
   exit(EXIT_SUCCESS);
