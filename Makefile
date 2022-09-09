@@ -271,7 +271,7 @@ clean: firmware-clean servant64-clean
 	[ -f log ] && rm -v log || true
 
 distclean: clean
-	rm -rf inpout32* || true
+	rm -rf inpout{32,x64}* || true
 
 release: distclean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD && \
