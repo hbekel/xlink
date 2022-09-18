@@ -2,11 +2,11 @@ PREFIX=/usr
 SYSCONFDIR=/etc
 KASM?=kasm3
 
-MINGW32?=x86_64-w64-mingw32
+MINGW32?=i686-w64-mingw32
 MINGW32-GCC=$(MINGW32)-gcc
 MINGW32-WINDRES=$(MINGW32)-windres
 MINGW32-CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security \
-	-O3 -I. -I/usr/$(MINGW32)/include
+	-O3 -I. -I/usr/$(MINGW32)/include 
 
 VERSION=1.3
 XLINK_SERIAL:=$(XLINK_SERIAL)
@@ -74,7 +74,6 @@ bootstrap-c64: bootstrap-c64.txt
 bootstrap-test-c64: bootstrap-test-c64.prg
 bootstrap-c128: bootstrap-c128.txt
 bootstrap-test-c128: bootstrap-test-c128.prg
-prepare-msi: clean win32 firmware xlink.lib
 
 testsuite: testsuite.c range.c
 	$(CC) -o testsuite testsuite.c range.c
@@ -92,14 +91,14 @@ xlink: libxlink.$(LIBEXT) client.c client.h range.c range.h help.c
 xlink.res.o: xlink.rc
 	$(MINGW32-WINDRES) -i xlink.rc -o xlink.res.o
 
-xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32 xlink.res.o
-	$(MINGW32-GCC) $(MINGW32-CFLAGS) $(LIBFLAGS) \
+xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32.dll xlink.res.o
+	$(MINGW32-GCC) $(MINGW32-CFLAGS) -DXLINK_LIBRARY_BUILD -L. -L/usr/$(MINGW32)/lib \
 		-static-libgcc -Wl,--enable-stdcall-fixup -shared \
-		-o xlink.dll $(LIBSOURCES) xlink.res.o -lusb-1.0 -linpoutx64
+		-o xlink.dll $(LIBSOURCES) xlink.res.o -lusb-1.0 -linpout32
 
 xlink.exe: xlink.dll client.c client.h range.c range.h help.c xlink.lib-clean 
 	$(MINGW32-GCC) $(MINGW32-CFLAGS) -static-libgcc -o xlink.exe \
-		client.c range.c -L. -lxlink 
+		client.c range.c -L. -L/usr/$(MINGW32)/lib -lxlink 
 
 xlink.lib: xlink.dll
 	dos2unix tools/make-msvc-lib.sh
@@ -108,12 +107,12 @@ xlink.lib: xlink.dll
 xlink.lib-clean:
 	[ -f xlink.lib ] && rm -v xlink.lib || true
 
-inpout32:
+inpout32.dll:
 	wget -O inpout32.zip $(INPOUT32_BINARIES) && \
 	unzip -d inpout32 inpout32.zip && \
-	cp inpout32/x64/inpout32.h . && \
-	cp inpout32/x64/inpoutx64.dll . && \
-	chmod +x inpoutx64.dll
+	cp inpout32/Win32/inpout32.h . && \
+	cp inpout32/Win32/inpout32.dll . && \
+	chmod +x inpout32.dll
 
 tools/make-server: tools/make-server.c
 	$(CC) $(CFLAGS) -o tools/make-server tools/make-server.c
@@ -272,6 +271,7 @@ clean: firmware-clean servant64-clean
 
 distclean: clean
 	rm -rf inpout{32,x64}* || true
+	rm -rf libusb-1.0* || true
 
 release: distclean
 	git archive --prefix=xlink-$(VERSION)/ -o ../xlink-$(VERSION).tar.gz HEAD && \
@@ -285,3 +285,18 @@ macosx-package: ../xlink-$(VERSION)-macosx.tar.gz
 	rm -rf stage && \
 	$(MD5SUM) ../xlink-$(VERSION)-macosx.tar.gz > \
 		../xlink-$(VERSION)-macosx.tar.gz.md5
+
+msi: xlink.exe xlink.dll libusb-1.0.dll inpout32.dll xlink.wxs
+	wixl --arch x86 --define VERSION=$(VERSION) -o ../xlink-$(VERSION).msi xlink.wxs && \
+	$(MD5SUM) ../xlink-$(VERSION).msi > \
+		../xlink-$(VERSION).msi.md5
+	rm -rf libusb-1.0.dll
+
+libusb-1.0.26-binaries.7z:
+	wget https://github.com/libusb/libusb/releases/download/v1.0.26/libusb-1.0.26-binaries.7z
+
+libusb-1.0.26-binaries: libusb-1.0.26-binaries.7z
+	7z x -y libusb-1.0.26-binaries.7z
+
+libusb-1.0.dll: libusb-1.0.26-binaries
+	cp libusb-1.0.26-binaries/VS2015-Win32/dll/libusb-1.0.dll .

@@ -1,0 +1,67 @@
+<?xml version='1.0' encoding='windows-1252'?>
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+  <Product Name='xlink $(var.VERSION)'
+	   Manufacturer='Henning Liebenau'
+	   Version='$(var.VERSION)'
+	   Id='e8df748b-2d7c-43a8-99a1-6a0dcacc0939' 
+           UpgradeCode='57dd88fa-608a-4ec6-8b08-fa287f011e56'
+           Language='1033'
+	   Codepage='1252'>
+      <Package Id='*'
+	       Keywords='Installer'
+	       Description="xlink $(var.VERSION) installer"
+               Comments='data transfer and control system for the C64/C128'
+	       Manufacturer='Henning Liebenau'
+               InstallerVersion='100'
+	       Languages='1033'
+	       Compressed='yes'
+	       SummaryCodepage='1252' />
+      <Media Id='1' Cabinet='Xlink.cab' EmbedCab='yes' />
+      
+      <Directory Id='TARGETDIR' Name='SourceDir'>
+
+        <!-- See https://gitlab.gnome.org/GNOME/msitools/-/merge_requests/42 -->
+        <Component Id='XlinkExecutableOnPath' Guid='1a23d111-7d42-4ac9-a9fa-5af3f7553cac'>
+          <Environment Id='7a2c37d6-dbf3-4502-8ec7-d4187752f42c' Name='PATH' System='yes' Action='set' Part='last' Value='[INSTALLDIR]' />
+        </Component>
+        
+	<Directory Id='ProgramFilesFolder' Name='PFiles'>
+
+	  <Directory Id='INSTALLDIR' Name='xlink'>	    
+            <Component Id='XlinkExecutable' Guid='36d81cf1-e32f-4e53-b2ba-9f1a588dfd1a'>
+	      <File Id='XlinkEXE' Name='xlink.exe' DiskId='1' Source='xlink.exe' KeyPath='yes' />
+            </Component>            
+	    <Component Id='XlinkHeader' Guid='d589dcf3-3080-49a7-bdca-d4a02543aab1'>
+	      <File Id='XlinkH' Name='xlink.h' DiskId='1' Source='xlink.h' KeyPath='yes' />
+            </Component>	    	    	    
+	  </Directory>
+	</Directory>
+
+	<Directory Id='SystemFolder' Name='SFiles'>
+          <Component Id='XlinkLibrary' Guid='8614e684-6c09-4dc5-ae64-b295e280c448'>
+ 	    <File Id='xlinkDLL' Name='xlink.dll' DiskId='1' Source='xlink.dll' KeyPath='yes' />
+          </Component>	    	    	    
+	  
+          <Component Id='LibUSBLibrary' Guid='12b9bd12-3d5a-4fc4-9b3c-c4ab45dd63cf'>
+	    <File Id='libusbDLL' Name='libusb-1.0.dll' DiskId='1' Source='libusb-1.0.dll' KeyPath='yes' />
+          </Component>	    	    	    
+	  
+	  <Component Id='Inpout32Library' Guid='b3eebfa1-6088-4e4c-82b1-2bbcda3cbd04'>
+	    <File Id='Inpout32DLL' Name='inpout32.dll' DiskId='1' Source='inpout32.dll' KeyPath='yes' />
+          </Component>	    	    	    
+	</Directory>
+	
+      </Directory>
+
+      <Feature Id='Complete' Level='1'>
+	<ComponentRef Id='XlinkExecutable' />
+        <!-- See https://gitlab.gnome.org/GNOME/msitools/-/merge_requests/42 -->
+        <ComponentRef Id='XlinkExecutableOnPath' />
+	<ComponentRef Id='XlinkHeader' />      
+	<ComponentRef Id='XlinkLibrary' />
+	<ComponentRef Id='LibUSBLibrary' />
+	<ComponentRef Id='Inpout32Library' />
+      </Feature>
+      
+    </Product>
+</Wix>
