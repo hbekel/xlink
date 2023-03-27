@@ -6,7 +6,7 @@ MINGW32?=i686-w64-mingw32
 MINGW32-GCC=$(MINGW32)-gcc
 MINGW32-WINDRES=$(MINGW32)-windres
 MINGW32-CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security \
-	-O3 -I. -I/usr/$(MINGW32)/include 
+	-O3 -I. -I/usr/$(MINGW32)/include
 
 VERSION=1.3
 XLINK_SERIAL:=$(XLINK_SERIAL)
@@ -20,7 +20,8 @@ CFLAGS=-DCLIENT_VERSION="$(VERSION)" -std=gnu99 -Wall -Wno-format-security -O3 \
 AVRDUDE=avrdude
 AVRDUDE_FLAGS=-c arduino -b 57600 -P /dev/ttyUSB0 -p atmega328p -F -u
 
-INPOUT32_BINARIES=http://www.highrez.co.uk/scripts/download.asp?package=InpOutBinaries
+INPOUT32_BINARIES=http://www.henning-liebenau.de/download/xlink/inpout32.zip
+INPOUT32_BINARIES_MD5=http://www.henning-liebenau.de/download/xlink/inpout32.zip.md5
 
 LIBHEADERS=\
 	xlink.h \
@@ -86,7 +87,7 @@ libxlink.$(LIBEXT): $(LIBHEADERS) $(LIBSOURCES)
 		-o libxlink.$(LIBEXT) $(LIBSOURCES) -lusb-1.0
 
 xlink: libxlink.$(LIBEXT) client.c client.h range.c range.h help.c
-	$(CC) $(CFLAGS) -o xlink client.c range.c -L. -lxlink 
+	$(CC) $(CFLAGS) -o xlink client.c range.c -L. -lxlink
 
 xlink.res.o: xlink.rc
 	$(MINGW32-WINDRES) -i xlink.rc -o xlink.res.o
@@ -96,9 +97,9 @@ xlink.dll: $(LIBHEADERS) $(LIBSOURCES) inpout32.dll xlink.res.o
 		-static-libgcc -Wl,--enable-stdcall-fixup -shared \
 		-o xlink.dll $(LIBSOURCES) xlink.res.o -lusb-1.0 -linpout32
 
-xlink.exe: xlink.dll client.c client.h range.c range.h help.c xlink.lib-clean 
+xlink.exe: xlink.dll client.c client.h range.c range.h help.c xlink.lib-clean
 	$(MINGW32-GCC) $(MINGW32-CFLAGS) -static-libgcc -o xlink.exe \
-		client.c range.c -L. -L/usr/$(MINGW32)/lib -lxlink 
+		client.c range.c -L. -L/usr/$(MINGW32)/lib -lxlink
 
 xlink.lib: xlink.dll
 	dos2unix tools/make-msvc-lib.sh
@@ -108,7 +109,9 @@ xlink.lib-clean:
 	[ -f xlink.lib ] && rm -v xlink.lib || true
 
 inpout32.dll:
-	wget -O inpout32.zip $(INPOUT32_BINARIES) && \
+	wget -4 $(INPOUT32_BINARIES) && \
+	wget -4 $(INPOUT32_BINARIES_MD5) && \
+	md5sum -c inpout32.zip.md5 && \
 	unzip -d inpout32 inpout32.zip && \
 	cp inpout32/Win32/inpout32.h . && \
 	cp inpout32/Win32/inpout32.dll . && \
@@ -117,7 +120,7 @@ inpout32.dll:
 tools/make-server: tools/make-server.c
 	$(CC) $(CFLAGS) -o tools/make-server tools/make-server.c
 
-server64.c: tools/make-server server.h server64.asm loader.asm 
+server64.c: tools/make-server server.h server64.asm loader.asm
 	$(KASM) :target=c64 :pc=257 -o base server64.asm  # 257 = 0101
 	$(KASM) :target=c64 :pc=513 -o high server64.asm  # 513 = 0201
 	$(KASM) :target=c64 :pc=258 -o low  server64.asm  # 258 = 0102
@@ -126,7 +129,7 @@ server64.c: tools/make-server server.h server64.asm loader.asm
 	tools/make-server c64 base low high loader > server64.c
 	rm -v base low high loader
 
-server128.c: tools/make-server server.h server128.asm loader.asm 
+server128.c: tools/make-server server.h server128.asm loader.asm
 	$(KASM) :target=c128 :pc=257 -o base server128.asm  # 257 = 0101
 	$(KASM) :target=c128 :pc=513 -o high server128.asm  # 513 = 0201
 	$(KASM) :target=c128 :pc=258 -o low  server128.asm  # 258 = 0102
@@ -225,9 +228,9 @@ install: xlink cbm
 ifeq ($(UNAME), Linux)
 		install -m644 -D etc/udev/rules.d/10-xlink.rules \
 			$(DESTDIR)$(SYSCONFDIR)/udev/rules.d/10-xlink.rules || true
-endif	
+endif
 
-	install -d $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/	
+	install -d $(DESTDIR)$(SYSCONFDIR)/bash_completion.d/
 	install -m644 etc/bash_completion.d/xlink \
 			$(DESTDIR)$(SYSCONFDIR)/bash_completion.d/
 
