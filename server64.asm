@@ -1,6 +1,6 @@
 /* -*- mode: kasm -*- */
 
-.import source "server.h"
+.import source "server_h.asm"
 
 .pc = cmdLineVars.get("pc").asNumber()
 
@@ -106,25 +106,50 @@ load: {
 	bne slow
 	
 fast:	
-!loop:  :wait()
+!loop:
+	:wait()
 	lda $dd01 
 	sta (start),y   // write with normal memory config
 	:ack()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
+
+!check:	
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
 	jmp done
 
 slow:	
-!loop:  :wait()
-        lda $dd01
+!loop:
+	:wait()
+	lda $dd01
 	ldx #$33        // write to ram with io disabled
 	stx $01
 	sta (start),y
 	lda #$37
 	sta $01
 	:ack()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
 
-done:	:relinkBasic()
+!check:	
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
+
+done:
+	:relinkBasic()
 	:screenOn()
 	jmp irq.done
 }
@@ -144,19 +169,43 @@ save: {
 	jmp slow	
 
 fast:	
-!loop:  lda (start),y  // read with normal memory config
+!loop:
+	lda (start),y  // read with normal memory config
 	:write()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
+
+!check:
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
 	jmp done
 
 slow:
-!loop:  lda mem        // read with requested memory config
+!loop:
+	lda mem        // read with requested memory config
 	sta $01
 	lda (start),y
 	ldx #$37
 	stx $01
 	:write()
-	:next()
+	inc start
+	bne check
+	inc start+1
+
+check:	
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
 	
 done:	lda #$00   // reset CIA2 port B to input
 	sta $dd03
@@ -168,16 +217,22 @@ done:	lda #$00   // reset CIA2 port B to input
 //------------------------------------------------------------------------------
 	
 poke: {
-	jsr read stx mem
-	jsr read stx bank
-	jsr read stx start
-	jsr read stx start+1
+	jsr read
+	stx mem
+	jsr read
+	stx bank
+	jsr read
+	stx start
+	jsr read
+	stx start+1
 
 	ldy #$00	
 
 	:wait()
 	lda $dd01
-	tax :ack() txa
+	tax 
+	:ack() 
+	txa
 	
 	ldx mem
 	stx $01
@@ -191,12 +246,16 @@ poke: {
 //------------------------------------------------------------------------------
 	
 peek: {
-	jsr read stx mem
-	jsr read stx bank
-	jsr read stx start
-	jsr read stx start+1
+	jsr read
+	stx mem
+	jsr read
+	stx bank
+	jsr read
+	stx start
+	jsr read
+	stx start+1
 
-        :output()
+    :output()
 	
 	ldy #$00
 	ldx mem
@@ -215,21 +274,33 @@ done:	:input()
 //------------------------------------------------------------------------------
 	
 jump: {
-	jsr read stx mem
-	jsr read stx bank
+	jsr read
+	stx mem
+	jsr read
+	stx bank
 
-	ldx #$ff txs // reset stack pointer
+	ldx #$ff
+	txs // reset stack pointer
 
-        lda #>repl     pha // make sure the code jumped to can rts to basic
-        lda #[<repl-1] pha   
+	lda #>repl
+	pha // make sure the code jumped to can rts to basic
+	lda #[<repl-1]
+	pha   
   
-	jsr read txa pha // push high byte of jump address
-	jsr read txa pha // push low byte of jump address
+	jsr read
+	txa
+	pha // push high byte of jump address
+	jsr read
+	txa
+	pha // push low byte of jump address
 
 	lda mem  // apply requested memory config
 	sta $01
 	
-	lda #$00 tax tay pha // clear registers & push clean flags 
+	lda #$00
+	tax
+	tay
+	pha // clear registers & push clean flags 
 	
 	rti // jump via rti
 }
@@ -239,8 +310,10 @@ jump: {
 run: {
 	jsr uninstall
 	
-	ldx #$ff txs        // reset stack pointer
-	lda #$01 sta cursor // cursor off
+	ldx #$ff
+	txs        // reset stack pointer
+	lda #$01
+	sta cursor // cursor off
 
 	jsr insnewl         // preprare run BASIC program
 	jsr restxtpt
@@ -254,11 +327,17 @@ run: {
 //------------------------------------------------------------------------------
 	
 inject:	{
-	lda #>return pha
-	lda #<return pha
+	lda #>return
+	pha
+	lda #<return
+	pha
 	
-	jsr read txa pha 
-	jsr read txa pha
+	jsr read
+	txa
+	pha 
+	jsr read
+	txa
+	pha
 	
 	rts
 	
@@ -324,12 +403,18 @@ done:   :input()
 //------------------------------------------------------------------------------	
 	
 readHeader: {
-	jsr read stx mem
-	jsr read stx bank
-	jsr read stx start
-	jsr read stx start+1
-	jsr read stx end
-	jsr read stx end+1
+	jsr read
+	stx mem
+	jsr read
+	stx bank
+	jsr read
+	stx start
+	jsr read
+	stx start+1
+	jsr read
+	stx end
+	jsr read
+	stx end+1
 	rts
 }
 

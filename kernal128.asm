@@ -2,7 +2,7 @@
 
 .pc = $e000
 
-.import source "server.h"
+.import source "server_h.asm"
 
 //------------------------------------------------------------------------------	
 	
@@ -26,7 +26,8 @@ eof:
   
 .pc = $f6cc
 tapeIODisabledMessage: {
-.text "TAPE IO DISABLE" .byte $c4 
+.text "TAPE IO DISABLE"
+.byte $c4 
 eof:
 }        
 
@@ -113,7 +114,18 @@ near:	ldy #$00
 	lda $dd01
 	sta (start),y 
 	:ack()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
+
+!check:
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
 	jmp done
 
 far:    :checkIO()
@@ -142,7 +154,18 @@ save: {
 near:	ldy #$00
 !loop:  lda (start),y  
 	:write()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
+
+!check:
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
 	jmp done
 
 far:    :checkIO()
@@ -161,19 +184,25 @@ eof:
 //------------------------------------------------------------------------------
 	
 poke: {
-	jsr read stx mem 
-	jsr read stx bank
-	jsr read stx start
-	jsr read stx start+1
+	jsr read
+	stx mem 
+	jsr read
+	stx bank
+	jsr read
+	stx start
+	jsr read
+	stx start+1
 
 	:wait()
-	lda $dd01 pha
+	lda $dd01
+	pha
 	:ack()
 	
 	:checkBank()
 	
 near:  ldy #$00
-	pla sta (start),y
+	pla
+	sta (start),y
 	jmp done
 
 far:    ldy #$00
@@ -181,7 +210,8 @@ far:    ldy #$00
 	sta stashptr
 
 	ldx mem
-	pla jsr stash
+	pla
+	jsr stash
 	
 done:   jmp irq.done
 eof:	
@@ -190,10 +220,14 @@ eof:
 //------------------------------------------------------------------------------
 	
 peek: {
-	jsr read stx mem
-	jsr read stx bank
-	jsr read stx start
-	jsr read stx start+1
+	jsr read
+	stx mem
+	jsr read
+	stx bank
+	jsr read
+	stx start
+	jsr read
+	stx start+1
 
         :output()
 	
@@ -221,24 +255,36 @@ eof:
 //------------------------------------------------------------------------------
 
 jump: {
- 	jsr read stx mem
-	jsr read stx bank
+ 	jsr read
+	stx mem
+	jsr read
+	stx bank
 
-	ldx #$ff txs        // reset stack pointer
+	ldx #$ff
+	txs        // reset stack pointer
 
-        lda #>repl     pha  // make sure the code jumped to can rts to basic
-        lda #[<repl-1] pha  // (only if the bank includes basic rom, of course) 
+	lda #>repl
+	pha  // make sure the code jumped to can rts to basic
+	lda #[<repl-1]
+	pha  // (only if the bank includes basic rom, of course) 
 
 	// prepare jmpfar...
 	
-	lda bank sta $02    // setup requested bank value
+	lda bank
+	sta $02    // setup requested bank value
 
-	jsr read stx $03    // setup jump address (sent msb first by client)
-	jsr read stx $04
+	jsr read
+	stx $03    // setup jump address (sent msb first by client)
+	jsr read
+	stx $04
 
 	// set clean registers and flags...
 	
-	lda #$00 sta $05 sta $06 sta $07 sta $08 
+	lda #$00
+	sta $05
+	sta $06
+	sta $07
+	sta $08 
 
 	jmp jmpfar          // implies rti
 eof:	
@@ -247,20 +293,28 @@ eof:
 //------------------------------------------------------------------------------
 	
 run: {
-	lda #$01 sta cursor // cursor off
+	lda #$01
+	sta cursor // cursor off
 
-	cli jmp basrun      // perform RUN
+	cli
+	jmp basrun      // perform RUN
 eof:	
 }
 	
 //------------------------------------------------------------------------------
 
 inject:	{
-	lda #>return pha
-	lda #<return pha
+	lda #>return
+	pha
+	lda #<return
+	pha
 	
-	jsr read txa pha 
-	jsr read txa pha
+	jsr read
+	txa
+	pha 
+	jsr read
+	txa
+	pha
 	
 	rts
 	
@@ -330,16 +384,30 @@ code: {
 	
 slow_receivefar: {
 .pseudopc common {
-	lda mmu sta saved
+	lda mmu
+	sta saved
 
 	ldy #$00	
 !loop:  :wait()
 	lda $dd01
-	ldx mem stx mmu
+	ldx mem
+	stx mmu
 	sta (start),y 
-	ldx saved stx mmu
+	ldx saved
+	stx mmu
 	:ack()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
+
+!check:
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
 
 	rts
 }
@@ -348,17 +416,31 @@ eof:
 
 fast_receivefar: {
 .pseudopc common {
-	lda mmu sta saved
-	lda mem sta mmu
+	lda mmu
+	sta saved
+	lda mem
+	sta mmu
 	
 	ldy #$00	
 !loop:  :wait()
 	lda $dd01
 	sta (start),y 
 	:ack()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
 
-	lda saved sta mmu
+!check:
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
+
+	lda saved
+	sta mmu
 	
 	rts
 }
@@ -371,11 +453,24 @@ slow_sendfar: {
 	sta saved
 
 	ldy #$00
-!loop:  ldx mem stx mmu
+!loop:  ldx mem
+stx mmu
 	lda (start),y
-	ldx saved stx mmu
+	ldx saved
+	stx mmu
 	:write()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
+
+!check:
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
 	
 	rts
 }
@@ -384,15 +479,29 @@ eof:
 
 fast_sendfar: {
 .pseudopc common {
-	lda mmu sta saved
-	lda mem sta mmu
+	lda mmu
+	sta saved
+	lda mem
+	sta mmu
 	
 	ldy #$00
 !loop:  lda (start),y	
 	:write()
-	:next()
+	inc start
+	bne !check+
+	inc start+1
+
+!check:
+	lda start+1
+	cmp end+1
+	bne !loop-
+
+	lda start
+	cmp end
+	bne !loop-
 	
-	lda saved sta mmu
+	lda saved
+	sta mmu
 	rts
 }
 eof:	
@@ -404,12 +513,18 @@ eof:
 //------------------------------------------------------------------------------
 	
 readHeader: {
-	jsr read stx mem
-	jsr read stx bank
-	jsr read stx start
-	jsr read stx start+1
-	jsr read stx end
-	jsr read stx end+1
+	jsr read
+	stx mem
+	jsr read
+	stx bank
+	jsr read
+	stx start
+	jsr read
+	stx start+1
+	jsr read
+	stx end
+	jsr read
+	stx end+1
 	rts
 eof:	
 }
@@ -489,7 +604,8 @@ check:	lda #%01111111 // check for Control key...
 
 skip:	rts
 
-text: .text "XLINK KERNAL V1.0" .byte $0d, $00
+text: .text "XLINK KERNAL V1.0"
+.byte $0d, $00
 eof:	
 }
 //------------------------------------------------------------------------------		

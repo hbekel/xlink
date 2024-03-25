@@ -1,6 +1,6 @@
-PREFIX=/usr
+PREFIX=/usr/local
 SYSCONFDIR=/etc
-KASM?=kasm3
+KASM?=java -jar /home/honza/projects/c64/pc-tools/kickass/KickAss.jar
 
 MINGW32?=i686-w64-mingw32
 MINGW32-GCC=$(MINGW32)-gcc
@@ -120,7 +120,7 @@ inpout32.dll:
 tools/make-server: tools/make-server.c
 	$(CC) $(CFLAGS) -o tools/make-server tools/make-server.c
 
-server64.c: tools/make-server server.h server64.asm loader.asm
+server64.c: tools/make-server server_h.asm server64.asm loader.asm
 	$(KASM) :target=c64 :pc=257 -o base server64.asm  # 257 = 0101
 	$(KASM) :target=c64 :pc=513 -o high server64.asm  # 513 = 0201
 	$(KASM) :target=c64 :pc=258 -o low  server64.asm  # 258 = 0102
@@ -129,7 +129,7 @@ server64.c: tools/make-server server.h server64.asm loader.asm
 	tools/make-server c64 base low high loader > server64.c
 	rm -v base low high loader
 
-server128.c: tools/make-server server.h server128.asm loader.asm
+server128.c: tools/make-server server_h.asm server128.asm loader.asm
 	$(KASM) :target=c128 :pc=257 -o base server128.asm  # 257 = 0101
 	$(KASM) :target=c128 :pc=513 -o high server128.asm  # 513 = 0201
 	$(KASM) :target=c128 :pc=258 -o low  server128.asm  # 258 = 0102
@@ -156,7 +156,7 @@ kernal128.c: tools/make-kernal tools/make-kernal.c kernal128.asm
 tools/make-bootstrap: tools/make-bootstrap.c
 	$(CC) $(CFLAGS) -o tools/make-bootstrap tools/make-bootstrap.c
 
-bootstrap-c64.txt: tools/make-bootstrap bootstrap.asm server.h
+bootstrap-c64.txt: tools/make-bootstrap bootstrap.asm server_h.asm
 	$(KASM) :target=c64 -o bootstrap-c64.prg bootstrap.asm && \
 	tools/make-bootstrap c64 bootstrap-c64.prg > bootstrap-c64.txt
 
