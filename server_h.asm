@@ -79,7 +79,8 @@
 }
 	
 .macro wait() { // Wait for handshake from PC (falling edge on FLAG)
-loop:	lda $dd0d
+loop:
+	lda $dd0d
 	and #$10
 	beq loop
 }
@@ -93,11 +94,15 @@ loop:	lda $dd0d
 .macro strobe() { :ack() }
 	
 .macro read() {
-	:wait() ldx $dd01 :ack()
+	:wait()
+	ldx $dd01
+	:ack()
 }
 
 .macro write() {
-	sta $dd01 :strobe() :wait()
+	sta $dd01
+	:strobe()
+	:wait()
 }
 
 .macro output() {
@@ -111,37 +116,23 @@ loop:	lda $dd0d
 	sta $dd03
 }
   
-.macro next() {
-	inc start
-	bne check
-	inc start+1
-
-check:	lda start+1
-	cmp end+1
-	bne !loop-
-
-	lda start
-	cmp end
-	bne !loop-
-}
-   
 .macro checkBank() {
-        lda mem
+	lda mem
 	cmp mmu	
-	bne far
+	// bne far
 	  
-        ldx bank
+	ldx bank
 	lda bank2mmu,x
 	sta mem
 	cmp mmu
-	bne far
+	// bne far
 }   
 
 .macro checkIO() {
 	lda mem
 	and #1
 	cmp #0
-	beq fast
+	// beq fast
 }
 	
    

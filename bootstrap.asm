@@ -1,4 +1,4 @@
-.import source "server.h"
+.import source "server_h.asm"
 
 .if(target == "c64") {
   .pc = $3000
@@ -14,10 +14,22 @@ jmp main
 
 //------------------------------------------------------------------------------		
 	
-read: { :read() rts }
-write: { :write() rts }
-ack: { :ack() rts }
-wait: { :wait() rts }
+read: {
+	:read()
+	rts
+}
+write: {
+	:write()
+	rts
+}
+ack: {
+	:ack()
+	rts
+}
+wait: {
+	:wait()
+	rts
+}
 
 //------------------------------------------------------------------------------		
 	
@@ -59,14 +71,26 @@ load: {
 	lda $dd01 
 	sta (start),y
 	jsr ack
-	:next()
+	inc start
+	bne !check+
+	inc start+1
 
-done:   lda end
-        sta bend
-        lda end+1
-        sta bend+1
+!check:
+	lda start+1
+	cmp end+1
+	bne !loop-
 
-        lda #$1b
+	lda start
+	cmp end
+	bne !loop-
+
+done:
+	lda end
+	sta bend
+	lda end+1
+	sta bend+1
+
+	lda #$1b
 	sta $d011
 	rts
 }
@@ -74,12 +98,18 @@ done:   lda end
 //------------------------------------------------------------------------------	
 	
 readHeader: {
-	jsr read stx mem
-	jsr read stx bank
-	jsr read stx start 
-	jsr read stx start+1
-	jsr read stx end
-	jsr read stx end+1
+	jsr read
+	stx mem
+	jsr read
+	stx bank
+	jsr read
+	stx start 
+	jsr read
+	stx start+1
+	jsr read
+	stx end
+	jsr read
+	stx end+1
 	rts
 }
 

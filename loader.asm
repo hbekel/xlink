@@ -1,6 +1,6 @@
 /* -*- mode: kasm -*- */
         
-.import source "server.h"
+.import source "server_h.asm"
 
 .pc = basic
 
